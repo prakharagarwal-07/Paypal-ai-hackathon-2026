@@ -5,7 +5,7 @@ import WorkflowSection from "@/components/WorkflowSection";
 import MilestoneCalculator from "@/components/MilestoneCalculator";
 import WhoItsFor from "@/components/WhoItsFor";
 import Footer from "@/components/Footer";
-import WebThreads from "@/components/WebThreads";
+import WebThreadsController from "@/components/WebThreadsController";
 import ScrollReveal from "@/components/ScrollReveal";
 import HeroTextFlyIn from "@/components/HeroTextFlyIn";
 import { ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
@@ -13,27 +13,8 @@ import { ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 export default function HomePage() {
   return (
     <div className="relative min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
-      {/* 
-        FIXED FULL-PAGE WEBTHREADS BACKGROUND:
-        Restored original vibrant colors & full presence, with glow decreased just by a little!
-      */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-80 dark:opacity-90">
-        <WebThreads
-          colors={["#00E599", "#0070BA", "#38BDF8", "#10B981", "#6366F1"]}
-          coreColor="#FFFFFF"
-          threadCount={8}
-          speed={0.16}
-          frequency={4.2}
-          spread={0.24}
-          position={0.48}
-          glow={0.026}
-          brightness={0.86}
-          thickness={1.1}
-          fade={0.12}
-          mouseInteraction={true}
-          pulseOnClick={true}
-        />
-      </div>
+      {/* Interactive WebThreads background with live visualizer control panel */}
+      <WebThreadsController />
 
       <Navbar />
 
