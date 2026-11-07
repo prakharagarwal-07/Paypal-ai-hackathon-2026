@@ -15,9 +15,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MilestoneOS — AI-Assisted Project Milestones & PayPal Payouts",
+  title: "MilestoneOS — Verified Freelance Milestones & PayPal Payouts",
   description:
-    "Work completed. Progress verified. Payments made with confidence. The intelligent milestone escrow platform for freelancers and clients.",
+    "Work completed. Progress verified. Payments made with confidence. The friendly milestone escrow platform for freelancers and clients.",
   keywords: [
     "PayPal Hackathon 2026",
     "Milestone Payments",
@@ -34,9 +34,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark scroll-smooth">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
       <body
-        className={`${jakartaSans.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-[#080B12] text-slate-100 antialiased selection:bg-[#00E599]/20 selection:text-[#00E599]`}
+        className={`${jakartaSans.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-emerald-500/20 selection:text-emerald-700 dark:bg-[#0B0F19] dark:text-slate-100 dark:selection:text-emerald-300 transition-colors duration-200`}
       >
         {children}
       </body>

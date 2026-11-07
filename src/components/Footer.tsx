@@ -1,148 +1,55 @@
 import Link from "next/link";
-import { ShieldCheck, Heart, ExternalLink } from "lucide-react";
+import { ExternalLink, ShieldCheck } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-800/80 bg-[#06080F] text-slate-400 text-xs">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-10">
-          {/* Brand & Mission (2 cols) */}
-          <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400 text-slate-950 font-bold shadow-md shadow-emerald-500/20">
-                <span className="text-sm font-extrabold tracking-tight">M</span>
-              </div>
-              <span className="text-lg font-extrabold text-white tracking-tight">
-                Milestone<span className="text-emerald-400">OS</span>
-              </span>
+    <footer className="border-t border-slate-200 bg-slate-100/60 dark:border-slate-800 dark:bg-[#06080F] text-slate-500 text-xs py-12 transition-colors">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-white font-bold">
+              <span className="text-sm font-extrabold">M</span>
             </div>
-            <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
-              Work completed. Progress verified. Payments made with confidence. The intelligent milestone escrow platform integrating Gemini AI evaluation and the PayPal Developer Platform.
-            </p>
-            <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono">
-              <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-              <span>PayPal AI Hackathon 2026 Submission</span>
-            </div>
+            <span className="font-extrabold text-base text-slate-900 dark:text-white">
+              Milestone<span className="text-emerald-500">OS</span>
+            </span>
+            <span className="text-[11px] text-slate-400 ml-2">
+              PayPal AI Hackathon 2026
+            </span>
           </div>
 
-          {/* Navigation Column */}
-          <div>
-            <h4 className="text-slate-200 font-semibold text-xs uppercase tracking-wider mb-3">
-              Platform
-            </h4>
-            <ul className="space-y-2">
-              <li>
-                <Link href="#how-it-works" className="hover:text-white transition-colors">
-                  How It Works
-                </Link>
-              </li>
-              <li>
-                <Link href="#ai-verification" className="hover:text-white transition-colors">
-                  AI Deliverable Audit
-                </Link>
-              </li>
-              <li>
-                <Link href="#calculator" className="hover:text-white transition-colors">
-                  Milestone Calculator
-                </Link>
-              </li>
-              <li>
-                <Link href="#roles" className="hover:text-white transition-colors">
-                  Client & Freelancer Roles
-                </Link>
-              </li>
-              <li>
-                <Link href="/auth?mode=login" className="hover:text-white transition-colors">
-                  Authentication Portal
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Tech Stack & APIs */}
-          <div>
-            <h4 className="text-slate-200 font-semibold text-xs uppercase tracking-wider mb-3">
-              Integrations
-            </h4>
-            <ul className="space-y-2">
-              <li>
-                <a
-                  href="https://developer.paypal.com/docs/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white flex items-center gap-1 transition-colors"
-                >
-                  PayPal Sandbox Orders API
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://ai.google.dev/gemini-api/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white flex items-center gap-1 transition-colors"
-                >
-                  Google Gemini 2.5 API
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://supabase.com/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white flex items-center gap-1 transition-colors"
-                >
-                  Supabase Database & Auth
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://nextjs.org/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-white flex items-center gap-1 transition-colors"
-                >
-                  Next.js 16 App Router
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Hackathon & Compliance */}
-          <div>
-            <h4 className="text-slate-200 font-semibold text-xs uppercase tracking-wider mb-3">
-              Hackathon Governance
-            </h4>
-            <ul className="space-y-2 text-[11px]">
-              <li className="text-slate-400">
-                Deadline: Nov 12, 2026 (12:00 PM PT)
-              </li>
-              <li className="text-slate-400">
-                License: MIT Open Source
-              </li>
-              <li className="text-slate-400">
-                Environment: PayPal Developer Sandbox
-              </li>
-              <li className="text-emerald-400">
-                Free Tier Compliant
-              </li>
-            </ul>
+          <div className="flex flex-wrap items-center gap-6 text-slate-600 dark:text-slate-400 font-medium">
+            <Link href="#how-it-works" className="hover:text-emerald-600 dark:hover:text-white">
+              How It Works
+            </Link>
+            <Link href="#demo" className="hover:text-emerald-600 dark:hover:text-white">
+              Live Demo
+            </Link>
+            <Link href="#calculator" className="hover:text-emerald-600 dark:hover:text-white">
+              Calculator
+            </Link>
+            <Link href="/auth?mode=login" className="hover:text-emerald-600 dark:hover:text-white">
+              Sign In
+            </Link>
+            <a
+              href="https://developer.paypal.com/docs/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-emerald-600 dark:hover:text-white inline-flex items-center gap-1"
+            >
+              PayPal Developer
+              <ExternalLink className="h-3 w-3" />
+            </a>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-slate-500">
+        <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
           <div>
-            © 2026 MilestoneOS. Open source software built for the PayPal AI Hackathon.
+            © 2026 MilestoneOS. Open source prototype built for the PayPal AI Hackathon.
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-slate-500">
-              Designed with precision for clients and builders worldwide.
-            </span>
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span>PayPal Sandbox Verified</span>
           </div>
         </div>
       </div>

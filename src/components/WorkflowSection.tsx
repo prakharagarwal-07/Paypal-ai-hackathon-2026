@@ -1,149 +1,77 @@
-import { ShieldCheck, Cpu, CreditCard, ArrowRight, CheckCircle, FileCode, CheckCheck, Eye } from "lucide-react";
+import { CheckCircle2, ShieldCheck, CreditCard, Sparkles, ArrowRight } from "lucide-react";
 
 export default function WorkflowSection() {
   const steps = [
     {
       step: "01",
-      icon: Cpu,
-      title: "Define Scoped Milestones & Criteria",
-      tagline: "Structured from Day One",
-      description:
-        "The client sets the deliverables, deadlines, and milestone budgets. MilestoneOS uses Gemini to convert vague requirements into objective, testable acceptance criteria before work begins.",
-      features: [
-        "Unambiguous scope definition prevents scope creep",
-        "Clear deliverable checklist agreed upon by both parties",
-        "Configured payout amount locked per milestone tranche",
-      ],
-      codeSnippet: `// Milestone #1 Agreement
-{
-  "milestone": "Homepage & Responsive Design",
-  "acceptanceCriteria": [
-    "Figma design tokens matching Tailwind config",
-    "Mobile viewport test (<375px) passing",
-    "Clean accessibility audit score >= 90"
-  ],
-  "payout": "₹10,000 INR"
-}`,
+      title: "Set Your Milestones",
+      desc: "Split the project into smaller, manageable goals with clear prices. No confusion about what is expected.",
+      tag: "Clear Scope",
+      icon: Sparkles,
+      color: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
     },
     {
       step: "02",
-      icon: FileCode,
-      title: "Deliver & Multi-Modal AI Audit",
-      tagline: "Objective Deliverable Inspection",
-      description:
-        "The freelancer uploads git commit links, screenshots, or build artifacts. MilestoneOS AI audits the deliverables against the locked criteria, categorizing every requirement into Satisfied, Missing, or Needs Verification.",
-      features: [
-        "Checks code repos, PR diffs, and test suites",
-        "Identifies missing features and provides constructive diff notes",
-        "Zero subjective arguments: objective criteria comparison",
-      ],
-      codeSnippet: `// AI Verification Output
-{
-  "criteriaEvaluated": 3,
-  "satisfied": ["Figma tokens synced", "Mobile viewport responsive"],
-  "needsVerification": ["Accessibility contrast on dark buttons"],
-  "confidenceScore": 92,
-  "clientRecommendation": "Ready for client sign-off"
-}`,
+      title: "AI Verifies the Work",
+      desc: "When the freelancer submits work, Gemini AI checks it against the agreed checklist and flags missing items.",
+      tag: "Objective Proof",
+      icon: ShieldCheck,
+      color: "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
     },
     {
       step: "03",
+      title: "Pay Safely via PayPal",
+      desc: "The client reviews the AI report and clicks Pay. PayPal captures the transaction securely and deposits it.",
+      tag: "Guaranteed Payout",
       icon: CreditCard,
-      title: "Review & Pay via PayPal Sandbox",
-      tagline: "Zero-Risk Human-Controlled Payouts",
-      description:
-        "The client reviews the AI audit report. If satisfied, one click triggers the PayPal Checkout modal. PayPal captures the transaction, verifies payment status, and stamps the milestone as Paid in real time.",
-      features: [
-        "Human client retains final decision authority at all times",
-        "Direct integration with PayPal Orders v2 Sandbox API",
-        "Instant immutable receipt and transaction audit trail",
-      ],
-      codeSnippet: `// PayPal Sandbox Capture Hook
-const order = await paypal.createOrder({
-  intent: "CAPTURE",
-  purchase_units: [{
-    reference_id: "milestone_ms_02",
-    amount: { currency_code: "INR", value: "15000.00" }
-  }]
-});
-// Milestone status -> "PAID"`,
+      color: "bg-sky-50 text-[#0070BA] border-sky-200 dark:bg-[#0070BA]/10 dark:text-sky-300 dark:border-[#0070BA]/30",
     },
   ];
 
   return (
-    <section id="how-it-works" className="relative py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-800/80 bg-[#080B12]">
-      <div className="mx-auto max-w-7xl">
-        {/* Section Header */}
-        <div className="max-w-3xl">
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-            The Verified Workflow
+    <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50/60 dark:bg-[#0E1424]/60 transition-colors">
+      <div className="mx-auto max-w-5xl">
+        <div className="text-center max-w-2xl mx-auto">
+          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+            How It Works
           </span>
-          <h2 className="mt-2 text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
-            Three Steps from Contract to PayPal Payout
+          <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            Three Simple Steps to Fair Payments
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-slate-400 leading-relaxed">
-            MilestoneOS replaces ambiguous freelancer contracts with an automated, transparent pipeline combining Gemini criteria analysis with PayPal Developer Platform security.
+          <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400">
+            Freelancers get paid for real progress. Clients only pay for verified work.
           </p>
         </div>
 
-        {/* Steps Detailed Flow */}
-        <div className="mt-16 space-y-12">
-          {steps.map((item, idx) => {
-            const Icon = item.icon;
-            const isEven = idx % 2 === 1;
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {steps.map((s) => {
+            const Icon = s.icon;
             return (
               <div
-                key={item.step}
-                className={`grid grid-cols-1 lg:grid-cols-12 gap-8 items-center rounded-2xl border border-slate-800 bg-[#0C1222]/60 p-6 sm:p-10 backdrop-blur-xl ${
-                  isEven ? "lg:flex-row-reverse" : ""
-                }`}
+                key={s.step}
+                className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-[#131B2E] flex flex-col justify-between"
               >
-                {/* Left Description Column */}
-                <div className={`lg:col-span-7 ${isEven ? "lg:order-2" : "lg:order-1"}`}>
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 font-mono text-sm font-extrabold border border-emerald-500/20">
-                      {item.step}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl font-mono text-sm font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                      {s.step}
                     </span>
-                    <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
-                      {item.tagline}
+                    <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${s.color}`}>
+                      {s.tag}
                     </span>
                   </div>
 
-                  <h3 className="mt-3 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                    {item.title}
+                  <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
+                    {s.title}
                   </h3>
-
-                  <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
-                    {item.description}
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                    {s.desc}
                   </p>
-
-                  <ul className="mt-6 space-y-2.5">
-                    {item.features.map((feat, fidx) => (
-                      <li key={fidx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-300">
-                        <CheckCheck className="h-4 w-4 text-emerald-400 mt-0.5 shrink-0" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
 
-                {/* Right Code/Terminal Column */}
-                <div className={`lg:col-span-5 ${isEven ? "lg:order-1" : "lg:order-2"}`}>
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 font-mono text-xs shadow-xl">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3 text-slate-500">
-                      <div className="flex items-center gap-1.5">
-                        <span className="h-2.5 w-2.5 rounded-full bg-rose-500/80" />
-                        <span className="h-2.5 w-2.5 rounded-full bg-amber-500/80" />
-                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/80" />
-                      </div>
-                      <span className="text-[11px] text-slate-400">
-                        milestone_step_{item.step}.json
-                      </span>
-                    </div>
-                    <pre className="mt-3 text-slate-300 text-[11px] leading-relaxed overflow-x-auto">
-                      <code>{item.codeSnippet}</code>
-                    </pre>
-                  </div>
+                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Transparent & Automated</span>
                 </div>
               </div>
             );

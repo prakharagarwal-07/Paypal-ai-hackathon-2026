@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  ShieldCheck,
   Eye,
   EyeOff,
   User,
@@ -18,6 +17,7 @@ import {
   RefreshCw,
   Zap,
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 type AuthMode = "login" | "signup";
 type UserRole = "client" | "freelancer";
@@ -54,11 +54,11 @@ function AuthForm() {
     setSuccessMsg(null);
     if (demoRole === "client") {
       setName("Sarah Chen");
-      setEmail("sarah.chen@client-enterprise.demo");
+      setEmail("sarah.chen@client.demo");
       setPassword("DemoClientPass2026!");
     } else {
       setName("Rohan Verma");
-      setEmail("rohan.verma@dev-freelance.demo");
+      setEmail("rohan.verma@dev.demo");
       setPassword("DemoFreelancer2026!");
     }
   };
@@ -91,32 +91,31 @@ function AuthForm() {
 
     setLoading(true);
 
-    // Simulate Auth API Latency for high-polish frontend prototype
     setTimeout(() => {
       setLoading(false);
       setSuccessMsg(
         mode === "login"
-          ? `Authenticated successfully as ${role === "client" ? "Client" : "Freelancer"}. Ready for Dashboard routing!`
-          : `Account created for ${name || "User"} with ${role === "client" ? "Client" : "Freelancer"} role. Supabase session initialized.`
+          ? `Authenticated successfully as ${role === "client" ? "Client" : "Freelancer"}. Session ready!`
+          : `Account created for ${name || "User"} with ${role === "client" ? "Client" : "Freelancer"} role!`
       );
-    }, 1200);
+    }, 1000);
   };
 
   return (
-    <div className="w-full max-w-lg">
-      {/* Phase 1 Prototype Banner */}
-      <div className="mb-6 rounded-xl border border-sky-500/30 bg-sky-500/10 p-3.5 text-xs text-sky-300 flex items-start gap-2.5">
-        <Sparkles className="h-4 w-4 text-sky-400 shrink-0 mt-0.5" />
+    <div className="w-full max-w-md">
+      {/* Friendly Notice */}
+      <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3.5 text-xs text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 flex items-start gap-2.5">
+        <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
         <div>
-          <span className="font-bold text-white">Phase 1 Frontend Prototype: </span>
-          Full UI validation & demo profiles are active. Supabase Auth backend will be integrated in Phase 2.
+          <span className="font-bold">Phase 1 Interactive Prototype: </span>
+          Full UI states are active. Real database authentication will be wired with Supabase in Phase 2.
         </div>
       </div>
 
-      {/* Form Glass Card */}
-      <div className="rounded-2xl border border-slate-800 bg-[#0C1222]/90 p-6 sm:p-8 shadow-2xl backdrop-blur-2xl">
+      {/* Form Card */}
+      <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-[#131B2E] dark:shadow-none transition-colors">
         {/* Mode Switcher Tabs */}
-        <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-950 p-1 border border-slate-800/90 text-sm font-semibold">
+        <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1 dark:bg-slate-900 text-sm font-semibold">
           <button
             type="button"
             onClick={() => {
@@ -124,10 +123,10 @@ function AuthForm() {
               setErrorMsg(null);
               setSuccessMsg(null);
             }}
-            className={`py-2 rounded-lg transition-all ${
+            className={`py-2 rounded-xl transition-all ${
               mode === "login"
-                ? "bg-slate-800 text-white shadow-sm font-bold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-white text-slate-900 shadow-sm font-bold dark:bg-slate-800 dark:text-white"
+                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
             Sign In
@@ -139,10 +138,10 @@ function AuthForm() {
               setErrorMsg(null);
               setSuccessMsg(null);
             }}
-            className={`py-2 rounded-lg transition-all ${
+            className={`py-2 rounded-xl transition-all ${
               mode === "signup"
-                ? "bg-slate-800 text-white shadow-sm font-bold"
-                : "text-slate-400 hover:text-slate-200"
+                ? "bg-white text-slate-900 shadow-sm font-bold dark:bg-slate-800 dark:text-white"
+                : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
             Create Account
@@ -150,191 +149,187 @@ function AuthForm() {
         </div>
 
         <div className="mt-6 text-center">
-          <h2 className="text-2xl font-extrabold text-white tracking-tight">
-            {mode === "login"
-              ? "Welcome Back to MilestoneOS"
-              : "Launch Your Verified Workspace"}
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            {mode === "login" ? "Welcome Back" : "Join MilestoneOS"}
           </h2>
-          <p className="mt-1.5 text-xs text-slate-400">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {mode === "login"
-              ? "Access your milestones, deliverable audits, and PayPal releases."
-              : "Choose your role to get tailored milestone tooling."}
+              ? "Access your milestones and PayPal settlement records."
+              : "Create your account as a client or freelancer."}
           </p>
         </div>
 
-        {/* Quick Demo Credentials Autofill */}
-        <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900/60 p-3">
-          <div className="flex items-center justify-between text-[11px] text-slate-400 font-semibold mb-2">
-            <span className="flex items-center gap-1 text-emerald-400">
+        {/* Demo Fast Fill */}
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+          <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-2">
+            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
               <Zap className="h-3 w-3" />
               Judge Quick-Fill:
             </span>
-            <span>Select Persona</span>
+            <span>Select Role</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => fillDemoAccount("client")}
-              className={`px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-all ${
+              className={`p-2 rounded-xl border text-xs font-semibold text-left transition-all ${
                 role === "client"
-                  ? "border-sky-500/50 bg-sky-500/15 text-sky-200 shadow-sm"
-                  : "border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200"
+                  ? "border-sky-400 bg-sky-50 text-sky-900 shadow-sm dark:border-sky-500/50 dark:bg-sky-500/15 dark:text-sky-200"
+                  : "border-slate-200 bg-white text-slate-600 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
               }`}
             >
-              <div className="font-bold flex items-center gap-1.5">
-                <User className="h-3.5 w-3.5 text-sky-400" />
-                <span>Client Profile</span>
+              <div className="font-bold flex items-center gap-1">
+                <User className="h-3.5 w-3.5 text-sky-500" />
+                <span>Client</span>
               </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5">
-                Sarah Chen (Hiring)
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
+                Sarah Chen
               </span>
             </button>
 
             <button
               type="button"
               onClick={() => fillDemoAccount("freelancer")}
-              className={`px-3 py-2 rounded-lg border text-xs font-semibold text-left transition-all ${
+              className={`p-2 rounded-xl border text-xs font-semibold text-left transition-all ${
                 role === "freelancer"
-                  ? "border-emerald-500/50 bg-emerald-500/15 text-emerald-200 shadow-sm"
-                  : "border-slate-800 bg-slate-950 text-slate-400 hover:text-slate-200"
+                  ? "border-emerald-400 bg-emerald-50 text-emerald-900 shadow-sm dark:border-emerald-500/50 dark:bg-emerald-500/15 dark:text-emerald-200"
+                  : "border-slate-200 bg-white text-slate-600 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
               }`}
             >
-              <div className="font-bold flex items-center gap-1.5">
-                <Briefcase className="h-3.5 w-3.5 text-emerald-400" />
+              <div className="font-bold flex items-center gap-1">
+                <Briefcase className="h-3.5 w-3.5 text-emerald-500" />
                 <span>Freelancer</span>
               </div>
-              <span className="text-[10px] text-slate-400 block mt-0.5">
-                Rohan Verma (Building)
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
+                Rohan Verma
               </span>
             </button>
           </div>
         </div>
 
-        {/* Role Selection Tabs for Signup */}
+        {/* Role Toggle for Signup */}
         {mode === "signup" && (
-          <div className="mt-5">
-            <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-              Select Your Account Role
+          <div className="mt-4">
+            <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5">
+              Account Role
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <div
                 onClick={() => setRole("client")}
-                className={`cursor-pointer rounded-xl border p-3 text-xs transition-all ${
+                className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all ${
                   role === "client"
-                    ? "border-sky-500 bg-sky-500/15 shadow-sm"
-                    : "border-slate-800 bg-slate-950/60 hover:border-slate-700"
+                    ? "border-sky-500 bg-sky-50 text-sky-900 dark:bg-sky-500/20 dark:text-white"
+                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-bold text-white">
-                  <User className="h-3.5 w-3.5 text-sky-400" />
+                <div className="font-bold flex items-center gap-1">
+                  <User className="h-3.5 w-3.5 text-sky-500" />
                   Client
                 </div>
-                <p className="mt-1 text-[11px] text-slate-400 leading-snug">
-                  Hire, define milestone criteria, review audits, and pay via PayPal.
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Hire & pay via PayPal
                 </p>
               </div>
 
               <div
                 onClick={() => setRole("freelancer")}
-                className={`cursor-pointer rounded-xl border p-3 text-xs transition-all ${
+                className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all ${
                   role === "freelancer"
-                    ? "border-emerald-500 bg-emerald-500/15 shadow-sm"
-                    : "border-slate-800 bg-slate-950/60 hover:border-slate-700"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:bg-emerald-500/20 dark:text-white"
+                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-bold text-white">
-                  <Briefcase className="h-3.5 w-3.5 text-emerald-400" />
+                <div className="font-bold flex items-center gap-1">
+                  <Briefcase className="h-3.5 w-3.5 text-emerald-500" />
                   Freelancer
                 </div>
-                <p className="mt-1 text-[11px] text-slate-400 leading-snug">
-                  Submit deliverables, get AI criteria feedback, and receive guaranteed payouts.
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Submit & get paid
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Error & Success Feedback Alerts */}
+        {/* Feedback Alerts */}
         {errorMsg && (
-          <div className="mt-4 rounded-xl border border-rose-500/40 bg-rose-500/10 p-3 text-xs text-rose-300 flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-start gap-2">
-            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 flex items-start gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+        {/* Input Form */}
+        <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
           {mode === "signup" && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Full Name
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="e.g. Alex Morgan"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-colors"
-                  required
-                />
-              </div>
+              <input
+                type="text"
+                placeholder="e.g. Alex Morgan"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                required
+              />
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <input
                 type="email"
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-colors"
+                className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 required
               />
             </div>
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-slate-300">
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Password
               </label>
               {mode === "login" && (
                 <button
                   type="button"
-                  onClick={() => alert("Password reset link will be dispatched via Supabase Auth.")}
-                  className="text-[11px] text-slate-400 hover:text-emerald-400 transition-colors"
+                  onClick={() => alert("Password reset link will be sent.")}
+                  className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
                 >
                   Forgot password?
                 </button>
               )}
             </div>
             <div className="relative">
-              <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 pl-10 pr-10 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-colors"
+                className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-9 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 required
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-2.5 text-slate-400 hover:text-white"
+                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-700 dark:hover:text-white"
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
@@ -343,17 +338,17 @@ function AuthForm() {
 
           {mode === "signup" && (
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Confirm Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-3 h-4 w-4 text-slate-500 pointer-events-none" />
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 transition-colors"
+                  className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                   required
                 />
               </div>
@@ -363,23 +358,23 @@ function AuthForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-emerald-400 hover:bg-emerald-300 py-3 text-sm font-bold text-slate-950 shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+            className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
           >
             {loading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Verifying Credentials...</span>
+                <span>Checking...</span>
               </>
             ) : (
               <>
-                <span>{mode === "login" ? "Sign In to Workspace" : "Create My Account"}</span>
+                <span>{mode === "login" ? "Sign In" : "Create Account"}</span>
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-xs text-slate-500">
+        <div className="mt-5 text-center text-xs text-slate-500 dark:text-slate-400">
           {mode === "login" ? (
             <span>
               Don't have an account?{" "}
@@ -389,9 +384,9 @@ function AuthForm() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className="text-emerald-400 font-semibold hover:underline"
+                className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
               >
-                Create one now
+                Create one free
               </button>
             </span>
           ) : (
@@ -403,7 +398,7 @@ function AuthForm() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className="text-emerald-400 font-semibold hover:underline"
+                className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
               >
                 Sign In
               </button>
@@ -417,33 +412,36 @@ function AuthForm() {
 
 export default function AuthPage() {
   return (
-    <div className="min-h-screen bg-[#080B12] text-slate-100 flex flex-col justify-between selection:bg-emerald-500/20 selection:text-emerald-300">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors duration-200">
       {/* Top Bar */}
-      <header className="w-full border-b border-slate-800/80 bg-[#080B12]/80 backdrop-blur-xl px-4 sm:px-8 py-4 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400 text-slate-950 font-bold shadow-md shadow-emerald-500/20">
-            <span className="text-base font-extrabold tracking-tight">M</span>
+      <header className="w-full border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-8 py-4 flex items-center justify-between dark:border-slate-800 dark:bg-[#0B0F19]/80">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500 text-white font-bold">
+            <span className="text-base font-extrabold">M</span>
           </div>
-          <span className="font-extrabold text-lg tracking-tight text-white">
-            Milestone<span className="text-emerald-400">OS</span>
+          <span className="font-extrabold text-lg text-slate-900 dark:text-white">
+            Milestone<span className="text-emerald-500">OS</span>
           </span>
         </Link>
 
-        <Link
-          href="/"
-          className="text-xs font-semibold text-slate-400 hover:text-white transition-colors"
-        >
-          ← Return to Overview
-        </Link>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <Link
+            href="/"
+            className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+          >
+            ← Back to Home
+          </Link>
+        </div>
       </header>
 
-      {/* Main Auth Container with Suspense boundary */}
+      {/* Main Container */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <Suspense
           fallback={
             <div className="text-center text-slate-400 text-sm py-12 flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin text-emerald-400" />
-              <span>Loading secure session...</span>
+              <RefreshCw className="h-4 w-4 animate-spin text-emerald-500" />
+              <span>Loading...</span>
             </div>
           }
         >
@@ -451,8 +449,7 @@ export default function AuthPage() {
         </Suspense>
       </main>
 
-      {/* Auth Footer */}
-      <footer className="py-6 text-center text-xs text-slate-500 border-t border-slate-900">
+      <footer className="py-6 text-center text-xs text-slate-400 border-t border-slate-200 dark:border-slate-800">
         MilestoneOS • PayPal AI Hackathon 2026 Sandbox Environment
       </footer>
     </div>
