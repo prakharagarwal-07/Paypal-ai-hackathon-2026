@@ -17,7 +17,7 @@ export default function HomePage() {
         FIXED FULL-PAGE WEBTHREADS BACKGROUND:
         Restored original vibrant colors & full presence, with glow decreased just by a little!
       */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-60 dark:opacity-75">
+      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-80 dark:opacity-90">
         <WebThreads
           colors={["#00E599", "#0070BA", "#38BDF8", "#10B981", "#6366F1"]}
           coreColor="#FFFFFF"
@@ -27,7 +27,7 @@ export default function HomePage() {
           spread={0.24}
           position={0.48}
           glow={0.026}
-          brightness={0.78}
+          brightness={0.86}
           thickness={1.1}
           fade={0.12}
           mouseInteraction={true}
@@ -112,7 +112,7 @@ export default function HomePage() {
         <WhoItsFor />
 
         {/* FRIENDLY CLOSING CTA */}
-        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/85 dark:bg-[#080C16]/60 backdrop-blur-md transition-colors">
+        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/20 dark:bg-transparent backdrop-blur-[1px] transition-colors">
           <ScrollReveal direction="up" delay={100}>
             <div className="mx-auto max-w-3xl text-center rounded-3xl border border-emerald-200/80 bg-white/85 p-8 sm:p-12 shadow-xl shadow-emerald-500/5 dark:border-slate-800 dark:bg-[#131B2E]/90 backdrop-blur-md">
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">

@@ -40,7 +40,7 @@ export default function MilestoneCalculator() {
   ];
 
   return (
-    <section id="calculator" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/85 dark:bg-[#080C16]/60 backdrop-blur-md transition-colors">
+    <section id="calculator" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/20 dark:bg-transparent backdrop-blur-[1px] transition-colors">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <ScrollReveal direction="up" delay={50}>
