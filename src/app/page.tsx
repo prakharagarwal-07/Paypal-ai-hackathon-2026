@@ -12,17 +12,22 @@ import { ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen bg-white dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
+    <div className="relative min-h-screen bg-[#F8FAFD] dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       {/* Interactive WebThreads background with live visualizer control panel */}
       <WebThreadsController />
+
+      {/* AMBIENT FLANK LIGHTING: Softly frames the left and right margins, eliminating stark empty whiteness */}
+      <div className="fixed inset-y-0 left-0 w-72 sm:w-96 bg-gradient-to-r from-sky-200/20 via-sky-100/10 to-transparent pointer-events-none z-0 dark:from-sky-900/10 dark:via-sky-950/5 dark:to-transparent" />
+      <div className="fixed inset-y-0 right-0 w-72 sm:w-96 bg-gradient-to-l from-emerald-200/20 via-teal-100/10 to-transparent pointer-events-none z-0 dark:from-emerald-900/10 dark:via-emerald-950/5 dark:to-transparent" />
+      <div className="fixed top-0 inset-x-0 h-40 bg-gradient-to-b from-sky-100/25 via-slate-50/10 to-transparent pointer-events-none z-0 dark:from-sky-950/20 dark:to-transparent" />
 
       <Navbar />
 
       <main className="relative z-10 flex-1">
         {/* HERO SECTION */}
         <section className="relative pt-12 pb-16 sm:pt-20 sm:pb-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
-          {/* Gentle, uplifting ambient radiance for bright mode / deep glow for dark mode */}
-          <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[750px] h-[400px] bg-gradient-to-tr from-emerald-200/40 via-sky-200/35 to-teal-100/30 dark:from-emerald-400/20 dark:via-sky-400/20 dark:to-indigo-500/10 blur-3xl pointer-events-none -z-10" />
+          {/* Broad, gentle ambient radiance covering widescreen displays */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] max-w-full h-[550px] bg-gradient-to-tr from-emerald-200/35 via-sky-200/30 to-teal-100/25 dark:from-emerald-400/15 dark:via-sky-400/15 dark:to-indigo-500/10 blur-[100px] pointer-events-none -z-10" />
 
           <div className="mx-auto max-w-5xl text-center">
             {/* DYNAMIC SCROLL FLY-IN HERO INTRO TEXT */}
@@ -108,7 +113,7 @@ export default function HomePage() {
         <WhoItsFor />
 
         {/* FRIENDLY CLOSING CTA */}
-        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-emerald-50/50 via-teal-50/20 to-white dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
+        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-emerald-50/50 via-teal-50/20 to-transparent dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
           <ScrollReveal direction="up" delay={100}>
             <div className="mx-auto max-w-3xl text-center rounded-3xl border border-emerald-200/80 bg-white/85 p-8 sm:p-12 shadow-xl shadow-emerald-500/5 dark:border-slate-800 dark:bg-[#131B2E]/90 backdrop-blur-md">
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">

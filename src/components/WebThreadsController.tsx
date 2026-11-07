@@ -16,8 +16,8 @@ interface ThreadSettings {
 const DEFAULT_SETTINGS: ThreadSettings = {
   brightness: 0.74,
   glow: 0.022,
-  threadCount: 8,
-  spread: 0.24,
+  threadCount: 9,
+  spread: 0.28,
   speed: 0.15,
   thickness: 1.1,
 };
@@ -30,12 +30,12 @@ const PRESETS = [
   {
     name: "Subtle",
     settings: {
-      brightness: 0.50,
-      glow: 0.012,
-      threadCount: 6,
-      spread: 0.18,
-      speed: 0.11,
-      thickness: 0.8,
+      brightness: 0.52,
+      glow: 0.014,
+      threadCount: 7,
+      spread: 0.22,
+      speed: 0.12,
+      thickness: 0.9,
     },
   },
   {
@@ -44,7 +44,7 @@ const PRESETS = [
       brightness: 0.76,
       glow: 0.020,
       threadCount: 9,
-      spread: 0.26,
+      spread: 0.28,
       speed: 0.15,
       thickness: 1.0,
     },
@@ -54,8 +54,8 @@ const PRESETS = [
     settings: {
       brightness: 0.84,
       glow: 0.024,
-      threadCount: 10,
-      spread: 0.28,
+      threadCount: 11,
+      spread: 0.32,
       speed: 0.16,
       thickness: 1.1,
     },
@@ -87,7 +87,7 @@ export default function WebThreadsController() {
   // Load persisted user settings from localStorage if available
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("milestone_webthreads_settings_v2");
+      const saved = localStorage.getItem("milestone_webthreads_settings_v3");
       if (saved) {
         const parsed = JSON.parse(saved);
         setSettings({ ...DEFAULT_SETTINGS, ...parsed });
@@ -105,7 +105,7 @@ export default function WebThreadsController() {
     setSettings((prev) => {
       const updated = { ...prev, [key]: value };
       try {
-        localStorage.setItem("milestone_webthreads_settings_v2", JSON.stringify(updated));
+        localStorage.setItem("milestone_webthreads_settings_v3", JSON.stringify(updated));
       } catch {
         // ignore
       }
@@ -118,7 +118,7 @@ export default function WebThreadsController() {
     setActivePreset(presetName);
     setSettings(presetSettings);
     try {
-      localStorage.setItem("milestone_webthreads_settings_v2", JSON.stringify(presetSettings));
+      localStorage.setItem("milestone_webthreads_settings_v3", JSON.stringify(presetSettings));
     } catch {
       // ignore
     }
@@ -135,7 +135,7 @@ export default function WebThreadsController() {
         FIXED FULL-PAGE WEBTHREADS BACKGROUND CANVAS:
         Receives real-time state from this controller!
       */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-85 dark:opacity-85 transition-opacity duration-300">
+      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-90 dark:opacity-85 transition-opacity duration-300">
         <WebThreads
           colors={["#00E599", "#0070BA", "#38BDF8", "#10B981", "#6366F1"]}
           coreColor="#FFFFFF"
@@ -148,7 +148,7 @@ export default function WebThreadsController() {
           glow={isDark ? settings.glow : settings.glow * 1.25}
           brightness={isDark ? settings.brightness : settings.brightness * 1.2}
           thickness={settings.thickness}
-          fade={0.12}
+          fade={0.015}
           mouseInteraction={true}
           pulseOnClick={true}
         />
