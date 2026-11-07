@@ -1,12 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X, ArrowUpRight } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
+const NAV_LINKS = [
+  { label: "How It Works", href: "#how-it-works", id: "how-it-works" },
+  { label: "See It In Action", href: "#demo", id: "demo" },
+  { label: "Payment Calculator", href: "#calculator", id: "calculator" },
+  { label: "Who It's For", href: "#benefits", id: "benefits" },
+];
+
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ticking = false;
+
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const sectionIds = ["how-it-works", "demo", "calculator", "benefits"];
+          const triggerPoint = window.innerHeight * 0.35;
+
+          let currentActive: string | null = null;
+          for (const id of sectionIds) {
+            const el = document.getElementById(id);
+            if (el) {
+              const rect = el.getBoundingClientRect();
+              if (rect.top <= triggerPoint && rect.bottom >= triggerPoint) {
+                currentActive = id;
+                break;
+              }
+            }
+          }
+
+          if (window.scrollY < 120) {
+            currentActive = null;
+          } else if (
+            window.innerHeight + window.scrollY >=
+            document.documentElement.scrollHeight - 80
+          ) {
+            currentActive = "benefits";
+          }
+
+          setActiveSection(currentActive);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full bg-transparent transition-colors">
@@ -26,32 +79,27 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Clean, Simple Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300">
-          <Link
-            href="#how-it-works"
-            className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-          >
-            How It Works
-          </Link>
-          <Link
-            href="#demo"
-            className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-          >
-            See It In Action
-          </Link>
-          <Link
-            href="#calculator"
-            className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-          >
-            Payment Calculator
-          </Link>
-          <Link
-            href="#benefits"
-            className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-          >
-            Who It's For
-          </Link>
+        {/* Clean, Simple Desktop Nav with White Glow for Active Section */}
+        <nav className="hidden md:flex items-center gap-1.5 text-sm">
+          {NAV_LINKS.map((item) => {
+            const isActive = activeSection === item.id;
+            return (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`relative px-3.5 py-1.5 rounded-xl transition-all duration-300 font-medium ${
+                  isActive
+                    ? "text-white font-black scale-105 [text-shadow:_0_0_12px_rgba(255,255,255,1),_0_0_24px_rgba(255,255,255,0.85),_0_0_36px_rgba(255,255,255,0.6)] drop-shadow-[0_0_10px_rgba(255,255,255,0.95)] bg-black/40 dark:bg-white/10 backdrop-blur-md shadow-lg shadow-white/20 border border-white/30"
+                    : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:scale-[1.02]"
+                }`}
+              >
+                <span>{item.label}</span>
+                {isActive && (
+                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-white rounded-full shadow-[0_0_8px_#ffffff]" />
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Actions & Theme Switch */}
@@ -86,35 +134,24 @@ export default function Navbar() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-slate-200 bg-white/95 px-4 pt-3 pb-6 backdrop-blur-xl dark:border-slate-800 dark:bg-[#0B0F19]/95">
-          <nav className="flex flex-col gap-3 text-base font-semibold text-slate-700 dark:text-slate-200">
-            <Link
-              href="#how-it-works"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-emerald-600 dark:hover:text-emerald-400"
-            >
-              How It Works
-            </Link>
-            <Link
-              href="#demo"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-emerald-600 dark:hover:text-emerald-400"
-            >
-              See It In Action
-            </Link>
-            <Link
-              href="#calculator"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-emerald-600 dark:hover:text-emerald-400"
-            >
-              Payment Calculator
-            </Link>
-            <Link
-              href="#benefits"
-              onClick={() => setMobileMenuOpen(false)}
-              className="py-1.5 hover:text-emerald-600 dark:hover:text-emerald-400"
-            >
-              Who It's For
-            </Link>
+          <nav className="flex flex-col gap-2 text-base font-semibold">
+            {NAV_LINKS.map((item) => {
+              const isActive = activeSection === item.id;
+              return (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`py-2 px-3 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? "text-white font-extrabold [text-shadow:_0_0_10px_rgba(255,255,255,1)] bg-black/40 dark:bg-white/15 border border-white/20"
+                      : "text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
           <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
             <Link
