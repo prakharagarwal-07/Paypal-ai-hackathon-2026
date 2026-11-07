@@ -5,25 +5,25 @@ export default function WorkflowSection() {
   const steps = [
     {
       step: "01",
-      title: "Set Your Milestones",
-      desc: "Split the project into smaller, manageable goals with clear prices. No confusion about what is expected.",
-      tag: "Clear Scope",
+      title: "Agree on Stages & Prices",
+      desc: "Instead of paying everything upfront, divide the project into clear stages (like Design, Pages, and Launch) with a fair price for each.",
+      tag: "Clear Plan",
       icon: Sparkles,
       color: "bg-blue-50 text-blue-600 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20",
     },
     {
       step: "02",
-      title: "AI Verifies the Work",
-      desc: "When the freelancer submits work, Gemini AI checks it against the agreed checklist and flags missing items.",
-      tag: "Objective Proof",
+      title: "AI Checks the Finished Work",
+      desc: "When the freelancer submits their work, our smart assistant scans the files and links against the agreed goals to make sure nothing was missed.",
+      tag: "Automatic Check",
       icon: ShieldCheck,
       color: "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20",
     },
     {
       step: "03",
-      title: "Pay Safely via PayPal",
-      desc: "The client reviews the AI report and clicks Pay. PayPal captures the transaction securely and deposits it.",
-      tag: "Guaranteed Payout",
+      title: "Pay Safely with PayPal",
+      desc: "Once you're happy with the work, tap Pay. PayPal safely transfers the money. Freelancers get paid on time, and clients only pay for finished work.",
+      tag: "Secure Payment",
       icon: CreditCard,
       color: "bg-sky-50 text-[#0070BA] border-sky-200 dark:bg-[#0070BA]/10 dark:text-sky-300 dark:border-[#0070BA]/30",
     },
@@ -41,14 +41,13 @@ export default function WorkflowSection() {
               Three Simple Steps to Fair Payments
             </h2>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
-              Freelancers get paid for real progress. Clients only pay for verified work.
+              No stress, no misunderstandings, and no lost money. Here is how MilestoneOS keeps every project safe.
             </p>
           </div>
         </ScrollReveal>
 
         <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
           {steps.map((s, idx) => {
-            const Icon = s.icon;
             return (
               <ScrollReveal
                 key={s.step}
@@ -77,7 +76,7 @@ export default function WorkflowSection() {
 
                   <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="h-4 w-4" />
-                    <span>Transparent & Automated</span>
+                    <span>Safe & Simple</span>
                   </div>
                 </div>
               </ScrollReveal>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowUpRight, Sparkles } from "lucide-react";
+import { Menu, X, ArrowUpRight } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Navbar() {
@@ -11,7 +11,7 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-md dark:border-slate-800/80 dark:bg-[#0B0F19]/80 transition-colors">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-        {/* Brand Logo */}
+        {/* Brand Logo - Clean, Real Product Identity */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-bold shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-all">
             <span className="text-base font-extrabold tracking-tight">M</span>
@@ -19,15 +19,10 @@ export default function Navbar() {
               <span className="text-[7px] text-white font-black leading-none">P</span>
             </div>
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
-                Milestone<span className="text-emerald-500 dark:text-emerald-400">OS</span>
-              </span>
-              <span className="rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[10px] font-bold border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-                PayPal AI '26
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
+              Milestone<span className="text-emerald-500 dark:text-emerald-400">OS</span>
+            </span>
           </div>
         </Link>
 
@@ -43,13 +38,13 @@ export default function Navbar() {
             href="#demo"
             className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
           >
-            Live Demo
+            See It In Action
           </Link>
           <Link
             href="#calculator"
             className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
           >
-            Calculator
+            Payment Calculator
           </Link>
           <Link
             href="#benefits"
@@ -61,7 +56,6 @@ export default function Navbar() {
 
         {/* Actions & Theme Switch */}
         <div className="flex items-center gap-3">
-          {/* Working Bright / Dark Mode Toggle Switch */}
           <ThemeToggle />
 
           <Link
@@ -105,14 +99,14 @@ export default function Navbar() {
               onClick={() => setMobileMenuOpen(false)}
               className="py-1.5 hover:text-emerald-600 dark:hover:text-emerald-400"
             >
-              Live Demo
+              See It In Action
             </Link>
             <Link
               href="#calculator"
               onClick={() => setMobileMenuOpen(false)}
               className="py-1.5 hover:text-emerald-600 dark:hover:text-emerald-400"
             >
-              Calculator
+              Payment Calculator
             </Link>
             <Link
               href="#benefits"

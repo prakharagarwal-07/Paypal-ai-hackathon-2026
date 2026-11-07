@@ -16,26 +16,26 @@ export default function MilestoneCalculator() {
     {
       index: 1,
       percent: 25,
-      title: "Design & Wireframes",
-      desc: "Approved mockups, responsive design tokens, and layout agreement.",
+      title: "Design & Look",
+      desc: "Color schemes, layout sketches, and agreed design previews.",
     },
     {
       index: 2,
       percent: 35,
-      title: "Core Development",
-      desc: "Frontend components, database models, and interactive features.",
+      title: "Building Main Pages",
+      desc: "Working website pages, navigation, and interactive features.",
     },
     {
       index: 3,
       percent: 25,
-      title: "PayPal Integration",
-      desc: "Payment button, server orders API, and sandbox checkout tests.",
+      title: "Online Payments Setup",
+      desc: "PayPal checkout so your customers can buy products or pay you.",
     },
     {
       index: 4,
       percent: 15,
-      title: "Final QA & Handoff",
-      desc: "Bug fixes, documentation, deployment, and live handoff.",
+      title: "Testing & Going Live",
+      desc: "Final checks, fixing any glitches, and officially launching the site.",
     },
   ];
 
@@ -47,13 +47,13 @@ export default function MilestoneCalculator() {
           <div className="text-center max-w-2xl mx-auto">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
               <Layers className="h-3.5 w-3.5" />
-              Simple Escrow Calculator
+              Project Payment Calculator
             </span>
             <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              See How Your Project Is Divided
+              See How Your Money Is Protected
             </h2>
             <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300">
-              Instead of paying 100% upfront or waiting months for payment, money is unlocked step-by-step as real work is verified.
+              Never pay 100% upfront to someone you just met. Pay step-by-step as real work gets completed and verified.
             </p>
           </div>
         </ScrollReveal>
@@ -63,7 +63,7 @@ export default function MilestoneCalculator() {
           <div className="mt-10 mx-auto max-w-xl rounded-3xl border border-slate-200/90 bg-white/95 p-7 dark:border-slate-800 dark:bg-[#131B2E]/95 shadow-xl shadow-slate-200/50 dark:shadow-none backdrop-blur-md">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Project Budget
+                Total Project Budget
               </span>
               <div className="flex rounded-xl border border-slate-200 bg-slate-100 p-0.5 text-xs font-bold dark:border-slate-700 dark:bg-slate-800">
                 <button
@@ -94,7 +94,7 @@ export default function MilestoneCalculator() {
                 {symbol}{currentBudget.toLocaleString()}
               </span>
               <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                across 4 verified milestones
+                split into 4 verified stages
               </span>
             </div>
 
@@ -109,8 +109,8 @@ export default function MilestoneCalculator() {
             />
 
             <div className="mt-2.5 flex justify-between text-[11px] font-semibold text-slate-400">
-              <span>{symbol}{Math.round(20000 * rateMultiplier).toLocaleString()} (Small Project)</span>
-              <span>{symbol}{Math.round(150000 * rateMultiplier).toLocaleString()} (Full Application)</span>
+              <span>{symbol}{Math.round(20000 * rateMultiplier).toLocaleString()} (Smaller Website)</span>
+              <span>{symbol}{Math.round(150000 * rateMultiplier).toLocaleString()} (Full Online Platform)</span>
             </div>
           </div>
         </ScrollReveal>
@@ -151,7 +151,7 @@ export default function MilestoneCalculator() {
 
                   <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                     <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-                    <span>AI Verified Payout</span>
+                    <span>Paid via PayPal after review</span>
                   </div>
                 </div>
               </ScrollReveal>

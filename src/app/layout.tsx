@@ -19,12 +19,11 @@ export const metadata: Metadata = {
   description:
     "Work completed. Progress verified. Payments made with confidence. The friendly milestone escrow platform for freelancers and clients.",
   keywords: [
-    "PayPal Hackathon 2026",
     "Milestone Payments",
+    "Freelance Payment Protection",
     "AI Project Verification",
     "Freelancer Escrow",
-    "Gemini AI",
-    "PayPal Sandbox",
+    "PayPal Integration",
   ],
 };
 

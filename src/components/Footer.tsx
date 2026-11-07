@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ExternalLink, ShieldCheck } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -14,7 +14,7 @@ export default function Footer() {
               Milestone<span className="text-emerald-500">OS</span>
             </span>
             <span className="text-[11px] text-slate-400 ml-2">
-              PayPal AI Hackathon 2026
+              Safe Milestone Payments
             </span>
           </div>
 
@@ -23,33 +23,27 @@ export default function Footer() {
               How It Works
             </Link>
             <Link href="#demo" className="hover:text-emerald-600 dark:hover:text-white">
-              Live Demo
+              See It In Action
             </Link>
             <Link href="#calculator" className="hover:text-emerald-600 dark:hover:text-white">
-              Calculator
+              Payment Calculator
+            </Link>
+            <Link href="#benefits" className="hover:text-emerald-600 dark:hover:text-white">
+              Who It's For
             </Link>
             <Link href="/auth?mode=login" className="hover:text-emerald-600 dark:hover:text-white">
               Sign In
             </Link>
-            <a
-              href="https://developer.paypal.com/docs/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-emerald-600 dark:hover:text-white inline-flex items-center gap-1"
-            >
-              PayPal Developer
-              <ExternalLink className="h-3 w-3" />
-            </a>
           </div>
         </div>
 
         <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400">
           <div>
-            © 2026 MilestoneOS. Open source prototype built for the PayPal AI Hackathon.
+            © 2026 MilestoneOS. Work completed. Progress verified. Payments made with confidence.
           </div>
           <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
             <ShieldCheck className="h-3.5 w-3.5" />
-            <span>PayPal Sandbox Verified</span>
+            <span>Official PayPal Checkout Integration</span>
           </div>
         </div>
       </div>

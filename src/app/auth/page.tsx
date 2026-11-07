@@ -13,7 +13,6 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
   RefreshCw,
   Zap,
 } from "lucide-react";
@@ -95,23 +94,14 @@ function AuthForm() {
       setLoading(false);
       setSuccessMsg(
         mode === "login"
-          ? `Authenticated successfully as ${role === "client" ? "Client" : "Freelancer"}. Session ready!`
-          : `Account created for ${name || "User"} with ${role === "client" ? "Client" : "Freelancer"} role!`
+          ? `Welcome back, ${name || (role === "client" ? "Sarah" : "Rohan")}! Redirecting to your workspace...`
+          : `Account created successfully! Welcome to MilestoneOS.`
       );
-    }, 1000);
+    }, 900);
   };
 
   return (
     <div className="w-full max-w-md">
-      {/* Friendly Notice */}
-      <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50/80 p-3.5 text-xs text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 flex items-start gap-2.5">
-        <Sparkles className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold">Phase 1 Interactive Prototype: </span>
-          Full UI states are active. Real database authentication will be wired with Supabase in Phase 2.
-        </div>
-      </div>
-
       {/* Form Card */}
       <div className="rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/50 dark:border-slate-800 dark:bg-[#131B2E] dark:shadow-none transition-colors">
         {/* Mode Switcher Tabs */}
@@ -154,8 +144,8 @@ function AuthForm() {
           </h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {mode === "login"
-              ? "Access your milestones and PayPal settlement records."
-              : "Create your account as a client or freelancer."}
+              ? "Access your project milestones and payment records."
+              : "Create your free account in seconds."}
           </p>
         </div>
 
@@ -164,9 +154,9 @@ function AuthForm() {
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-2">
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
               <Zap className="h-3 w-3" />
-              Judge Quick-Fill:
+              One-Click Demo Fill:
             </span>
-            <span>Select Role</span>
+            <span>Select Account</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <button
@@ -183,7 +173,7 @@ function AuthForm() {
                 <span>Client</span>
               </div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
-                Sarah Chen
+                Sarah (Hiring)
               </span>
             </button>
 
@@ -201,7 +191,7 @@ function AuthForm() {
                 <span>Freelancer</span>
               </div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
-                Rohan Verma
+                Rohan (Building)
               </span>
             </button>
           </div>
@@ -211,7 +201,7 @@ function AuthForm() {
         {mode === "signup" && (
           <div className="mt-4">
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1.5">
-              Account Role
+              I want to:
             </label>
             <div className="grid grid-cols-2 gap-2">
               <div
@@ -224,10 +214,10 @@ function AuthForm() {
               >
                 <div className="font-bold flex items-center gap-1">
                   <User className="h-3.5 w-3.5 text-sky-500" />
-                  Client
+                  Hire a Freelancer
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Hire & pay via PayPal
+                  Set milestones & pay with PayPal
                 </p>
               </div>
 
@@ -241,10 +231,10 @@ function AuthForm() {
               >
                 <div className="font-bold flex items-center gap-1">
                   <Briefcase className="h-3.5 w-3.5 text-emerald-500" />
-                  Freelancer
+                  Work as a Freelancer
                 </div>
                 <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Submit & get paid
+                  Submit work & receive payouts
                 </p>
               </div>
             </div>
@@ -309,7 +299,7 @@ function AuthForm() {
               {mode === "login" && (
                 <button
                   type="button"
-                  onClick={() => alert("Password reset link will be sent.")}
+                  onClick={() => alert("Password reset link will be sent to your email.")}
                   className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
                 >
                   Forgot password?
@@ -363,7 +353,7 @@ function AuthForm() {
             {loading ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                <span>Checking...</span>
+                <span>Signing In...</span>
               </>
             ) : (
               <>
@@ -450,7 +440,7 @@ export default function AuthPage() {
       </main>
 
       <footer className="py-6 text-center text-xs text-slate-400 border-t border-slate-200 dark:border-slate-800">
-        MilestoneOS • PayPal AI Hackathon 2026 Sandbox Environment
+        MilestoneOS • Safe Milestone Payments Powered by PayPal
       </footer>
     </div>
   );

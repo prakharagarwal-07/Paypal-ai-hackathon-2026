@@ -8,19 +8,19 @@ export default function WhoItsFor() {
         <ScrollReveal direction="up" delay={50}>
           <div className="text-center max-w-2xl mx-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              Fair for Both Sides
+              Fair & Transparent
             </span>
             <h2 className="mt-2 text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              Designed for Trust on Both Ends
+              Peace of Mind for Both Sides
             </h2>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
-              No more client ghosting. No more freelancers delivering incomplete work.
+              Clients don't get ghosted. Freelancers don't get underpaid.
             </p>
           </div>
         </ScrollReveal>
 
         <div className="mt-14 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Client Card flying in from left */}
+          {/* Client Card */}
           <ScrollReveal direction="left" delay={150} className="h-full">
             <div className="h-full rounded-3xl border border-sky-200/90 bg-white/90 p-8 shadow-xl shadow-sky-100/50 dark:border-sky-500/20 dark:bg-[#131B2E]/90 dark:shadow-none backdrop-blur-md flex flex-col justify-between">
               <div>
@@ -30,10 +30,10 @@ export default function WhoItsFor() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                      For Clients
+                      If You Are Hiring
                     </h3>
                     <span className="text-xs text-sky-700 dark:text-sky-300 font-semibold">
-                      Total Payment Control
+                      For Clients & Business Owners
                     </span>
                   </div>
                 </div>
@@ -43,30 +43,30 @@ export default function WhoItsFor() {
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 shrink-0 mt-0.5">
                       <Check className="h-3.5 w-3.5" />
                     </div>
-                    <span>Never pay 100% upfront to an unknown freelancer.</span>
+                    <span><strong>Never pay 100% upfront:</strong> Pay in safe, bite-sized amounts as each stage is finished.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 shrink-0 mt-0.5">
                       <Check className="h-3.5 w-3.5" />
                     </div>
-                    <span>AI automatically highlights missing or incomplete deliverables.</span>
+                    <span><strong>No tech skills needed:</strong> AI inspects the work for you and alerts you if anything is missing.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 shrink-0 mt-0.5">
                       <Check className="h-3.5 w-3.5" />
                     </div>
-                    <span>Release payouts in one click using official PayPal Checkout.</span>
+                    <span><strong>You stay in control:</strong> No payment is sent until you look at the work and tap Approve.</span>
                   </li>
                 </ul>
               </div>
 
               <div className="mt-8 pt-4 border-t border-sky-100 dark:border-sky-500/20 text-xs font-bold text-sky-700 dark:text-sky-300">
-                ✓ You retain final decision on every payment
+                ✓ You only pay for real, verified results
               </div>
             </div>
           </ScrollReveal>
 
-          {/* Freelancer Card flying in from right */}
+          {/* Freelancer Card */}
           <ScrollReveal direction="right" delay={250} className="h-full">
             <div className="h-full rounded-3xl border border-emerald-200/90 bg-white/90 p-8 shadow-xl shadow-emerald-100/50 dark:border-emerald-500/20 dark:bg-[#131B2E]/90 dark:shadow-none backdrop-blur-md flex flex-col justify-between">
               <div>
@@ -76,10 +76,10 @@ export default function WhoItsFor() {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                      For Freelancers
+                      If You Are Working
                     </h3>
                     <span className="text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
-                      Guaranteed Payout Cashflow
+                      For Freelancers & Contractors
                     </span>
                   </div>
                 </div>
@@ -89,25 +89,25 @@ export default function WhoItsFor() {
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 shrink-0 mt-0.5">
                       <Check className="h-3.5 w-3.5" />
                     </div>
-                    <span>Get paid regularly as milestones are finished—no more waiting months.</span>
+                    <span><strong>Regular cashflow:</strong> Get paid as each milestone is completed instead of waiting months.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 shrink-0 mt-0.5">
                       <Check className="h-3.5 w-3.5" />
                     </div>
-                    <span>Clear agreed criteria protect you from endless free revisions.</span>
+                    <span><strong>Protected from scope creep:</strong> Clear agreed checklists prevent clients from demanding free extra work.</span>
                   </li>
                   <li className="flex items-start gap-3">
                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 shrink-0 mt-0.5">
                       <Check className="h-3.5 w-3.5" />
                     </div>
-                    <span>Instant deposit to your PayPal wallet upon milestone approval.</span>
+                    <span><strong>Fast PayPal payouts:</strong> Money is deposited directly to your PayPal account upon approval.</span>
                   </li>
                 </ul>
               </div>
 
               <div className="mt-8 pt-4 border-t border-emerald-100 dark:border-emerald-500/20 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                ✓ Protected by objective criteria verification
+                ✓ Guaranteed payouts for your hard work
               </div>
             </div>
           </ScrollReveal>
