@@ -40,7 +40,7 @@ export default function MilestoneCalculator() {
   ];
 
   return (
-    <section id="calculator" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-emerald-50/25 dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
+    <section id="calculator" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-blue-50/20 dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <ScrollReveal direction="up" delay={50}>
@@ -66,7 +66,7 @@ export default function MilestoneCalculator() {
                   onClick={() => setCurrency("INR")}
                   className={`px-3 py-1 rounded-lg transition-colors ${
                     currency === "INR"
-                      ? "bg-emerald-500 text-white shadow-sm"
+                      ? "bg-gradient-to-r from-[#004C8F] to-[#0070BA] text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                   }`}
                 >
@@ -76,7 +76,7 @@ export default function MilestoneCalculator() {
                   onClick={() => setCurrency("USD")}
                   className={`px-3 py-1 rounded-lg transition-colors ${
                     currency === "USD"
-                      ? "bg-emerald-500 text-white shadow-sm"
+                      ? "bg-gradient-to-r from-[#004C8F] to-[#0070BA] text-white shadow-sm"
                       : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                   }`}
                 >
@@ -101,7 +101,7 @@ export default function MilestoneCalculator() {
               step="5000"
               value={budget}
               onChange={(e) => setBudget(Number(e.target.value))}
-              className="w-full mt-6 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              className="w-full mt-6 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-[#0070BA]"
             />
 
             <div className="mt-2.5 flex justify-between text-[11px] font-semibold text-slate-400">
@@ -122,13 +122,13 @@ export default function MilestoneCalculator() {
                 delay={200 + idx * 100}
                 className="h-full"
               >
-                <div className="h-full rounded-2xl border border-slate-200/90 bg-white/90 p-5 shadow-md shadow-slate-200/50 hover:shadow-lg hover:border-emerald-400 transition-all dark:border-slate-800 dark:bg-[#131B2E]/90 dark:shadow-none backdrop-blur-md flex flex-col justify-between">
+                <div className="h-full rounded-2xl border border-slate-200/90 bg-white/90 p-5 shadow-md shadow-slate-200/50 hover:shadow-lg hover:border-[#0070BA]/50 transition-all dark:border-slate-800 dark:bg-[#131B2E]/90 dark:shadow-none backdrop-blur-md flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between text-xs font-bold">
-                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-700 font-mono dark:bg-emerald-500/20 dark:text-emerald-400">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-50 text-[#0070BA] font-mono dark:bg-[#0070BA]/20 dark:text-sky-300">
                         0{m.index}
                       </span>
-                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                      <span className="text-[#0070BA] dark:text-sky-400 font-bold">
                         {m.percent}%
                       </span>
                     </div>
@@ -145,7 +145,7 @@ export default function MilestoneCalculator() {
                     </p>
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                  <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] font-semibold text-[#0070BA] dark:text-sky-400 flex items-center gap-1.5">
                     <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
                     <span>Paid via PayPal after review</span>
                   </div>

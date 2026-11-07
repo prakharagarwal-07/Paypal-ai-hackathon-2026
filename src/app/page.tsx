@@ -16,18 +16,18 @@ export default function HomePage() {
       {/* Interactive WebThreads background with live visualizer control panel */}
       <WebThreadsController />
 
-      {/* AMBIENT FLANK LIGHTING: Softly frames the left and right margins, eliminating stark empty whiteness */}
-      <div className="fixed inset-y-0 left-0 w-72 sm:w-96 bg-gradient-to-r from-sky-200/20 via-sky-100/10 to-transparent pointer-events-none z-0 dark:from-sky-900/10 dark:via-sky-950/5 dark:to-transparent" />
-      <div className="fixed inset-y-0 right-0 w-72 sm:w-96 bg-gradient-to-l from-emerald-200/20 via-teal-100/10 to-transparent pointer-events-none z-0 dark:from-emerald-900/10 dark:via-emerald-950/5 dark:to-transparent" />
-      <div className="fixed top-0 inset-x-0 h-40 bg-gradient-to-b from-sky-100/25 via-slate-50/10 to-transparent pointer-events-none z-0 dark:from-sky-950/20 dark:to-transparent" />
+      {/* AMBIENT FLANK LIGHTING: Softly frames the left and right margins with rich PayPal blue ambiance */}
+      <div className="fixed inset-y-0 left-0 w-72 sm:w-96 bg-gradient-to-r from-blue-200/25 via-sky-100/15 to-transparent pointer-events-none z-0 dark:from-blue-900/15 dark:via-sky-950/5 dark:to-transparent" />
+      <div className="fixed inset-y-0 right-0 w-72 sm:w-96 bg-gradient-to-l from-sky-200/25 via-blue-100/10 to-transparent pointer-events-none z-0 dark:from-sky-900/15 dark:via-blue-950/5 dark:to-transparent" />
+      <div className="fixed top-0 inset-x-0 h-40 bg-gradient-to-b from-sky-100/30 via-blue-50/10 to-transparent pointer-events-none z-0 dark:from-sky-950/20 dark:to-transparent" />
 
       <Navbar />
 
       <main className="relative z-10 flex-1">
         {/* HERO SECTION */}
         <section className="relative pt-12 pb-16 sm:pt-20 sm:pb-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
-          {/* Broad, gentle ambient radiance covering widescreen displays */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] max-w-full h-[550px] bg-gradient-to-tr from-emerald-200/35 via-sky-200/30 to-teal-100/25 dark:from-emerald-400/15 dark:via-sky-400/15 dark:to-indigo-500/10 blur-[100px] pointer-events-none -z-10" />
+          {/* Broad, gentle ambient radiance with PayPal blue aura covering widescreen displays */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] max-w-full h-[550px] bg-gradient-to-tr from-blue-300/35 via-sky-200/35 to-indigo-100/25 dark:from-blue-600/20 dark:via-sky-500/20 dark:to-indigo-500/10 blur-[100px] pointer-events-none -z-10" />
 
           <div className="mx-auto max-w-5xl text-center">
             {/* DYNAMIC SCROLL FLY-IN HERO INTRO TEXT */}
@@ -47,7 +47,7 @@ export default function HomePage() {
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
                 <Link
                   href="/auth?mode=signup"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:via-[#005EA6] hover:to-[#008ECC] px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>Start for Free</span>
                   <ArrowRight className="h-4 w-4" />
@@ -65,17 +65,17 @@ export default function HomePage() {
             <ScrollReveal direction="up" delay={620} distance={20}>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
                 <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-[#0070BA] dark:text-sky-400 shrink-0" />
                   Secure PayPal Payments
                 </span>
                 <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
                 <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-[#0070BA] dark:text-sky-400 shrink-0" />
                   Automatic Work Review
                 </span>
                 <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
                 <span className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-[#0070BA] dark:text-sky-400 shrink-0" />
                   Pay Only When Satisfied
                 </span>
               </div>
@@ -113,9 +113,9 @@ export default function HomePage() {
         <WhoItsFor />
 
         {/* FRIENDLY CLOSING CTA */}
-        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-emerald-50/50 via-teal-50/20 to-transparent dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
+        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-blue-50/40 via-sky-50/20 to-transparent dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
           <ScrollReveal direction="up" delay={100}>
-            <div className="mx-auto max-w-3xl text-center rounded-3xl border border-emerald-200/80 bg-white/85 p-8 sm:p-12 shadow-xl shadow-emerald-500/5 dark:border-slate-800 dark:bg-[#131B2E]/90 backdrop-blur-md">
+            <div className="mx-auto max-w-3xl text-center rounded-3xl border border-sky-200/80 bg-white/85 p-8 sm:p-12 shadow-xl shadow-blue-600/5 dark:border-slate-800 dark:bg-[#131B2E]/90 backdrop-blur-md">
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
                 Ready to Protect Your Next Project?
               </h2>
@@ -125,7 +125,7 @@ export default function HomePage() {
               <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3.5">
                 <Link
                   href="/auth?mode=signup"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-7 py-3.5 text-sm font-bold text-white shadow-md shadow-emerald-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:via-[#005EA6] hover:to-[#008ECC] px-7 py-3.5 text-sm font-bold text-white shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>Create Free Account</span>
                   <ArrowRight className="h-4 w-4" />

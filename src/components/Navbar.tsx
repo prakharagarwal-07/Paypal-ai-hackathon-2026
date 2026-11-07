@@ -66,15 +66,15 @@ export default function Navbar() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
         {/* Brand Logo - Clean, Real Product Identity */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-bold shadow-md shadow-emerald-500/20 group-hover:scale-105 transition-all">
+          <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-[#004C8F] via-[#0070BA] to-[#00A3E0] text-white font-bold shadow-md shadow-blue-600/25 group-hover:scale-105 transition-all">
             <span className="text-base font-extrabold tracking-tight">M</span>
-            <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-[#0070BA] border-2 border-white dark:border-[#0B0F19] flex items-center justify-center">
+            <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-[#004C8F] border-2 border-white dark:border-[#0B0F19] flex items-center justify-center">
               <span className="text-[7px] text-white font-black leading-none">P</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
-              Milestone<span className="text-emerald-500 dark:text-emerald-400">OS</span>
+              Milestone<span className="text-[#0070BA] dark:text-[#38BDF8]">OS</span>
             </span>
           </div>
         </Link>
@@ -111,7 +111,7 @@ export default function Navbar() {
           </Link>
           <Link
             href="/auth?mode=signup"
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all hover:shadow-emerald-500/30 active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:via-[#005EA6] hover:to-[#008ECC] px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-600/25 transition-all hover:shadow-blue-600/35 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Get Started</span>
             <ArrowUpRight className="h-4 w-4" />

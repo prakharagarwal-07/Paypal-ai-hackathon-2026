@@ -176,7 +176,7 @@ export default function WorkflowSection() {
               >
                 <div
                   onClick={() => setSelectedStep(idx)}
-                  className="group cursor-pointer h-full rounded-3xl border border-slate-200/90 bg-white/90 p-7 sm:p-8 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:scale-[1.02] hover:border-emerald-300 dark:hover:border-emerald-500/40 transition-all duration-300 dark:border-slate-800/90 dark:bg-[#131B2E]/90 dark:shadow-none backdrop-blur-md flex flex-col justify-between"
+                  className="group cursor-pointer h-full rounded-3xl border border-slate-200/90 bg-white/90 p-7 sm:p-8 shadow-lg shadow-slate-200/50 hover:shadow-xl hover:scale-[1.02] hover:border-[#0070BA]/50 dark:hover:border-sky-500/40 transition-all duration-300 dark:border-slate-800/90 dark:bg-[#131B2E]/90 dark:shadow-none backdrop-blur-md flex flex-col justify-between"
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => {
@@ -188,19 +188,19 @@ export default function WorkflowSection() {
                   <div>
                     {/* Top Step Number */}
                     <div className="flex items-center justify-between">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl font-mono text-sm font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 group-hover:bg-emerald-50 group-hover:text-emerald-600 dark:group-hover:bg-emerald-500/20 dark:group-hover:text-emerald-400 transition-colors">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl font-mono text-sm font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 group-hover:bg-blue-50 group-hover:text-[#0070BA] dark:group-hover:bg-[#0070BA]/20 dark:group-hover:text-sky-300 transition-colors">
                         {s.step}
                       </span>
                     </div>
 
                     {/* Big Clean Title */}
-                    <h3 className="mt-7 text-2xl font-black text-slate-900 dark:text-white leading-snug group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <h3 className="mt-7 text-2xl font-black text-slate-900 dark:text-white leading-snug group-hover:text-[#0070BA] dark:group-hover:text-sky-400 transition-colors">
                       {s.title}
                     </h3>
                   </div>
 
                   {/* Interactive Cue: Click to View Details */}
-                  <div className="mt-10 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover:translate-x-1 transition-transform">
+                  <div className="mt-10 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-[#0070BA] dark:text-sky-400 group-hover:translate-x-1 transition-transform">
                     <span>Click to view details</span>
                     <ArrowRight className="h-4 w-4" />
                   </div>
@@ -312,7 +312,7 @@ export default function WorkflowSection() {
                       key={dIdx}
                       className="flex items-start gap-3 text-sm sm:text-base text-slate-200 drop-shadow-sm"
                     >
-                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-400 border border-emerald-400/30 shrink-0 mt-0.5">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#0070BA]/25 text-sky-400 border border-[#0070BA]/40 shrink-0 mt-0.5">
                         <Check className="h-3.5 w-3.5" />
                       </div>
                       <span className="leading-snug">{detail}</span>
@@ -328,7 +328,7 @@ export default function WorkflowSection() {
                     <button
                       type="button"
                       onClick={() => setSelectedStep(selectedStep - 1)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-emerald-300 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-sky-300 px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" />
                       <span>Previous</span>
@@ -338,7 +338,7 @@ export default function WorkflowSection() {
                     <button
                       type="button"
                       onClick={() => setSelectedStep(selectedStep + 1)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-emerald-300 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-sky-300 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer"
                     >
                       <span>Next Stage</span>
                       <ArrowRight className="h-3.5 w-3.5" />
@@ -349,7 +349,7 @@ export default function WorkflowSection() {
                 <button
                   type="button"
                   onClick={() => setSelectedStep(null)}
-                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:to-[#008ECC] text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
                 >
                   Done
                 </button>

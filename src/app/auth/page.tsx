@@ -268,7 +268,7 @@ function AuthForm() {
                 placeholder="e.g. Alex Morgan"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 required
               />
             </div>
@@ -285,7 +285,7 @@ function AuthForm() {
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 required
               />
             </div>
@@ -300,7 +300,7 @@ function AuthForm() {
                 <button
                   type="button"
                   onClick={() => alert("Password reset link will be sent to your email.")}
-                  className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
+                  className="text-[11px] text-[#0070BA] dark:text-sky-400 font-medium hover:underline"
                 >
                   Forgot password?
                 </button>
@@ -313,7 +313,7 @@ function AuthForm() {
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-9 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-9 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                 required
               />
               <button
@@ -338,7 +338,7 @@ function AuthForm() {
                   placeholder="••••••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+                  className="w-full rounded-xl border border-slate-300 bg-white pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-1 focus:ring-[#0070BA] dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                   required
                 />
               </div>
@@ -348,7 +348,7 @@ function AuthForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 py-3 text-sm font-bold text-white shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+            className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:via-[#005EA6] hover:to-[#008ECC] py-3 text-sm font-bold text-white shadow-md shadow-blue-600/25 transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
           >
             {loading ? (
               <>
@@ -388,7 +388,7 @@ function AuthForm() {
                   setErrorMsg(null);
                   setSuccessMsg(null);
                 }}
-                className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline"
+                className="text-[#0070BA] dark:text-sky-400 font-bold hover:underline"
               >
                 Sign In
               </button>
@@ -406,11 +406,11 @@ export default function AuthPage() {
       {/* Top Bar */}
       <header className="w-full border-b border-slate-200 bg-white/80 backdrop-blur-md px-4 sm:px-8 py-4 flex items-center justify-between dark:border-slate-800 dark:bg-[#0B0F19]/80">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500 text-white font-bold">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-[#004C8F] via-[#0070BA] to-[#00A3E0] text-white font-bold shadow-sm shadow-blue-500/20">
             <span className="text-base font-extrabold">M</span>
           </div>
           <span className="font-extrabold text-lg text-slate-900 dark:text-white">
-            Milestone<span className="text-emerald-500">OS</span>
+            Milestone<span className="text-[#0070BA] dark:text-[#38BDF8]">OS</span>
           </span>
         </Link>
 
@@ -430,7 +430,7 @@ export default function AuthPage() {
         <Suspense
           fallback={
             <div className="text-center text-slate-400 text-sm py-12 flex items-center gap-2">
-              <RefreshCw className="h-4 w-4 animate-spin text-emerald-500" />
+              <RefreshCw className="h-4 w-4 animate-spin text-[#0070BA]" />
               <span>Loading...</span>
             </div>
           }

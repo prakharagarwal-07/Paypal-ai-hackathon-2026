@@ -84,7 +84,7 @@ export default function HeroTextFlyIn() {
           style={{ perspective: "1000px" }}
         >
           <span
-            className="inline-block bg-gradient-to-r from-emerald-600 via-teal-600 to-[#0070BA] bg-clip-text text-transparent dark:from-emerald-400 dark:via-teal-300 dark:to-sky-400 font-extrabold transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            className="inline-block bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#00A3E0] bg-clip-text text-transparent dark:from-[#38BDF8] dark:via-[#60A5FA] dark:to-cyan-300 font-extrabold transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]"
             style={{
               transform: hasEntered
                 ? "translate3d(0, 0, 0) scale(1)"

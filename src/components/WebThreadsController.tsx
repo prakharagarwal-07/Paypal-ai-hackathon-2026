@@ -137,7 +137,7 @@ export default function WebThreadsController() {
       */}
       <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-90 dark:opacity-85 transition-opacity duration-300">
         <WebThreads
-          colors={["#00E599", "#0070BA", "#38BDF8", "#10B981", "#6366F1"]}
+          colors={["#0070BA", "#00457C", "#009CDE", "#38BDF8", "#00E599"]}
           coreColor="#FFFFFF"
           lightMode={false}
           threadCount={settings.threadCount}
@@ -165,13 +165,13 @@ export default function WebThreadsController() {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/20 text-sky-400 border border-blue-500/30">
                   <Sliders className="h-4 w-4" />
                 </div>
                 <div>
                   <h4 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
                     <span>Web Threads Studio</span>
-                    <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="flex h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
                   </h4>
                   <p className="text-[11px] text-slate-400">Real-time background adjustments</p>
                 </div>
@@ -210,7 +210,7 @@ export default function WebThreadsController() {
                     onClick={() => applyPreset(p.name, p.settings)}
                     className={`flex-1 py-1 px-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer text-center ${
                       isSelected
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/30"
+                        ? "bg-gradient-to-r from-[#004C8F] to-[#0070BA] text-white shadow-md shadow-blue-500/30"
                         : "bg-white/10 hover:bg-white/15 text-slate-300"
                     }`}
                   >
@@ -240,7 +240,7 @@ export default function WebThreadsController() {
                   step="0.02"
                   value={settings.brightness}
                   onChange={(e) => updateSetting("brightness", parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#0070BA]"
                 />
               </div>
 
@@ -248,7 +248,7 @@ export default function WebThreadsController() {
               <div>
                 <div className="flex items-center justify-between text-slate-300 font-semibold mb-1">
                   <span className="flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
+                    <Sparkles className="h-3.5 w-3.5 text-sky-400" />
                     <span>Glow</span>
                   </span>
                   <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-white/10 text-white font-bold">
@@ -262,7 +262,7 @@ export default function WebThreadsController() {
                   step="0.001"
                   value={settings.glow}
                   onChange={(e) => updateSetting("glow", parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#0070BA]"
                 />
               </div>
 
@@ -284,7 +284,7 @@ export default function WebThreadsController() {
                   step="1"
                   value={settings.threadCount}
                   onChange={(e) => updateSetting("threadCount", parseInt(e.target.value, 10))}
-                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#0070BA]"
                 />
               </div>
 
@@ -305,7 +305,7 @@ export default function WebThreadsController() {
                   step="0.01"
                   value={settings.spread}
                   onChange={(e) => updateSetting("spread", parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#0070BA]"
                 />
               </div>
 
@@ -324,7 +324,7 @@ export default function WebThreadsController() {
                   step="0.1"
                   value={settings.thickness}
                   onChange={(e) => updateSetting("thickness", parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#0070BA]"
                 />
               </div>
 
@@ -343,7 +343,7 @@ export default function WebThreadsController() {
                   step="0.01"
                   value={settings.speed}
                   onChange={(e) => updateSetting("speed", parseFloat(e.target.value))}
-                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                  className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-[#0070BA]"
                 />
               </div>
             </div>
@@ -357,15 +357,15 @@ export default function WebThreadsController() {
           className={`flex items-center gap-2 px-4 py-2.5 rounded-full border shadow-xl backdrop-blur-xl transition-all duration-300 cursor-pointer ${
             isOpen
               ? "bg-slate-900 text-white border-white/20"
-              : "bg-white/90 text-slate-900 border-slate-200/80 hover:scale-105 hover:bg-white hover:border-emerald-400/80 dark:bg-slate-900/90 dark:text-white dark:border-white/15 dark:hover:border-emerald-500/50"
+              : "bg-white/90 text-slate-900 border-slate-200/80 hover:scale-105 hover:bg-white hover:border-[#0070BA]/80 dark:bg-slate-900/90 dark:text-white dark:border-white/15 dark:hover:border-sky-500/50"
           }`}
           aria-label="Toggle background control panel"
         >
-          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/20 text-[#0070BA] dark:text-sky-400">
             <Sliders className="h-3 w-3" />
           </div>
           <span className="text-xs font-bold tracking-tight">Adjust Web Threads</span>
-          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300">
+          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-blue-500/10 text-[#0070BA] dark:bg-blue-500/20 dark:text-sky-300">
             {(settings.brightness * 100).toFixed(0)}%
           </span>
           {isOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}

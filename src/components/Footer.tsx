@@ -7,11 +7,11 @@ export default function Footer() {
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500 text-white font-bold">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#004C8F] via-[#0070BA] to-[#00A3E0] text-white font-bold shadow-sm shadow-blue-500/20">
               <span className="text-sm font-extrabold">M</span>
             </div>
             <span className="font-extrabold text-base text-slate-900 dark:text-white">
-              Milestone<span className="text-emerald-500">OS</span>
+              Milestone<span className="text-[#0070BA] dark:text-[#38BDF8]">OS</span>
             </span>
             <span className="text-[11px] text-slate-400 ml-2">
               Safe Milestone Payments
@@ -19,19 +19,19 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6 text-slate-600 dark:text-slate-400 font-medium">
-            <Link href="#how-it-works" className="hover:text-emerald-600 dark:hover:text-white">
+            <Link href="#how-it-works" className="hover:text-[#0070BA] dark:hover:text-white">
               How It Works
             </Link>
-            <Link href="#demo" className="hover:text-emerald-600 dark:hover:text-white">
+            <Link href="#demo" className="hover:text-[#0070BA] dark:hover:text-white">
               See It In Action
             </Link>
-            <Link href="#calculator" className="hover:text-emerald-600 dark:hover:text-white">
+            <Link href="#calculator" className="hover:text-[#0070BA] dark:hover:text-white">
               Payment Calculator
             </Link>
-            <Link href="#benefits" className="hover:text-emerald-600 dark:hover:text-white">
+            <Link href="#benefits" className="hover:text-[#0070BA] dark:hover:text-white">
               Who It's For
             </Link>
-            <Link href="/auth?mode=login" className="hover:text-emerald-600 dark:hover:text-white">
+            <Link href="/auth?mode=login" className="hover:text-[#0070BA] dark:hover:text-white">
               Sign In
             </Link>
           </div>
@@ -41,7 +41,7 @@ export default function Footer() {
           <div>
             © 2026 MilestoneOS. Work completed. Progress verified. Payments made with confidence.
           </div>
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-semibold">
+          <div className="flex items-center gap-2 text-[#0070BA] dark:text-sky-400 font-semibold">
             <ShieldCheck className="h-3.5 w-3.5" />
             <span>Official PayPal Checkout Integration</span>
           </div>
