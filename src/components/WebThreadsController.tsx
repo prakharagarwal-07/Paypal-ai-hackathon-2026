@@ -30,34 +30,34 @@ const PRESETS = [
   {
     name: "Subtle",
     settings: {
-      brightness: 0.52,
-      glow: 0.014,
+      brightness: 0.50,
+      glow: 0.012,
       threadCount: 6,
       spread: 0.18,
-      speed: 0.12,
+      speed: 0.11,
       thickness: 0.8,
     },
   },
   {
     name: "Vibrant",
     settings: {
-      brightness: 1.15,
-      glow: 0.038,
-      threadCount: 10,
-      spread: 0.28,
-      speed: 0.18,
-      thickness: 1.3,
+      brightness: 0.76,
+      glow: 0.020,
+      threadCount: 9,
+      spread: 0.26,
+      speed: 0.15,
+      thickness: 1.0,
     },
   },
   {
-    name: "Neon Glow",
+    name: "Luminous",
     settings: {
-      brightness: 1.45,
-      glow: 0.065,
-      threadCount: 14,
-      spread: 0.36,
-      speed: 0.22,
-      thickness: 1.6,
+      brightness: 0.84,
+      glow: 0.024,
+      threadCount: 10,
+      spread: 0.28,
+      speed: 0.16,
+      thickness: 1.1,
     },
   },
 ];
@@ -218,7 +218,7 @@ export default function WebThreadsController() {
                 <input
                   type="range"
                   min="0.20"
-                  max="1.80"
+                  max="1.15"
                   step="0.02"
                   value={settings.brightness}
                   onChange={(e) => updateSetting("brightness", parseFloat(e.target.value))}
@@ -240,8 +240,8 @@ export default function WebThreadsController() {
                 <input
                   type="range"
                   min="0.005"
-                  max="0.080"
-                  step="0.002"
+                  max="0.035"
+                  step="0.001"
                   value={settings.glow}
                   onChange={(e) => updateSetting("glow", parseFloat(e.target.value))}
                   className="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400"
