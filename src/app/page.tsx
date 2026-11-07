@@ -112,7 +112,7 @@ export default function HomePage() {
         <WhoItsFor />
 
         {/* FRIENDLY CLOSING CTA */}
-        <section className="relative py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-200/60 dark:border-slate-800/60 bg-emerald-50/50 dark:bg-gradient-to-b dark:from-[#0E1424]/60 dark:to-[#06080F]/80 backdrop-blur-sm">
+        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/85 dark:bg-[#080C16]/60 backdrop-blur-md transition-colors">
           <ScrollReveal direction="up" delay={100}>
             <div className="mx-auto max-w-3xl text-center rounded-3xl border border-emerald-200/80 bg-white/85 p-8 sm:p-12 shadow-xl shadow-emerald-500/5 dark:border-slate-800 dark:bg-[#131B2E]/90 backdrop-blur-md">
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">

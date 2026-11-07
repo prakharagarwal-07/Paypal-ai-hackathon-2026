@@ -151,7 +151,7 @@ export default function WorkflowSection() {
   const activeStepData = selectedStep !== null ? steps[selectedStep] : null;
 
   return (
-    <section id="how-it-works" className="relative py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-200/60 dark:border-slate-800/60 bg-slate-50/40 dark:bg-[#0E1424]/40 backdrop-blur-sm transition-colors">
+    <section id="how-it-works" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-slate-100/70 dark:bg-[#0E1528]/80 backdrop-blur-md transition-colors">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal direction="up" delay={50}>
           <div className="text-center max-w-2xl mx-auto">

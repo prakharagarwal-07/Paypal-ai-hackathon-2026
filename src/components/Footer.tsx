@@ -3,7 +3,7 @@ import { ShieldCheck } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-slate-100/60 dark:border-slate-800 dark:bg-[#06080F] text-slate-500 text-xs py-12 transition-colors">
+    <footer className="bg-slate-100/90 dark:bg-[#05070D] text-slate-500 text-xs py-14 transition-colors">
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2.5">
