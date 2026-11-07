@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import WebThreads from "@/components/WebThreads";
+import WebThreadsController from "@/components/WebThreadsController";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
   Eye,
@@ -502,29 +502,17 @@ function AuthForm() {
 
 export default function AuthPage() {
   return (
-    <div className="relative min-h-screen bg-[#F8FAFD] dark:bg-[#070B14] text-slate-900 dark:text-slate-100 flex flex-col justify-between overflow-hidden transition-colors duration-200">
+    <div className="relative min-h-screen bg-[#F8FAFD] dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col justify-between overflow-hidden transition-colors duration-200">
       {/* 
-        FANCY DYNAMIC WEBTHREADS BACKGROUND:
-        Flows luminous ribbons of light across the auth page reacting to mouse movement!
+        INTERACTIVE WEB THREADS STUDIO BACKGROUND:
+        Renders the exact same glowing luminous web lines with real-time controls,
+        presets, mouse interaction, and ripple pulses on the login page!
       */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-85 dark:opacity-85 transition-opacity duration-300">
-        <WebThreads
-          colors={["#0070BA", "#00457C", "#009CDE", "#38BDF8", "#00E599"]}
-          coreColor="#FFFFFF"
-          lightMode={false}
-          threadCount={9}
-          speed={0.14}
-          frequency={3.8}
-          spread={0.28}
-          position={0.5}
-          glow={0.024}
-          brightness={0.84}
-          thickness={1.1}
-          fade={0.015}
-          mouseInteraction={true}
-          pulseOnClick={true}
-        />
-      </div>
+      <WebThreadsController />
+
+      {/* AMBIENT FLANK LIGHTING: Softly frames the left and right margins with rich PayPal blue ambiance */}
+      <div className="fixed inset-y-0 left-0 w-72 sm:w-96 bg-gradient-to-r from-blue-200/25 via-sky-100/15 to-transparent pointer-events-none z-0 dark:from-blue-900/15 dark:via-sky-950/5 dark:to-transparent" />
+      <div className="fixed inset-y-0 right-0 w-72 sm:w-96 bg-gradient-to-l from-sky-200/25 via-blue-100/10 to-transparent pointer-events-none z-0 dark:from-sky-900/15 dark:via-blue-950/5 dark:to-transparent" />
 
       {/* AMBIENT RADIAL LIGHTING ORBS */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-blue-600/20 via-sky-500/15 to-teal-400/10 rounded-full blur-[140px] pointer-events-none -z-10" />
