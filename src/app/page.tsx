@@ -12,7 +12,7 @@ import { ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
+    <div className="relative min-h-screen bg-white dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       {/* Interactive WebThreads background with live visualizer control panel */}
       <WebThreadsController />
 
@@ -21,8 +21,8 @@ export default function HomePage() {
       <main className="relative z-10 flex-1">
         {/* HERO SECTION */}
         <section className="relative pt-12 pb-16 sm:pt-20 sm:pb-28 px-4 sm:px-6 lg:px-8 overflow-hidden">
-          {/* Gentle ambient glow */}
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[600px] h-[360px] bg-gradient-to-tr from-emerald-400/20 via-sky-400/20 to-indigo-500/10 blur-3xl pointer-events-none -z-10" />
+          {/* Gentle, uplifting ambient radiance for bright mode / deep glow for dark mode */}
+          <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[750px] h-[400px] bg-gradient-to-tr from-emerald-200/40 via-sky-200/35 to-teal-100/30 dark:from-emerald-400/20 dark:via-sky-400/20 dark:to-indigo-500/10 blur-3xl pointer-events-none -z-10" />
 
           <div className="mx-auto max-w-5xl text-center">
             {/* DYNAMIC SCROLL FLY-IN HERO INTRO TEXT */}
@@ -82,7 +82,7 @@ export default function HomePage() {
         <WorkflowSection />
 
         {/* 2. SEE IT IN ACTION (INTERACTIVE DEMO) - DIRECTLY BELOW HOW IT WORKS */}
-        <section id="demo" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/20 dark:bg-transparent backdrop-blur-[1px] transition-colors">
+        <section id="demo" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/70 dark:bg-transparent backdrop-blur-[2px] transition-colors">
           <div className="mx-auto max-w-5xl">
             <ScrollReveal direction="up" delay={50}>
               <div className="text-center max-w-2xl mx-auto mb-12">
@@ -108,7 +108,7 @@ export default function HomePage() {
         <WhoItsFor />
 
         {/* FRIENDLY CLOSING CTA */}
-        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-slate-900/[0.03] dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
+        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-emerald-50/50 via-teal-50/20 to-white dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
           <ScrollReveal direction="up" delay={100}>
             <div className="mx-auto max-w-3xl text-center rounded-3xl border border-emerald-200/80 bg-white/85 p-8 sm:p-12 shadow-xl shadow-emerald-500/5 dark:border-slate-800 dark:bg-[#131B2E]/90 backdrop-blur-md">
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">

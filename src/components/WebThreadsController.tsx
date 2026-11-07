@@ -66,6 +66,23 @@ export default function WebThreadsController() {
   const [settings, setSettings] = useState<ThreadSettings>(DEFAULT_SETTINGS);
   const [isOpen, setIsOpen] = useState(false);
   const [activePreset, setActivePreset] = useState<string>("Default");
+  const [isDark, setIsDark] = useState(false);
+
+  // Sync theme changes in real-time
+  useEffect(() => {
+    const checkDark = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+    checkDark();
+
+    const observer = new MutationObserver(checkDark);
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Load persisted user settings from localStorage if available
   useEffect(() => {
@@ -118,10 +135,11 @@ export default function WebThreadsController() {
         FIXED FULL-PAGE WEBTHREADS BACKGROUND CANVAS:
         Receives real-time state from this controller!
       */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-70 dark:opacity-80">
+      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-45 dark:opacity-80 transition-opacity duration-300">
         <WebThreads
           colors={["#00E599", "#0070BA", "#38BDF8", "#10B981", "#6366F1"]}
-          coreColor="#FFFFFF"
+          coreColor={isDark ? "#FFFFFF" : "#E0F2FE"}
+          lightMode={!isDark}
           threadCount={settings.threadCount}
           speed={settings.speed}
           frequency={4.2}
