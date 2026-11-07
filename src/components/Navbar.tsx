@@ -79,7 +79,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Clean, Simple Desktop Nav with Light Blue & White Glowing Gradient Text (No Box) */}
+        {/* Clean, Simple Desktop Nav with Theme-Adaptive Glow */}
         <nav className="hidden md:flex items-center gap-8 text-sm">
           {NAV_LINKS.map((item) => {
             const isActive = activeSection === item.id;
@@ -89,8 +89,8 @@ export default function Navbar() {
                 href={item.href}
                 className={`transition-all duration-300 ${
                   isActive
-                    ? "font-extrabold scale-105 bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(255,255,255,1)] drop-shadow-[0_0_20px_rgba(56,189,248,0.95)] drop-shadow-[0_0_35px_rgba(56,189,248,0.7)] drop-shadow-[0_0_50px_rgba(14,165,233,0.45)]"
-                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium hover:scale-[1.02]"
+                    ? "font-black scale-105 bg-gradient-to-r from-slate-950 via-[#004B87] to-[#0070BA] bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(56,189,248,0.75)] drop-shadow-[0_0_22px_rgba(14,165,233,0.4)] dark:bg-gradient-to-r dark:from-white dark:via-sky-100 dark:to-sky-300 dark:drop-shadow-[0_0_10px_rgba(255,255,255,1)] dark:drop-shadow-[0_0_20px_rgba(56,189,248,0.95)] dark:drop-shadow-[0_0_35px_rgba(56,189,248,0.7)] dark:drop-shadow-[0_0_50px_rgba(14,165,233,0.45)]"
+                    : "text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white font-semibold hover:scale-[1.02]"
                 }`}
               >
                 <span>{item.label}</span>
@@ -141,8 +141,8 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`py-2 px-3 transition-all duration-200 ${
                     isActive
-                      ? "font-extrabold bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(255,255,255,1)] drop-shadow-[0_0_20px_rgba(56,189,248,0.95)] drop-shadow-[0_0_35px_rgba(56,189,248,0.7)]"
-                      : "text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
+                      ? "font-black bg-gradient-to-r from-slate-950 via-[#004B87] to-[#0070BA] bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(56,189,248,0.75)] dark:bg-gradient-to-r dark:from-white dark:via-sky-100 dark:to-sky-300 dark:drop-shadow-[0_0_10px_rgba(255,255,255,1)] dark:drop-shadow-[0_0_20px_rgba(56,189,248,0.95)]"
+                      : "text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold"
                   }`}
                 >
                   {item.label}
