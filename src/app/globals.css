@@ -23,3 +23,20 @@
     transition: background-color 0.25s ease, color 0.25s ease;
   }
 }
+
+@keyframes flyInRight {
+  0% {
+    transform: translateX(42px);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+.animate-fly-in-right {
+  animation: flyInRight 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
