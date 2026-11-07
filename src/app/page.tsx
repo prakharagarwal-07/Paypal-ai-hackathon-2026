@@ -7,6 +7,7 @@ import WhoItsFor from "@/components/WhoItsFor";
 import Footer from "@/components/Footer";
 import WebThreads from "@/components/WebThreads";
 import ScrollReveal from "@/components/ScrollReveal";
+import HeroTextFlyIn from "@/components/HeroTextFlyIn";
 import { ArrowRight, Sparkles, CheckCircle2 } from "lucide-react";
 
 export default function HomePage() {
@@ -51,26 +52,20 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            {/* Main Headline flies in */}
-            <ScrollReveal direction="up" delay={200} distance={36}>
-              <h1 className="mt-6 text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.12]">
-                Work completed. <br className="hidden sm:inline" />
-                Progress verified. <br />
-                <span className="bg-gradient-to-r from-emerald-600 via-teal-600 to-[#0070BA] bg-clip-text text-transparent dark:from-emerald-400 dark:via-teal-300 dark:to-sky-400">
-                  Payments made with confidence.
-                </span>
-              </h1>
-            </ScrollReveal>
+            {/* DYNAMIC SCROLL FLY-IN HERO INTRO TEXT */}
+            <div className="mt-6">
+              <HeroTextFlyIn />
+            </div>
 
             {/* Plain English Subtitle flies in */}
-            <ScrollReveal direction="up" delay={350} distance={28}>
+            <ScrollReveal direction="up" delay={420} distance={28}>
               <p className="mt-5 text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed backdrop-blur-[2px]">
                 MilestoneOS splits freelance projects into safe milestone payments. AI inspects submitted deliverables against agreed checklists so clients pay with confidence and freelancers get paid on time.
               </p>
             </ScrollReveal>
 
             {/* Action Buttons fly in */}
-            <ScrollReveal direction="up" delay={450} distance={24}>
+            <ScrollReveal direction="up" delay={520} distance={24}>
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
                 <Link
                   href="/auth?mode=signup"
@@ -89,7 +84,7 @@ export default function HomePage() {
             </ScrollReveal>
 
             {/* Trust Badges fly in */}
-            <ScrollReveal direction="up" delay={550} distance={20}>
+            <ScrollReveal direction="up" delay={620} distance={20}>
               <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
                 <span className="flex items-center gap-1.5 bg-white/80 dark:bg-slate-900/80 px-3.5 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md shadow-sm">
                   <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -107,7 +102,7 @@ export default function HomePage() {
             </ScrollReveal>
 
             {/* Clean Interactive Demo Component flies in */}
-            <ScrollReveal direction="up" delay={650} distance={40} className="mt-12">
+            <ScrollReveal direction="up" delay={720} distance={40} className="mt-12">
               <SimpleInteractiveDemo />
             </ScrollReveal>
           </div>
