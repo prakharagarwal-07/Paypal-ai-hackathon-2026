@@ -79,7 +79,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Clean, Simple Desktop Nav with Pure Glowing White Text (No Box) */}
+        {/* Clean, Simple Desktop Nav with Light Blue & White Glowing Gradient Text (No Box) */}
         <nav className="hidden md:flex items-center gap-8 text-sm">
           {NAV_LINKS.map((item) => {
             const isActive = activeSection === item.id;
@@ -89,7 +89,7 @@ export default function Navbar() {
                 href={item.href}
                 className={`transition-all duration-300 ${
                   isActive
-                    ? "text-white font-extrabold scale-105 [text-shadow:_0_0_8px_#ffffff,_0_0_18px_#ffffff,_0_0_30px_rgba(255,255,255,0.9),_0_1px_4px_rgba(0,0,0,0.6)] drop-shadow-[0_0_12px_rgba(255,255,255,1)]"
+                    ? "font-extrabold scale-105 bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,255,255,0.95)] drop-shadow-[0_0_18px_rgba(56,189,248,0.85)] drop-shadow-[0_0_30px_rgba(56,189,248,0.5)]"
                     : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium hover:scale-[1.02]"
                 }`}
               >
@@ -141,7 +141,7 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`py-2 px-3 transition-all duration-200 ${
                     isActive
-                      ? "text-white font-extrabold [text-shadow:_0_0_10px_#ffffff,_0_0_20px_#ffffff]"
+                      ? "font-extrabold bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,255,255,0.95)] drop-shadow-[0_0_16px_rgba(56,189,248,0.8)]"
                       : "text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
                   }`}
                 >
