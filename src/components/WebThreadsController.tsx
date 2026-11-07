@@ -14,12 +14,12 @@ interface ThreadSettings {
 }
 
 const DEFAULT_SETTINGS: ThreadSettings = {
-  brightness: 0.86,
-  glow: 0.026,
+  brightness: 0.68,
+  glow: 0.018,
   threadCount: 8,
   spread: 0.24,
-  speed: 0.16,
-  thickness: 1.1,
+  speed: 0.14,
+  thickness: 1.0,
 };
 
 const PRESETS = [
@@ -70,10 +70,12 @@ export default function WebThreadsController() {
   // Load persisted user settings from localStorage if available
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("milestone_webthreads_settings");
+      const saved = localStorage.getItem("milestone_webthreads_settings_v2");
       if (saved) {
         const parsed = JSON.parse(saved);
         setSettings({ ...DEFAULT_SETTINGS, ...parsed });
+      } else {
+        setSettings(DEFAULT_SETTINGS);
       }
     } catch {
       // fallback to default
@@ -86,7 +88,7 @@ export default function WebThreadsController() {
     setSettings((prev) => {
       const updated = { ...prev, [key]: value };
       try {
-        localStorage.setItem("milestone_webthreads_settings", JSON.stringify(updated));
+        localStorage.setItem("milestone_webthreads_settings_v2", JSON.stringify(updated));
       } catch {
         // ignore
       }
@@ -99,7 +101,7 @@ export default function WebThreadsController() {
     setActivePreset(presetName);
     setSettings(presetSettings);
     try {
-      localStorage.setItem("milestone_webthreads_settings", JSON.stringify(presetSettings));
+      localStorage.setItem("milestone_webthreads_settings_v2", JSON.stringify(presetSettings));
     } catch {
       // ignore
     }
@@ -116,7 +118,7 @@ export default function WebThreadsController() {
         FIXED FULL-PAGE WEBTHREADS BACKGROUND CANVAS:
         Receives real-time state from this controller!
       */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-80 dark:opacity-90">
+      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-70 dark:opacity-80">
         <WebThreads
           colors={["#00E599", "#0070BA", "#38BDF8", "#10B981", "#6366F1"]}
           coreColor="#FFFFFF"
