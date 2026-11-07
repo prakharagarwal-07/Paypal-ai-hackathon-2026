@@ -14,12 +14,12 @@ interface ThreadSettings {
 }
 
 const DEFAULT_SETTINGS: ThreadSettings = {
-  brightness: 0.68,
-  glow: 0.018,
+  brightness: 0.74,
+  glow: 0.022,
   threadCount: 8,
   spread: 0.24,
-  speed: 0.14,
-  thickness: 1.0,
+  speed: 0.15,
+  thickness: 1.1,
 };
 
 const PRESETS = [
@@ -135,18 +135,18 @@ export default function WebThreadsController() {
         FIXED FULL-PAGE WEBTHREADS BACKGROUND CANVAS:
         Receives real-time state from this controller!
       */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-45 dark:opacity-80 transition-opacity duration-300">
+      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-85 dark:opacity-85 transition-opacity duration-300">
         <WebThreads
           colors={["#00E599", "#0070BA", "#38BDF8", "#10B981", "#6366F1"]}
-          coreColor={isDark ? "#FFFFFF" : "#E0F2FE"}
-          lightMode={!isDark}
+          coreColor="#FFFFFF"
+          lightMode={false}
           threadCount={settings.threadCount}
           speed={settings.speed}
           frequency={4.2}
           spread={settings.spread}
           position={0.48}
-          glow={settings.glow}
-          brightness={settings.brightness}
+          glow={isDark ? settings.glow : settings.glow * 1.25}
+          brightness={isDark ? settings.brightness : settings.brightness * 1.2}
           thickness={settings.thickness}
           fade={0.12}
           mouseInteraction={true}
@@ -236,7 +236,7 @@ export default function WebThreadsController() {
                 <input
                   type="range"
                   min="0.20"
-                  max="1.15"
+                  max="1.40"
                   step="0.02"
                   value={settings.brightness}
                   onChange={(e) => updateSetting("brightness", parseFloat(e.target.value))}
@@ -258,7 +258,7 @@ export default function WebThreadsController() {
                 <input
                   type="range"
                   min="0.005"
-                  max="0.035"
+                  max="0.045"
                   step="0.001"
                   value={settings.glow}
                   onChange={(e) => updateSetting("glow", parseFloat(e.target.value))}
