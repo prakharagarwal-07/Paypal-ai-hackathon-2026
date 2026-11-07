@@ -7,10 +7,7 @@ export default function WhoItsFor() {
       <div className="mx-auto max-w-5xl">
         <ScrollReveal direction="up" delay={50}>
           <div className="text-center max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              Fair & Transparent
-            </span>
-            <h2 className="mt-2 text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Peace of Mind for Both Sides
             </h2>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300">

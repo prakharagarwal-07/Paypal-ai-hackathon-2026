@@ -45,14 +45,10 @@ export default function MilestoneCalculator() {
         {/* Header */}
         <ScrollReveal direction="up" delay={50}>
           <div className="text-center max-w-2xl mx-auto">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-              <Layers className="h-3.5 w-3.5" />
-              Project Payment Calculator
-            </span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               See How Your Money Is Protected
             </h2>
-            <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-300">
+            <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300">
               Never pay 100% upfront to someone you just met. Pay step-by-step as real work gets completed and verified.
             </p>
           </div>

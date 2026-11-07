@@ -33,14 +33,10 @@ export default function SimpleInteractiveDemo() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5 dark:border-slate-800">
         <div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
-            <Sparkles className="h-3.5 w-3.5" />
-            Interactive Example
-          </span>
-          <h3 className="mt-2 text-xl font-bold text-slate-900 dark:text-white">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
             Stage 2: Store Pages & Online Checkout
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             Project: Modern E-Commerce Website • Total Price: ₹50,000
           </p>
         </div>

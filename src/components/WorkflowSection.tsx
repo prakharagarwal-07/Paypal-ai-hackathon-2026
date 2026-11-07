@@ -155,10 +155,7 @@ export default function WorkflowSection() {
       <div className="mx-auto max-w-5xl">
         <ScrollReveal direction="up" delay={50}>
           <div className="text-center max-w-2xl mx-auto">
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              How It Works
-            </span>
-            <h2 className="mt-2 text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Three Simple Steps to Fair Payments
             </h2>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
@@ -189,13 +186,10 @@ export default function WorkflowSection() {
                   }}
                 >
                   <div>
-                    {/* Top Step Number and Tag */}
+                    {/* Top Step Number */}
                     <div className="flex items-center justify-between">
                       <span className="flex h-10 w-10 items-center justify-center rounded-2xl font-mono text-sm font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 group-hover:bg-emerald-50 group-hover:text-emerald-600 dark:group-hover:bg-emerald-500/20 dark:group-hover:text-emerald-400 transition-colors">
                         {s.step}
-                      </span>
-                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${s.color}`}>
-                        {s.tag}
                       </span>
                     </div>
 
@@ -267,9 +261,6 @@ export default function WorkflowSection() {
                   <span className="flex h-11 w-11 items-center justify-center rounded-2xl font-mono text-base font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
                     {activeStepData.step}
                   </span>
-                  <span className={`text-xs font-bold px-3 py-1 rounded-full border ${activeStepData.color}`}>
-                    {activeStepData.tag}
-                  </span>
                 </div>
 
                 <h3 className="mt-6 text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
@@ -297,14 +288,12 @@ export default function WorkflowSection() {
               className="animate-free-text flex-1 flex flex-col justify-between space-y-4 text-left py-1"
             >
               <div>
-                {/* Category Pill */}
-                <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>Stage {activeStepData.step} Walkthrough</span>
-                </div>
+                <span className="text-xs font-mono font-bold tracking-wider text-emerald-400 uppercase">
+                  Stage {activeStepData.step} of 03
+                </span>
 
                 {/* Subheading */}
-                <h4 className="mt-3 text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-md">
+                <h4 className="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-md">
                   {activeStepData.title}
                 </h4>
 

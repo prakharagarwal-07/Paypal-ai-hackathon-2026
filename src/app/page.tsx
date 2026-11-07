@@ -44,16 +44,8 @@ export default function HomePage() {
           <div className="absolute top-16 left-1/2 -translate-x-1/2 w-[600px] h-[360px] bg-gradient-to-tr from-emerald-400/20 via-sky-400/20 to-indigo-500/10 blur-3xl pointer-events-none -z-10" />
 
           <div className="mx-auto max-w-5xl text-center">
-            {/* Clean, authentic badge */}
-            <ScrollReveal direction="down" delay={100}>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/80 bg-white/85 dark:bg-emerald-500/15 dark:border-emerald-500/30 px-4 py-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 backdrop-blur-md shadow-sm">
-                <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                <span>The Smarter Way to Pay for Freelance Work</span>
-              </div>
-            </ScrollReveal>
-
             {/* DYNAMIC SCROLL FLY-IN HERO INTRO TEXT */}
-            <div className="mt-6">
+            <div>
               <HeroTextFlyIn />
             </div>
 
@@ -83,20 +75,22 @@ export default function HomePage() {
               </div>
             </ScrollReveal>
 
-            {/* Trust Badges - Plain, Natural Language */}
+            {/* Trust Points - Clean, Natural Language without AI pill capsules */}
             <ScrollReveal direction="up" delay={620} distance={20}>
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                <span className="flex items-center gap-1.5 bg-white/80 dark:bg-slate-900/80 px-3.5 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md shadow-sm">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
                   Secure PayPal Payments
                 </span>
-                <span className="flex items-center gap-1.5 bg-white/80 dark:bg-slate-900/80 px-3.5 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md shadow-sm">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  Automatic AI Work Review
+                <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                  Automatic Work Review
                 </span>
-                <span className="flex items-center gap-1.5 bg-white/80 dark:bg-slate-900/80 px-3.5 py-1.5 rounded-full border border-slate-200/80 dark:border-slate-800/80 backdrop-blur-md shadow-sm">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  You Only Pay When Satisfied
+                <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">•</span>
+                <span className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+                  Pay Only When Satisfied
                 </span>
               </div>
             </ScrollReveal>
