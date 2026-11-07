@@ -111,7 +111,7 @@ export default function Navbar() {
           </Link>
           <Link
             href="/auth?mode=signup"
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:via-[#005EA6] hover:to-[#008ECC] px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-600/25 transition-all hover:shadow-blue-600/35 hover:scale-[1.02] active:scale-[0.98]"
+            className="btn-gradient-glow inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] via-[#00A3E0] to-[#004C8F] px-4 py-2 text-sm font-bold text-white shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Get Started</span>
             <ArrowUpRight className="h-4 w-4" />

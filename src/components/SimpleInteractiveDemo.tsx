@@ -208,7 +208,7 @@ export default function SimpleInteractiveDemo() {
                   type="button"
                   onClick={handlePay}
                   disabled={isProcessing}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#0070BA] to-[#003087] hover:from-[#0079C1] hover:to-[#003D9E] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-sky-600/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                  className="btn-gradient-glow w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] via-[#00A3E0] to-[#004C8F] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/25 hover:shadow-blue-600/35 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
                 >
                   {isProcessing ? (
                     <>

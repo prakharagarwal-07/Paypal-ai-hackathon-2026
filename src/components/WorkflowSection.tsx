@@ -349,7 +349,7 @@ export default function WorkflowSection() {
                 <button
                   type="button"
                   onClick={() => setSelectedStep(null)}
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:to-[#008ECC] text-white text-xs font-bold shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
+                  className="btn-gradient-glow px-5 py-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] via-[#00A3E0] to-[#004C8F] text-white text-xs font-bold shadow-lg shadow-blue-500/25 hover:shadow-blue-500/35 hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer"
                 >
                   Done
                 </button>

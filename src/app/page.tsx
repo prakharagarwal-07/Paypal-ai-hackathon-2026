@@ -47,14 +47,14 @@ export default function HomePage() {
               <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
                 <Link
                   href="/auth?mode=signup"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:via-[#005EA6] hover:to-[#008ECC] px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="btn-gradient-glow w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] via-[#00A3E0] to-[#004C8F] px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>Start for Free</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="#how-it-works"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300/90 bg-white/90 hover:bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-sm dark:border-slate-700 dark:bg-slate-800/90 dark:text-white dark:hover:bg-slate-800 transition-colors backdrop-blur-md"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300/90 bg-white/90 hover:bg-white hover:border-[#0070BA]/60 px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-sm hover:shadow hover:text-[#0070BA] dark:border-slate-700 dark:bg-slate-800/90 dark:text-white dark:hover:bg-slate-800 dark:hover:border-sky-400/60 dark:hover:text-sky-300 transition-all backdrop-blur-md"
                 >
                   <span>See How It Works</span>
                 </Link>
@@ -125,14 +125,14 @@ export default function HomePage() {
               <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3.5">
                 <Link
                   href="/auth?mode=signup"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:via-[#005EA6] hover:to-[#008ECC] px-7 py-3.5 text-sm font-bold text-white shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="btn-gradient-glow w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] via-[#00A3E0] to-[#004C8F] px-7 py-3.5 text-sm font-bold text-white shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:scale-[1.02] active:scale-[0.98]"
                 >
                   <span>Create Free Account</span>
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
                   href="/auth?mode=login"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-sm dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-[#0070BA]/60 px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-sm hover:text-[#0070BA] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-sky-400/60 dark:hover:text-sky-300 transition-all"
                 >
                   <span>Explore Demo Account</span>
                 </Link>

@@ -348,7 +348,7 @@ function AuthForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-3 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] to-[#009CDE] hover:from-[#003B70] hover:via-[#005EA6] hover:to-[#008ECC] py-3 text-sm font-bold text-white shadow-md shadow-blue-600/25 transition-all hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+            className="btn-gradient-glow w-full mt-3 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#004C8F] via-[#0070BA] via-[#00A3E0] to-[#004C8F] py-3 text-sm font-bold text-white shadow-md shadow-blue-600/25 hover:shadow-blue-600/35 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 cursor-pointer"
           >
             {loading ? (
               <>

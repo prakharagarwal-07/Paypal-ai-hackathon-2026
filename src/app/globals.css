@@ -40,3 +40,38 @@
 .animate-free-text {
   animation: flyFreeTextFromRight 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Subtle, high-end button gradient hover animation */
+.btn-gradient-glow {
+  position: relative;
+  overflow: hidden;
+  background-size: 220% auto;
+  background-position: 0% center;
+  transition: background-position 0.65s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s ease, box-shadow 0.25s ease;
+}
+
+.btn-gradient-glow:hover {
+  background-position: 100% center;
+}
+
+.btn-gradient-glow::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -130%;
+  width: 65%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.btn-gradient-glow:hover::after {
+  left: 140%;
+}
