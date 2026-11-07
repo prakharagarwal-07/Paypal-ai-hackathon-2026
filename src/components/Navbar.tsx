@@ -89,7 +89,7 @@ export default function Navbar() {
                 href={item.href}
                 className={`transition-all duration-300 ${
                   isActive
-                    ? "font-extrabold scale-105 bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,255,255,0.95)] drop-shadow-[0_0_18px_rgba(56,189,248,0.85)] drop-shadow-[0_0_30px_rgba(56,189,248,0.5)]"
+                    ? "font-extrabold scale-105 bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(255,255,255,1)] drop-shadow-[0_0_20px_rgba(56,189,248,0.95)] drop-shadow-[0_0_35px_rgba(56,189,248,0.7)] drop-shadow-[0_0_50px_rgba(14,165,233,0.45)]"
                     : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium hover:scale-[1.02]"
                 }`}
               >
@@ -141,7 +141,7 @@ export default function Navbar() {
                   onClick={() => setMobileMenuOpen(false)}
                   className={`py-2 px-3 transition-all duration-200 ${
                     isActive
-                      ? "font-extrabold bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_8px_rgba(255,255,255,0.95)] drop-shadow-[0_0_16px_rgba(56,189,248,0.8)]"
+                      ? "font-extrabold bg-gradient-to-r from-white via-sky-100 to-sky-300 bg-clip-text text-transparent drop-shadow-[0_0_10px_rgba(255,255,255,1)] drop-shadow-[0_0_20px_rgba(56,189,248,0.95)] drop-shadow-[0_0_35px_rgba(56,189,248,0.7)]"
                       : "text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
                   }`}
                 >
