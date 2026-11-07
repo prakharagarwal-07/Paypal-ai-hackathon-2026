@@ -67,7 +67,7 @@ export default function HomePage() {
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link
-                  href="#demo"
+                  href="#how-it-works"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300/90 bg-white/90 hover:bg-white px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-sm dark:border-slate-700 dark:bg-slate-800/90 dark:text-white dark:hover:bg-slate-800 transition-colors backdrop-blur-md"
                 >
                   <span>See How It Works</span>
@@ -94,25 +94,40 @@ export default function HomePage() {
                 </span>
               </div>
             </ScrollReveal>
+          </div>
+        </section>
 
-            {/* Clean Interactive Demo Component */}
-            <ScrollReveal direction="up" delay={720} distance={40} className="mt-12">
+        {/* 1. THREE SIMPLE STEPS (HOW IT WORKS) */}
+        <WorkflowSection />
+
+        {/* 2. SEE IT IN ACTION (INTERACTIVE DEMO) - DIRECTLY BELOW HOW IT WORKS */}
+        <section id="demo" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/20 dark:bg-transparent backdrop-blur-[1px] transition-colors">
+          <div className="mx-auto max-w-5xl">
+            <ScrollReveal direction="up" delay={50}>
+              <div className="text-center max-w-2xl mx-auto mb-12">
+                <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  See It In Action
+                </h2>
+                <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
+                  Try this live milestone simulator. Toggle between completed and missing work to see how payments stay protected before any money moves.
+                </p>
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal direction="up" delay={150}>
               <SimpleInteractiveDemo />
             </ScrollReveal>
           </div>
         </section>
 
-        {/* 3 SIMPLE STEPS */}
-        <WorkflowSection />
-
-        {/* INTERACTIVE MILESTONE CALCULATOR */}
+        {/* 3. INTERACTIVE MILESTONE CALCULATOR */}
         <MilestoneCalculator />
 
-        {/* FOR CLIENTS & FREELANCERS */}
+        {/* 4. FOR CLIENTS & FREELANCERS */}
         <WhoItsFor />
 
         {/* FRIENDLY CLOSING CTA */}
-        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/20 dark:bg-transparent backdrop-blur-[1px] transition-colors">
+        <section className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-slate-900/[0.03] dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
           <ScrollReveal direction="up" delay={100}>
             <div className="mx-auto max-w-3xl text-center rounded-3xl border border-emerald-200/80 bg-white/85 p-8 sm:p-12 shadow-xl shadow-emerald-500/5 dark:border-slate-800 dark:bg-[#131B2E]/90 backdrop-blur-md">
               <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">

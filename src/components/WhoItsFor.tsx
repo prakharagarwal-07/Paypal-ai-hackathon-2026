@@ -3,7 +3,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 
 export default function WhoItsFor() {
   return (
-    <section id="benefits" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-slate-900/[0.03] dark:bg-white/[0.03] backdrop-blur-[2px] transition-colors">
+    <section id="benefits" className="relative py-24 sm:py-32 px-4 sm:px-6 lg:px-8 bg-white/20 dark:bg-transparent backdrop-blur-[1px] transition-colors">
       <div className="mx-auto max-w-5xl">
         <ScrollReveal direction="up" delay={50}>
           <div className="text-center max-w-2xl mx-auto">
