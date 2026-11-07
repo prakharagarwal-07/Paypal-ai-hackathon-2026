@@ -9,7 +9,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-md dark:border-slate-800/80 dark:bg-[#0B0F19]/80 transition-colors">
+    <header className="sticky top-0 z-50 w-full bg-transparent transition-colors">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
         {/* Brand Logo - Clean, Real Product Identity */}
         <Link href="/" className="flex items-center gap-2.5 group">
