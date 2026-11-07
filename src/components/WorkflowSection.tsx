@@ -1,4 +1,5 @@
-import { CheckCircle2, ShieldCheck, CreditCard, Sparkles, ArrowRight } from "lucide-react";
+import { CheckCircle2, ShieldCheck, CreditCard, Sparkles } from "lucide-react";
+import ScrollReveal from "@/components/ScrollReveal";
 
 export default function WorkflowSection() {
   const steps = [
@@ -29,51 +30,57 @@ export default function WorkflowSection() {
   ];
 
   return (
-    <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8 bg-slate-50/60 dark:bg-[#0E1424]/60 transition-colors">
+    <section id="how-it-works" className="relative py-24 px-4 sm:px-6 lg:px-8 border-t border-slate-200/60 dark:border-slate-800/60 bg-slate-50/40 dark:bg-[#0E1424]/40 backdrop-blur-sm transition-colors">
       <div className="mx-auto max-w-5xl">
-        <div className="text-center max-w-2xl mx-auto">
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-            How It Works
-          </span>
-          <h2 className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Three Simple Steps to Fair Payments
-          </h2>
-          <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400">
-            Freelancers get paid for real progress. Clients only pay for verified work.
-          </p>
-        </div>
+        <ScrollReveal direction="up" delay={50}>
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+              How It Works
+            </span>
+            <h2 className="mt-2 text-3xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Three Simple Steps to Fair Payments
+            </h2>
+            <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
+              Freelancers get paid for real progress. Clients only pay for verified work.
+            </p>
+          </div>
+        </ScrollReveal>
 
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-          {steps.map((s) => {
+        <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {steps.map((s, idx) => {
             const Icon = s.icon;
             return (
-              <div
+              <ScrollReveal
                 key={s.step}
-                className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-[#131B2E] flex flex-col justify-between"
+                direction="up"
+                delay={100 + idx * 150}
+                className="h-full"
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl font-mono text-sm font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                      {s.step}
-                    </span>
-                    <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${s.color}`}>
-                      {s.tag}
-                    </span>
+                <div className="h-full rounded-3xl border border-slate-200/90 bg-white/90 p-7 shadow-lg shadow-slate-200/50 hover:shadow-xl transition-all dark:border-slate-800/90 dark:bg-[#131B2E]/90 dark:shadow-none backdrop-blur-md flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-2xl font-mono text-sm font-extrabold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {s.step}
+                      </span>
+                      <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${s.color}`}>
+                        {s.tag}
+                      </span>
+                    </div>
+
+                    <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
+                      {s.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                      {s.desc}
+                    </p>
                   </div>
 
-                  <h3 className="mt-5 text-xl font-bold text-slate-900 dark:text-white">
-                    {s.title}
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    {s.desc}
-                  </p>
+                  <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span>Transparent & Automated</span>
+                  </div>
                 </div>
-
-                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span>Transparent & Automated</span>
-                </div>
-              </div>
+              </ScrollReveal>
             );
           })}
         </div>
