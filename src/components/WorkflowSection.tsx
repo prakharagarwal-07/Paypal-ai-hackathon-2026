@@ -1,40 +1,38 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { CheckCircle2, ShieldCheck, CreditCard, Sparkles, ArrowRight, X, Check, ArrowLeft } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 
 export default function WorkflowSection() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
+  const modalContentRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Close on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setSelectedStep(null);
-      }
-    };
-    if (selectedStep !== null) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [selectedStep]);
-
-  // Keep the dark panel stationary while moving the back screen whenever someone scrolls
+  // Background scrolling & panel controls while spotlight panel is open
   useEffect(() => {
     if (selectedStep === null) return;
 
-    // Direct wheel handler to scroll the background page underneath
+    // 1. Temporarily disable CSS scroll-smooth while the modal is open so trackpad wheel deltas
+    // are applied instantaneously with zero animation fight or freezing
+    const htmlEl = document.documentElement;
+    const hadScrollSmooth = htmlEl.classList.contains("scroll-smooth");
+    if (hadScrollSmooth) {
+      htmlEl.classList.remove("scroll-smooth");
+    }
+    const originalScrollBehavior = htmlEl.style.scrollBehavior;
+    htmlEl.style.scrollBehavior = "auto";
+
+    // 2. Wheel event handler: ensures scrolling background works even when hovering directly over the card
     const handleWheel = (e: WheelEvent) => {
       window.scrollBy({
         top: e.deltaY,
-        behavior: "auto",
+        left: 0,
+        behavior: "instant" as ScrollBehavior,
       });
     };
 
-    // Touch events for mobile/trackpad gestures
+    // 3. Touch events for mobile / touch devices
     let startY = 0;
     const handleTouchStart = (e: TouchEvent) => {
       startY = e.touches[0].clientY;
@@ -44,19 +42,58 @@ export default function WorkflowSection() {
       const diffY = startY - currentY;
       window.scrollBy({
         top: diffY,
-        behavior: "auto",
+        left: 0,
+        behavior: "instant" as ScrollBehavior,
       });
       startY = currentY;
+    };
+
+    // 4. Keyboard arrow / page navigation
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedStep(null);
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        window.scrollBy({ top: 120, behavior: "instant" as ScrollBehavior });
+      } else if (e.key === "ArrowUp") {
+        window.scrollBy({ top: -120, behavior: "instant" as ScrollBehavior });
+      } else if (e.key === "PageDown" || (e.key === " " && !e.shiftKey)) {
+        window.scrollBy({ top: 400, behavior: "instant" as ScrollBehavior });
+      } else if (e.key === "PageUp" || (e.key === " " && e.shiftKey)) {
+        window.scrollBy({ top: -400, behavior: "instant" as ScrollBehavior });
+      }
+    };
+
+    // 5. Dismiss when clicking outside the panel (capture phase prevents clicking background links)
+    const handleClickCapture = (e: MouseEvent) => {
+      if (
+        (modalContentRef.current && modalContentRef.current.contains(e.target as Node)) ||
+        (closeBtnRef.current && closeBtnRef.current.contains(e.target as Node))
+      ) {
+        return;
+      }
+      e.preventDefault();
+      e.stopPropagation();
+      setSelectedStep(null);
     };
 
     window.addEventListener("wheel", handleWheel, { passive: true });
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
     window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("click", handleClickCapture, { capture: true });
 
     return () => {
+      if (hadScrollSmooth) {
+        htmlEl.classList.add("scroll-smooth");
+      }
+      htmlEl.style.scrollBehavior = originalScrollBehavior;
       window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("click", handleClickCapture, { capture: true });
     };
   }, [selectedStep]);
 
@@ -176,23 +213,33 @@ export default function WorkflowSection() {
 
       {/* 
         FULL-SCREEN DARK PANEL SHOWCASE:
-        - The dark panel covers the screen and stays 100% still/stationary on screen.
-        - The background page behind it moves up and down whenever someone scrolls!
+        - The dark panel covers the screen and stays 100% still/stationary on the screen until closed.
+        - The background page behind the dark panel moves up and down whenever someone scrolls!
         - Left: The enlarged clean white card.
         - Right: The free text flying in from right to left.
         - Top right: Close ✕ button.
         - Bottom: Next Stage → / Done buttons.
+        - Clicking outside the central card/text area also closes the panel.
       */}
       {activeStepData && selectedStep !== null && (
-        <div
-          onClick={() => setSelectedStep(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-10 bg-slate-950/75 dark:bg-black/80 backdrop-blur-md transition-all duration-300"
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-10 pointer-events-none">
+          {/* 
+            Dark Blurred Backdrop:
+            Renders the full dark focus veil across the screen.
+            pointer-events-none lets trackpad/mouse gestures pass straight through
+            to the background page for native, buttery-smooth scrolling!
+          */}
+          <div
+            className="absolute inset-0 bg-slate-950/75 dark:bg-black/80 backdrop-blur-md transition-all duration-300 pointer-events-none"
+            aria-hidden="true"
+          />
+
           {/* Top-Right Quick Dismiss Button */}
           <button
+            ref={closeBtnRef}
             type="button"
             onClick={() => setSelectedStep(null)}
-            className="fixed top-5 right-5 sm:top-8 sm:right-8 z-50 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold backdrop-blur-md border border-white/20 transition-all cursor-pointer shadow-lg"
+            className="fixed top-5 right-5 sm:top-8 sm:right-8 z-50 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold backdrop-blur-md border border-white/20 transition-all cursor-pointer shadow-lg pointer-events-auto"
             aria-label="Close"
           >
             <span>Close</span>
@@ -201,8 +248,8 @@ export default function WorkflowSection() {
 
           {/* Central Side-by-Side Content (Stationary on screen) */}
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative flex flex-col lg:flex-row items-stretch lg:items-center justify-center gap-8 lg:gap-14 max-w-4xl w-full"
+            ref={modalContentRef}
+            className="relative flex flex-col lg:flex-row items-stretch lg:items-center justify-center gap-8 lg:gap-14 max-w-4xl w-full pointer-events-auto"
           >
             {/* 
               LEFT PANEL: THE ENLARGED WHITE BOX
