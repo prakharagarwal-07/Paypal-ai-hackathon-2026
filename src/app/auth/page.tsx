@@ -142,12 +142,12 @@ function AuthForm() {
   return (
     <div className="w-full max-w-md relative z-10">
       {/* Glow highlight behind card */}
-      <div className="absolute -inset-1 rounded-[32px] bg-gradient-to-r from-[#004C8F]/20 via-[#0070BA]/25 to-[#00A3E0]/20 blur-xl opacity-75 dark:opacity-50 pointer-events-none" />
+      <div className="absolute -inset-1 rounded-[32px] bg-gradient-to-r from-[#004C8F]/20 via-[#0070BA]/25 to-[#00A3E0]/20 blur-xl opacity-60 dark:opacity-40 pointer-events-none" />
 
-      {/* Form Card */}
-      <div className="relative rounded-3xl border border-white/60 bg-white/85 p-6 sm:p-8 shadow-2xl shadow-blue-900/10 backdrop-blur-2xl dark:border-white/10 dark:bg-[#0d1527]/85 dark:shadow-2xl dark:shadow-black/70 ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300">
+      {/* Form Card with Decreased Opacity (Sleek Frosted Glass) */}
+      <div className="relative rounded-3xl border border-white/50 bg-white/65 p-6 sm:p-8 shadow-2xl shadow-blue-900/10 backdrop-blur-2xl dark:border-white/10 dark:bg-[#0d1527]/55 dark:shadow-2xl dark:shadow-black/70 ring-1 ring-black/5 dark:ring-white/10 transition-all duration-300">
         {/* Mode Switcher Tabs */}
-        <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100/90 p-1 dark:bg-slate-900/90 text-sm font-semibold">
+        <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100/60 p-1 dark:bg-slate-900/50 backdrop-blur-md text-sm font-semibold">
           <button
             type="button"
             onClick={() => {
@@ -157,7 +157,7 @@ function AuthForm() {
             }}
             className={`py-2 rounded-xl transition-all cursor-pointer ${
               mode === "login"
-                ? "bg-white text-slate-900 shadow-md font-bold dark:bg-gradient-to-r dark:from-[#004C8F] dark:to-[#0070BA] dark:text-white"
+                ? "bg-white/90 text-slate-900 shadow-md font-bold dark:bg-gradient-to-r dark:from-[#004C8F] dark:to-[#0070BA] dark:text-white"
                 : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
@@ -172,7 +172,7 @@ function AuthForm() {
             }}
             className={`py-2 rounded-xl transition-all cursor-pointer ${
               mode === "signup"
-                ? "bg-white text-slate-900 shadow-md font-bold dark:bg-gradient-to-r dark:from-[#004C8F] dark:to-[#0070BA] dark:text-white"
+                ? "bg-white/90 text-slate-900 shadow-md font-bold dark:bg-gradient-to-r dark:from-[#004C8F] dark:to-[#0070BA] dark:text-white"
                 : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
             }`}
           >
@@ -198,7 +198,7 @@ function AuthForm() {
             type="button"
             onClick={handlePayPalInstantAuth}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-50 px-4 py-3 text-xs sm:text-sm font-bold text-slate-900 shadow-sm hover:shadow transition-all hover:scale-[1.01] active:scale-[0.99] dark:border-white/15 dark:bg-[#131c31] dark:text-white dark:hover:bg-[#1a2642] cursor-pointer"
+            className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-300/60 bg-white/60 hover:bg-white/90 px-4 py-3 text-xs sm:text-sm font-bold text-slate-900 shadow-sm hover:shadow transition-all hover:scale-[1.01] active:scale-[0.99] dark:border-white/10 dark:bg-[#131c31]/50 dark:text-white dark:hover:bg-[#1a2642]/75 backdrop-blur-md cursor-pointer"
           >
             <PayPalIcon className="h-4 w-4" />
             <span>Continue with PayPal Sandbox</span>
@@ -207,15 +207,15 @@ function AuthForm() {
 
         {/* Divider */}
         <div className="my-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+          <div className="h-px flex-1 bg-slate-200/80 dark:bg-white/10" />
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             or continue with email
           </span>
-          <div className="h-px flex-1 bg-slate-200 dark:bg-white/10" />
+          <div className="h-px flex-1 bg-slate-200/80 dark:bg-white/10" />
         </div>
 
         {/* Instant Sandbox Fast-Fill */}
-        <div className="rounded-2xl border border-blue-200/60 bg-blue-50/50 p-3 dark:border-blue-500/20 dark:bg-[#0070BA]/10">
+        <div className="rounded-2xl border border-blue-200/50 bg-blue-50/30 p-3 dark:border-blue-500/20 dark:bg-[#0070BA]/10 backdrop-blur-md">
           <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2">
             <span className="flex items-center gap-1.5 text-[#0070BA] dark:text-sky-300">
               <Zap className="h-3.5 w-3.5" />
@@ -229,10 +229,10 @@ function AuthForm() {
             <button
               type="button"
               onClick={() => fillDemoAccount("client")}
-              className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+              className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer backdrop-blur-sm ${
                 role === "client" && email === "sarah.chen@client.demo"
-                  ? "border-[#0070BA] bg-white text-slate-950 shadow-sm ring-1 ring-[#0070BA] dark:border-sky-400 dark:bg-[#131c31] dark:text-white"
-                  : "border-slate-200 bg-white/80 text-slate-700 hover:text-slate-950 hover:bg-white dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:text-white"
+                  ? "border-[#0070BA] bg-white/90 text-slate-950 shadow-sm ring-1 ring-[#0070BA] dark:border-sky-400 dark:bg-[#131c31]/80 dark:text-white"
+                  : "border-slate-200/70 bg-white/50 text-slate-700 hover:text-slate-950 hover:bg-white/80 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300 dark:hover:text-white"
               }`}
             >
               <div className="font-bold flex items-center justify-between">
@@ -252,10 +252,10 @@ function AuthForm() {
             <button
               type="button"
               onClick={() => fillDemoAccount("freelancer")}
-              className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
+              className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer backdrop-blur-sm ${
                 role === "freelancer" && email === "rohan.verma@dev.demo"
-                  ? "border-[#0070BA] bg-white text-slate-950 shadow-sm ring-1 ring-[#0070BA] dark:border-sky-400 dark:bg-[#131c31] dark:text-white"
-                  : "border-slate-200 bg-white/80 text-slate-700 hover:text-slate-950 hover:bg-white dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-300 dark:hover:text-white"
+                  ? "border-[#0070BA] bg-white/90 text-slate-950 shadow-sm ring-1 ring-[#0070BA] dark:border-sky-400 dark:bg-[#131c31]/80 dark:text-white"
+                  : "border-slate-200/70 bg-white/50 text-slate-700 hover:text-slate-950 hover:bg-white/80 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300 dark:hover:text-white"
               }`}
             >
               <div className="font-bold flex items-center justify-between">
@@ -283,10 +283,10 @@ function AuthForm() {
             <div className="grid grid-cols-2 gap-2">
               <div
                 onClick={() => setRole("client")}
-                className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all ${
+                className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all backdrop-blur-sm ${
                   role === "client"
-                    ? "border-[#0070BA] bg-blue-50/70 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
-                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400"
+                    ? "border-[#0070BA] bg-blue-50/50 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
+                    : "border-slate-200/70 bg-slate-50/50 text-slate-600 dark:border-slate-800/80 dark:bg-slate-950/40 dark:text-slate-400"
                 }`}
               >
                 <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white">
@@ -300,10 +300,10 @@ function AuthForm() {
 
               <div
                 onClick={() => setRole("freelancer")}
-                className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all ${
+                className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all backdrop-blur-sm ${
                   role === "freelancer"
-                    ? "border-[#0070BA] bg-blue-50/70 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
-                    : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400"
+                    ? "border-[#0070BA] bg-blue-50/50 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
+                    : "border-slate-200/70 bg-slate-50/50 text-slate-600 dark:border-slate-800/80 dark:bg-slate-950/40 dark:text-slate-400"
                 }`}
               >
                 <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white">
@@ -320,14 +320,14 @@ function AuthForm() {
 
         {/* Feedback Alerts */}
         {errorMsg && (
-          <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 flex items-start gap-2 animate-in fade-in">
+          <div className="mt-4 rounded-xl border border-rose-200/80 bg-rose-50/80 p-3 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 flex items-start gap-2 backdrop-blur-sm animate-in fade-in">
             <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 flex items-start gap-2 animate-in fade-in">
+          <div className="mt-4 rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-3 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300 flex items-start gap-2 backdrop-blur-sm animate-in fade-in">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
@@ -347,7 +347,7 @@ function AuthForm() {
                   placeholder="e.g. Alex Morgan"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300/80 bg-white/90 pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-4 focus:ring-[#0070BA]/15 dark:border-slate-700 dark:bg-slate-950/80 dark:text-white transition-all"
+                  className="w-full rounded-xl border border-slate-300/70 bg-white/60 pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-4 focus:ring-[#0070BA]/15 dark:border-slate-700/80 dark:bg-slate-950/50 dark:text-white backdrop-blur-sm transition-all"
                   required
                 />
               </div>
@@ -365,7 +365,7 @@ function AuthForm() {
                 placeholder="name@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-slate-300/80 bg-white/90 pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-4 focus:ring-[#0070BA]/15 dark:border-slate-700 dark:bg-slate-950/80 dark:text-white transition-all"
+                className="w-full rounded-xl border border-slate-300/70 bg-white/60 pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-4 focus:ring-[#0070BA]/15 dark:border-slate-700/80 dark:bg-slate-950/50 dark:text-white backdrop-blur-sm transition-all"
                 required
               />
             </div>
@@ -393,7 +393,7 @@ function AuthForm() {
                 placeholder="••••••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl border border-slate-300/80 bg-white/90 pl-9 pr-9 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-4 focus:ring-[#0070BA]/15 dark:border-slate-700 dark:bg-slate-950/80 dark:text-white transition-all"
+                className="w-full rounded-xl border border-slate-300/70 bg-white/60 pl-9 pr-9 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-4 focus:ring-[#0070BA]/15 dark:border-slate-700/80 dark:bg-slate-950/50 dark:text-white backdrop-blur-sm transition-all"
                 required
               />
               <button
@@ -419,7 +419,7 @@ function AuthForm() {
                   placeholder="••••••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300/80 bg-white/90 pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-4 focus:ring-[#0070BA]/15 dark:border-slate-700 dark:bg-slate-950/80 dark:text-white transition-all"
+                  className="w-full rounded-xl border border-slate-300/70 bg-white/60 pl-9 pr-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none focus:ring-4 focus:ring-[#0070BA]/15 dark:border-slate-700/80 dark:bg-slate-950/50 dark:text-white backdrop-blur-sm transition-all"
                   required
                 />
               </div>
