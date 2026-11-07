@@ -1,13 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { CheckCircle2, ShieldCheck, CreditCard, Sparkles, ArrowRight, X, Check, ArrowLeft } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 
 export default function WorkflowSection() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
   const modalContentRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Background scrolling & panel controls while spotlight panel is open
   useEffect(() => {
@@ -221,7 +227,7 @@ export default function WorkflowSection() {
         - Bottom: Next Stage → / Done buttons.
         - Clicking outside the central card/text area also closes the panel.
       */}
-      {activeStepData && selectedStep !== null && (
+      {mounted && activeStepData && selectedStep !== null && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-10 pointer-events-none">
           {/* 
             Dark Blurred Backdrop:
@@ -361,7 +367,8 @@ export default function WorkflowSection() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </section>
   );
