@@ -79,24 +79,21 @@ export default function Navbar() {
           </div>
         </Link>
 
-        {/* Clean, Simple Desktop Nav with White Glow for Active Section */}
-        <nav className="hidden md:flex items-center gap-1.5 text-sm">
+        {/* Clean, Simple Desktop Nav with Pure Glowing White Text (No Box) */}
+        <nav className="hidden md:flex items-center gap-8 text-sm">
           {NAV_LINKS.map((item) => {
             const isActive = activeSection === item.id;
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className={`relative px-3.5 py-1.5 rounded-xl transition-all duration-300 font-medium ${
+                className={`transition-all duration-300 ${
                   isActive
-                    ? "text-white font-black scale-105 [text-shadow:_0_0_12px_rgba(255,255,255,1),_0_0_24px_rgba(255,255,255,0.85),_0_0_36px_rgba(255,255,255,0.6)] drop-shadow-[0_0_10px_rgba(255,255,255,0.95)] bg-black/40 dark:bg-white/10 backdrop-blur-md shadow-lg shadow-white/20 border border-white/30"
-                    : "text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:scale-[1.02]"
+                    ? "text-white font-extrabold scale-105 [text-shadow:_0_0_8px_#ffffff,_0_0_18px_#ffffff,_0_0_30px_rgba(255,255,255,0.9),_0_1px_4px_rgba(0,0,0,0.6)] drop-shadow-[0_0_12px_rgba(255,255,255,1)]"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium hover:scale-[1.02]"
                 }`}
               >
                 <span>{item.label}</span>
-                {isActive && (
-                  <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-[2px] bg-white rounded-full shadow-[0_0_8px_#ffffff]" />
-                )}
               </Link>
             );
           })}
@@ -142,9 +139,9 @@ export default function Navbar() {
                   key={item.id}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`py-2 px-3 rounded-xl transition-all duration-200 ${
+                  className={`py-2 px-3 transition-all duration-200 ${
                     isActive
-                      ? "text-white font-extrabold [text-shadow:_0_0_10px_rgba(255,255,255,1)] bg-black/40 dark:bg-white/15 border border-white/20"
+                      ? "text-white font-extrabold [text-shadow:_0_0_10px_#ffffff,_0_0_20px_#ffffff]"
                       : "text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-400"
                   }`}
                 >
