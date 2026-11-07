@@ -7,7 +7,7 @@ import ScrollReveal from "@/components/ScrollReveal";
 export default function WorkflowSection() {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
 
-  // Close on Escape key and lock body scroll
+  // Close on Escape key and manage body scroll cleanly
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -15,13 +15,19 @@ export default function WorkflowSection() {
       }
     };
     if (selectedStep !== null) {
+      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = "hidden";
+      if (scrollBarWidth > 0) {
+        document.body.style.paddingRight = `${scrollBarWidth}px`;
+      }
       window.addEventListener("keydown", handleKeyDown);
     } else {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     }
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [selectedStep]);
@@ -52,7 +58,7 @@ export default function WorkflowSection() {
       details: [
         "Automatically inspects links, designs, and completed files.",
         "Instantly spots if any requirement is incomplete before you pay.",
-        "Zero technical knowledge needed—the AI gives you simple advice.",
+        "Zero technical knowledge needed—the AI gives you simple, plain-English advice.",
       ],
     },
     {
@@ -85,12 +91,12 @@ export default function WorkflowSection() {
               Three Simple Steps to Fair Payments
             </h2>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300">
-              No stress, no misunderstandings, and no lost money. Click any box below to see the details.
+              No stress, no misunderstandings, and no lost money. Click any box below to see how it works.
             </p>
           </div>
         </ScrollReveal>
 
-        {/* 3 Clean Info Boxes (Only Titles & Click to View Prompt) */}
+        {/* 3 Clean Info Boxes (Clean titles only) */}
         <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
           {steps.map((s, idx) => {
             return (
@@ -141,26 +147,36 @@ export default function WorkflowSection() {
       </div>
 
       {/* 
-        ENLARGED BOX + SIDE FLY-IN TEXT:
+        SPOTLIGHT VIEW:
         - The whole screen blurs out.
         - The selected box is enlarged on the left.
-        - The info text FLIES IN FROM THE FAR RIGHT EDGE OF THE SCREEN to the side of the box!
+        - The text FLIES IN FREE (NO BOX CONTAINER) to the side of the box with high contrast!
       */}
       {activeStepData && selectedStep !== null && (
         <div
           onClick={() => setSelectedStep(null)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-slate-950/60 dark:bg-black/75 backdrop-blur-md overflow-hidden transition-all duration-300"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-10 bg-slate-950/80 dark:bg-black/85 backdrop-blur-xl overflow-hidden transition-all duration-300"
         >
-          {/* Main Container: Selected Box on the Left, Flying Text on the Right */}
+          {/* Top-Right Quick Dismiss Button */}
+          <button
+            type="button"
+            onClick={() => setSelectedStep(null)}
+            className="fixed top-5 right-5 sm:top-8 sm:right-8 z-50 flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold backdrop-blur-md border border-white/20 transition-all cursor-pointer"
+            aria-label="Close"
+          >
+            <span>Close</span>
+            <X className="h-4 w-4" />
+          </button>
+
+          {/* Side-by-Side Flex Layout */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative flex flex-col lg:flex-row items-stretch lg:items-center justify-center gap-6 max-w-4xl w-full"
+            className="relative flex flex-col lg:flex-row items-stretch lg:items-center justify-center gap-8 lg:gap-14 max-w-4xl w-full"
           >
             {/* 
               LEFT PANEL: THE ENLARGED BOX
-              Stays clean and prominent
             */}
-            <div className="w-full lg:w-[340px] shrink-0 rounded-3xl border-2 border-emerald-400/80 bg-white p-7 sm:p-8 shadow-2xl dark:border-emerald-500/80 dark:bg-[#131B2E] flex flex-col justify-between transition-transform duration-300 scale-100">
+            <div className="w-full lg:w-[340px] shrink-0 rounded-3xl border border-white/20 bg-white/95 p-7 sm:p-9 shadow-2xl dark:border-slate-700 dark:bg-[#131B2E] flex flex-col justify-between transition-transform duration-300 scale-100">
               <div>
                 <div className="flex items-center justify-between">
                   <span className="flex h-11 w-11 items-center justify-center rounded-2xl font-mono text-base font-extrabold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
@@ -179,74 +195,66 @@ export default function WorkflowSection() {
               <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4" />
-                  Active Stage
+                  Stage {activeStepData.step} of 03
                 </span>
                 <span className="text-[11px] text-slate-400">
-                  Step {activeStepData.step} of 03
+                  Active
                 </span>
               </div>
             </div>
 
             {/* 
-              RIGHT PANEL: THE INFO TEXT
-              FLIES ACROSS FROM THE FAR RIGHT EDGE OF THE SCREEN TO THE SIDE OF THE BOX!
+              RIGHT SIDE: COMPLETELY FREE TEXT (NO BOX/NO CONTAINER)
+              Flies in from the right edge directly alongside the box!
             */}
             <div
               key={activeStepData.step}
-              className="animate-fly-from-right-edge flex-1 rounded-3xl border border-slate-200/90 bg-white/95 p-7 sm:p-9 shadow-2xl dark:border-slate-800/90 dark:bg-[#131B2E]/95 backdrop-blur-xl flex flex-col justify-between"
+              className="animate-free-text flex-1 flex flex-col justify-between space-y-5 text-left py-2"
             >
               <div>
-                {/* Header with Title and Close X */}
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Stage Details
-                  </span>
-
-                  <button
-                    type="button"
-                    onClick={() => setSelectedStep(null)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-white transition-colors cursor-pointer"
-                    aria-label="Close details"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                {/* Category Pill */}
+                <div className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 backdrop-blur-sm">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Stage {activeStepData.step} Walkthrough</span>
                 </div>
 
-                {/* Main Explanation Text */}
-                <p className="mt-5 text-base sm:text-lg text-slate-800 dark:text-slate-200 font-medium leading-relaxed">
+                {/* Subheading */}
+                <h4 className="mt-3 text-2xl sm:text-3xl font-black text-white tracking-tight drop-shadow-md">
+                  {activeStepData.title}
+                </h4>
+
+                {/* Free Paragraph Text */}
+                <p className="mt-3 text-base sm:text-lg text-slate-100 font-medium leading-relaxed drop-shadow-sm">
                   {activeStepData.description}
                 </p>
 
-                {/* Key Bullet Points */}
-                <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                {/* Free Bullet Points */}
+                <div className="mt-6 space-y-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 block mb-2">
                     What happens at this stage:
-                  </h4>
-                  <ul className="space-y-3">
-                    {activeStepData.details.map((detail, dIdx) => (
-                      <li
-                        key={dIdx}
-                        className="flex items-start gap-3 text-sm text-slate-700 dark:text-slate-300"
-                      >
-                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 shrink-0 mt-0.5">
-                          <Check className="h-3.5 w-3.5" />
-                        </div>
-                        <span className="leading-snug">{detail}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  </span>
+                  {activeStepData.details.map((detail, dIdx) => (
+                    <div
+                      key={dIdx}
+                      className="flex items-start gap-3.5 text-sm sm:text-base text-slate-200 drop-shadow-sm"
+                    >
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-400 border border-emerald-400/30 shrink-0 mt-0.5">
+                        <Check className="h-3.5 w-3.5" />
+                      </div>
+                      <span className="leading-snug">{detail}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Navigation Controls at Bottom */}
-              <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              {/* Step Navigation Controls */}
+              <div className="pt-6 flex items-center justify-between border-t border-white/10">
                 <div className="flex items-center gap-2">
                   {selectedStep > 0 && (
                     <button
                       type="button"
                       onClick={() => setSelectedStep(selectedStep - 1)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-emerald-300 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" />
                       <span>Previous</span>
@@ -256,9 +264,9 @@ export default function WorkflowSection() {
                     <button
                       type="button"
                       onClick={() => setSelectedStep(selectedStep + 1)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-white hover:text-emerald-300 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 backdrop-blur-md transition-all cursor-pointer"
                     >
-                      <span>Next Step</span>
+                      <span>Next Stage</span>
                       <ArrowRight className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -267,9 +275,9 @@ export default function WorkflowSection() {
                 <button
                   type="button"
                   onClick={() => setSelectedStep(null)}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
                 >
-                  Close
+                  Done
                 </button>
               </div>
             </div>
