@@ -33,9 +33,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+    <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body
-        className={`${jakartaSans.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-white text-slate-900 antialiased selection:bg-emerald-500/20 selection:text-emerald-700 dark:bg-[#0B0F19] dark:text-slate-100 dark:selection:text-emerald-300 transition-colors duration-200`}
+        className={`${jakartaSans.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-[var(--bg-main)] text-slate-900 antialiased selection:bg-blue-500/20 selection:text-blue-700 dark:bg-[#0B0F19] dark:text-slate-100 dark:selection:text-sky-300 transition-colors duration-200`}
       >
         {children}
       </body>
