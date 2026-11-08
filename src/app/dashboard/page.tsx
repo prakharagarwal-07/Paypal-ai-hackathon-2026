@@ -1,165 +1,74 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { DashboardProvider, useDashboard } from "@/lib/dashboard-store";
+import { Milestone, ProjectContract } from "@/lib/dashboard-data";
+import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
-import ClientView from "@/components/dashboard/ClientView";
-import FreelancerView from "@/components/dashboard/FreelancerView";
+import NotificationDrawer from "@/components/dashboard/NotificationDrawer";
+import ClientOverview from "@/components/dashboard/ClientOverview";
+import FreelancerOverview from "@/components/dashboard/FreelancerOverview";
+import ProjectWorkspace from "@/components/dashboard/ProjectWorkspace";
+import MilestonesView from "@/components/dashboard/MilestonesView";
+import AIAuditCenter from "@/components/dashboard/AIAuditCenter";
+import PaymentsView from "@/components/dashboard/PaymentsView";
+
+// Modals
 import AuditModal from "@/components/dashboard/AuditModal";
 import SubmissionModal from "@/components/dashboard/SubmissionModal";
+import RevisionRequestModal from "@/components/dashboard/RevisionRequestModal";
+import PayPalPaymentModal from "@/components/dashboard/PayPalPaymentModal";
 import NewProjectModal from "@/components/dashboard/NewProjectModal";
+import EditProjectModal from "@/components/dashboard/EditProjectModal";
+
 import WebThreads from "@/components/WebThreads";
-import { INITIAL_PROJECT, ProjectContract, Milestone } from "@/lib/dashboard-data";
-import { CheckCircle2, X } from "lucide-react";
+import { CheckCircle2, AlertCircle, X, Sparkles, ShieldCheck } from "lucide-react";
 
-function DashboardContent() {
-  const searchParams = useSearchParams();
-  const initialRole = searchParams.get("role") === "freelancer" ? "freelancer" : "client";
+function DashboardInner() {
+  const {
+    role,
+    activeTab,
+    activeProject,
+    toast,
+    hideToast,
+  } = useDashboard();
 
-  const [role, setRole] = useState<"client" | "freelancer">(initialRole);
-  const [project, setProject] = useState<ProjectContract>(INITIAL_PROJECT);
+  // Navigation & Drawer states
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  // Modals state
-  const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
-  const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
-  const [submissionMilestone, setSubmissionMilestone] = useState<Milestone | null>(null);
-  const [isSubmissionModalOpen, setIsSubmissionModalOpen] = useState(false);
+  // Modal target states
+  const [auditTarget, setAuditTarget] = useState<{
+    project: ProjectContract;
+    milestone: Milestone;
+  } | null>(null);
+
+  const [submissionTarget, setSubmissionTarget] = useState<{
+    project: ProjectContract;
+    milestone: Milestone;
+  } | null>(null);
+
+  const [revisionTarget, setRevisionTarget] = useState<{
+    project: ProjectContract;
+    milestone: Milestone;
+  } | null>(null);
+
+  const [payPalTarget, setPayPalTarget] = useState<{
+    project: ProjectContract;
+    milestone: Milestone;
+  } | null>(null);
+
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
-
-  // Success Toast notification
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    const urlRole = searchParams.get("role");
-    if (urlRole === "client" || urlRole === "freelancer") {
-      setRole(urlRole);
-    }
-  }, [searchParams]);
-
-  // Handle client releasing milestone payout via PayPal
-  const handleReleasePayout = (milestoneId: string) => {
-    const milestone = project.milestones.find((m) => m.id === milestoneId);
-    if (!milestone) return;
-
-    const txId = `PAYID-SBX-${Math.floor(100000 + Math.random() * 900000)}-X`;
-
-    const updatedMilestones = project.milestones.map((m) => {
-      if (m.id === milestoneId) {
-        return {
-          ...m,
-          status: "paid" as const,
-          paidAt: "Today at " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          paypalTransactionId: txId,
-        };
-      }
-      return m;
-    });
-
-    setProject({
-      ...project,
-      escrowReleased: project.escrowReleased + milestone.amount,
-      milestones: updatedMilestones,
-    });
-
-    setIsAuditModalOpen(false);
-    setSelectedMilestone(null);
-
-    setToastMessage(
-      `$${milestone.amount.toLocaleString()}.00 USD successfully transferred to ${project.freelancerName} via PayPal Sandbox! Transaction ID: ${txId}`
-    );
-
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 6000);
-  };
-
-  // Handle freelancer submitting deliverables
-  const handleSubmitDeliverables = (
-    milestoneId: string,
-    deliverables: {
-      demoUrl: string;
-      githubRepo: string;
-      githubPr: string;
-      loomVideo: string;
-      notes: string;
-    }
-  ) => {
-    const updatedMilestones = project.milestones.map((m) => {
-      if (m.id === milestoneId) {
-        return {
-          ...m,
-          status: "in_review" as const,
-          deliverables: {
-            ...deliverables,
-            submittedAt: "Today at " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          },
-          aiAudit: {
-            overallScore: 97,
-            summary: "Pre-flight audit passed! Staging URL responded 200 OK and all webhook handler criteria verified.",
-            status: "approved" as const,
-            verifiedAt: "Today at " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            criteria: [
-              {
-                id: "crit_auto_1",
-                title: "Live Webhook Endpoint Verification",
-                description: "Endpoint accepts signed PayPal webhook POST requests.",
-                status: "passed" as const,
-                aiNotes: "Verified: returned 200 on simulated PAYMENT.CAPTURE.COMPLETED event.",
-              },
-              {
-                id: "crit_auto_2",
-                title: "HMAC Signature Verification",
-                description: "Prevents spoofed notifications by checking PayPal cert signature.",
-                status: "passed" as const,
-                aiNotes: "Verified: valid cryptographic verification logic detected.",
-              },
-            ],
-            automatedChecks: [
-              { name: "Live Staging Response", passed: true, detail: "HTTPS 200 OK (164ms)" },
-              { name: "GitHub Commits & CI", passed: true, detail: "Passing automated tests" },
-            ],
-          },
-        };
-      }
-      return m;
-    });
-
-    setProject({
-      ...project,
-      milestones: updatedMilestones,
-    });
-
-    setIsSubmissionModalOpen(false);
-    setSubmissionMilestone(null);
-
-    setToastMessage(
-      `Deliverables submitted successfully! Gemini AI verified 97% match. Your client (${project.clientName}) has been notified to release funds.`
-    );
-
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 6000);
-  };
-
-  // Handle new project creation
-  const handleCreateProject = (newProject: ProjectContract) => {
-    setProject(newProject);
-    setIsNewProjectModalOpen(false);
-    setToastMessage(
-      `New contract "${newProject.title}" created and $${newProject.totalBudget.toLocaleString()} funded into PayPal Escrow!`
-    );
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 6000);
-  };
+  const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
 
   return (
-    <div className="relative min-h-screen bg-[#F8FAFD] dark:bg-[#070B14] text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors duration-200">
+    <div className="relative min-h-screen bg-[#F8FAFD] dark:bg-[#070B14] text-slate-900 dark:text-slate-100 flex transition-colors duration-200">
       {/* 
         SUBTLE AMBIENT WEBTHREADS BACKGROUND:
-        Low opacity (35%) so dashboard data is crisp and 100% readable
+        Low opacity (25%-30%) so all dashboard data is crisp and 100% readable
       */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-35 dark:opacity-25 transition-opacity">
+      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-30 dark:opacity-20 transition-opacity">
         <WebThreads
           colors={["#0070BA", "#00457C", "#009CDE", "#38BDF8", "#00E599"]}
           coreColor="#FFFFFF"
@@ -178,107 +87,211 @@ function DashboardContent() {
         />
       </div>
 
-      {/* AMBIENT LIGHTING ORBS */}
-      <div className="fixed top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-tr from-blue-600/15 via-sky-500/10 to-teal-400/5 rounded-full blur-[160px] pointer-events-none -z-10" />
+      {/* AMBIENT LIGHTING ORB */}
+      <div className="fixed top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-tr from-blue-600/10 via-sky-500/10 to-teal-400/5 rounded-full blur-[160px] pointer-events-none -z-10" />
 
-      {/* DASHBOARD HEADER */}
-      <DashboardHeader
-        role={role}
-        onRoleChange={setRole}
-        onNewProjectClick={() => setIsNewProjectModalOpen(true)}
-        escrowFunded={project.escrowFunded}
-        escrowReleased={project.escrowReleased}
+      {/* SIDEBAR NAVIGATION (Desktop static, mobile slide-over) */}
+      <Sidebar
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        onOpenNewProject={() => setIsNewProjectModalOpen(true)}
       />
 
-      {/* TOAST NOTIFICATION BANNER */}
-      {toastMessage && (
-        <div className="fixed top-20 right-4 sm:right-8 z-50 max-w-md rounded-2xl border border-emerald-300 bg-white/95 p-4 text-xs shadow-2xl backdrop-blur-xl dark:border-emerald-500/40 dark:bg-[#0D182E]/95 text-slate-900 dark:text-white animate-in slide-in-from-top-4 duration-300 flex items-start gap-3">
-          <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-emerald-500 text-white shrink-0">
-            <CheckCircle2 className="h-4 w-4" />
-          </div>
-          <div className="flex-1">
-            <span className="font-bold block text-emerald-700 dark:text-emerald-400">
-              PayPal Escrow Update
-            </span>
-            <p className="mt-0.5 text-slate-600 dark:text-slate-300 leading-snug">
-              {toastMessage}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setToastMessage(null)}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
+      {/* MAIN CONTENT CONTAINER (Padded left for desktop sidebar) */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 relative z-10">
+        {/* HEADER */}
+        <DashboardHeader
+          onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
+          onOpenNotifications={() => setNotificationsOpen(true)}
+          onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+        />
 
-      {/* MAIN CONTENT AREA */}
-      <main className="relative z-10 flex-1 px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
-        {role === "client" ? (
-          <ClientView
-            project={project}
-            onInspectMilestone={(m) => {
-              setSelectedMilestone(m);
-              setIsAuditModalOpen(true);
-            }}
-          />
-        ) : (
-          <FreelancerView
-            project={project}
-            onOpenSubmission={(m) => {
-              setSubmissionMilestone(m);
-              setIsSubmissionModalOpen(true);
-            }}
-            onInspectMilestone={(m) => {
-              setSelectedMilestone(m);
-              setIsAuditModalOpen(true);
-            }}
-          />
+        {/* TOAST FEEDBACK NOTIFICATION */}
+        {toast && (
+          <div className="fixed top-20 right-4 sm:right-8 z-50 max-w-md rounded-2xl border border-blue-300 bg-white/95 p-4 text-xs shadow-2xl backdrop-blur-xl dark:border-blue-500/40 dark:bg-[#0D182E]/95 text-slate-900 dark:text-white animate-in slide-in-from-top-4 duration-300 flex items-start gap-3">
+            <div
+              className={`flex h-7 w-7 items-center justify-center rounded-xl text-white shrink-0 ${
+                toast.type === "success"
+                  ? "bg-emerald-500"
+                  : toast.type === "warning"
+                  ? "bg-amber-500"
+                  : "bg-[#0070BA]"
+              }`}
+            >
+              {toast.type === "success" ? (
+                <CheckCircle2 className="h-4 w-4" />
+              ) : toast.type === "warning" ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+            </div>
+            <div className="flex-1">
+              <span className="font-bold block text-slate-900 dark:text-white">
+                MilestoneOS Update
+              </span>
+              <p className="mt-0.5 text-slate-600 dark:text-slate-300 leading-snug">
+                {toast.message}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={hideToast}
+              className="text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         )}
-      </main>
+
+        {/* MAIN BODY AREA */}
+        <main className="flex-1 px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
+          {activeTab === "overview" && (
+            <>
+              {role === "client" ? (
+                <ClientOverview
+                  onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+                  onOpenRevision={(p, m) => setRevisionTarget({ project: p, milestone: m })}
+                  onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+                  onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+                />
+              ) : (
+                <FreelancerOverview
+                  onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
+                  onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+                />
+              )}
+            </>
+          )}
+
+          {activeTab === "projects" && (
+            <ProjectWorkspace
+              onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+              onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
+              onOpenRevision={(p, m) => setRevisionTarget({ project: p, milestone: m })}
+              onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+              onOpenEditProject={() => setIsEditProjectModalOpen(true)}
+            />
+          )}
+
+          {activeTab === "milestones" && (
+            <MilestonesView
+              onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+              onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
+              onOpenRevision={(p, m) => setRevisionTarget({ project: p, milestone: m })}
+              onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+            />
+          )}
+
+          {activeTab === "ai-audits" && (
+            <AIAuditCenter
+              onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+            />
+          )}
+
+          {activeTab === "payments" && (
+            <PaymentsView
+              onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+            />
+          )}
+        </main>
+
+        {/* FOOTER */}
+        <footer className="py-6 text-center text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200/80 dark:border-white/10 bg-white/40 dark:bg-transparent backdrop-blur-md">
+          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>
+              MilestoneOS • PayPal AI Hackathon 2026 • Verified Milestones & Secure PayPal Payouts
+            </span>
+            <span className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              PayPal Orders v2 Escrow Active
+            </span>
+          </div>
+        </footer>
+      </div>
+
+      {/* NOTIFICATION DRAWER */}
+      <NotificationDrawer
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
 
       {/* AUDIT / INSPECTION MODAL */}
-      {selectedMilestone && (
+      {auditTarget && (
         <AuditModal
-          project={project}
-          milestone={selectedMilestone}
-          isOpen={isAuditModalOpen}
-          onClose={() => {
-            setIsAuditModalOpen(false);
-            setSelectedMilestone(null);
+          project={auditTarget.project}
+          milestone={auditTarget.milestone}
+          isOpen={true}
+          onClose={() => setAuditTarget(null)}
+          onOpenRevisionModal={() => {
+            const t = auditTarget;
+            setAuditTarget(null);
+            setRevisionTarget(t);
           }}
-          onReleasePayout={handleReleasePayout}
-          isClientView={role === "client"}
+          onOpenPayPalModal={() => {
+            const t = auditTarget;
+            setAuditTarget(null);
+            setPayPalTarget(t);
+          }}
         />
       )}
 
-      {/* FREELANCER SUBMISSION MODAL */}
-      {submissionMilestone && (
+      {/* SUBMISSION MODAL */}
+      {submissionTarget && (
         <SubmissionModal
-          milestone={submissionMilestone}
-          isOpen={isSubmissionModalOpen}
-          onClose={() => {
-            setIsSubmissionModalOpen(false);
-            setSubmissionMilestone(null);
-          }}
-          onSubmitDeliverable={handleSubmitDeliverables}
+          project={submissionTarget.project}
+          milestone={submissionTarget.milestone}
+          isOpen={true}
+          onClose={() => setSubmissionTarget(null)}
         />
       )}
 
-      {/* NEW PROJECT CONTRACT MODAL */}
+      {/* REVISION REQUEST MODAL */}
+      {revisionTarget && (
+        <RevisionRequestModal
+          project={revisionTarget.project}
+          milestone={revisionTarget.milestone}
+          isOpen={true}
+          onClose={() => setRevisionTarget(null)}
+        />
+      )}
+
+      {/* PAYPAL SANDBOX PAYMENT MODAL */}
+      {payPalTarget && (
+        <PayPalPaymentModal
+          project={payPalTarget.project}
+          milestone={payPalTarget.milestone}
+          isOpen={true}
+          onClose={() => setPayPalTarget(null)}
+        />
+      )}
+
+      {/* CREATE NEW PROJECT MODAL */}
       <NewProjectModal
         isOpen={isNewProjectModalOpen}
         onClose={() => setIsNewProjectModalOpen(false)}
-        onCreateProject={handleCreateProject}
       />
 
-      {/* FOOTER */}
-      <footer className="relative z-10 py-5 text-center text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200/80 dark:border-white/10 bg-white/40 dark:bg-transparent backdrop-blur-md">
-        MilestoneOS • PayPal AI Hackathon 2026 • Verified Milestones & Secure PayPal Payouts
-      </footer>
+      {/* EDIT PROJECT MODAL */}
+      {activeProject && (
+        <EditProjectModal
+          project={activeProject}
+          isOpen={isEditProjectModalOpen}
+          onClose={() => setIsEditProjectModalOpen(false)}
+        />
+      )}
     </div>
+  );
+}
+
+function DashboardContent() {
+  const searchParams = useSearchParams();
+  const initialRole = searchParams.get("role") === "freelancer" ? "freelancer" : "client";
+
+  return (
+    <DashboardProvider initialRole={initialRole}>
+      <DashboardInner />
+    </DashboardProvider>
   );
 }
 
