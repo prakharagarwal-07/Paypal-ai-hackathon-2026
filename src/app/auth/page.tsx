@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import WebThreadsController from "@/components/WebThreadsController";
 import ThemeToggle from "@/components/ThemeToggle";
 import {
@@ -48,6 +48,7 @@ function PayPalIcon({ className = "h-4 w-4" }: { className?: string }) {
 }
 
 function AuthForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
@@ -98,6 +99,9 @@ function AuthForm() {
       setSuccessMsg(
         `Authenticated with PayPal Sandbox (${role === "client" ? "sarah.chen@client.demo" : "rohan.verma@dev.demo"}). Redirecting to workspace...`
       );
+      setTimeout(() => {
+        router.push(`/dashboard?role=${role}`);
+      }, 400);
     }, 700);
   };
 
@@ -136,6 +140,9 @@ function AuthForm() {
           ? `Welcome back, ${name || (role === "client" ? "Sarah" : "Rohan")}! Redirecting to your workspace...`
           : `Account created successfully! Welcome to MilestoneOS.`
       );
+      setTimeout(() => {
+        router.push(`/dashboard?role=${role}`);
+      }, 400);
     }, 900);
   };
 

@@ -6,10 +6,11 @@ import { Menu, X, ArrowUpRight } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV_LINKS = [
-  { label: "How It Works", href: "#how-it-works", id: "how-it-works" },
-  { label: "See It In Action", href: "#demo", id: "demo" },
-  { label: "Payment Calculator", href: "#calculator", id: "calculator" },
-  { label: "Who It's For", href: "#benefits", id: "benefits" },
+  { label: "How It Works", href: "/#how-it-works", id: "how-it-works" },
+  { label: "See It In Action", href: "/#demo", id: "demo" },
+  { label: "Payment Calculator", href: "/#calculator", id: "calculator" },
+  { label: "Who It's For", href: "/#benefits", id: "benefits" },
+  { label: "Live Dashboard", href: "/dashboard", id: "dashboard" },
 ];
 
 export default function Navbar() {

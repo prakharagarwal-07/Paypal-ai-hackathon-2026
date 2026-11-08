@@ -19,17 +19,20 @@ export default function Footer() {
           </div>
 
           <div className="flex flex-wrap items-center gap-6 text-slate-600 dark:text-slate-400 font-medium">
-            <Link href="#how-it-works" className="hover:text-[#0070BA] dark:hover:text-white">
+            <Link href="/#how-it-works" className="hover:text-[#0070BA] dark:hover:text-white">
               How It Works
             </Link>
-            <Link href="#demo" className="hover:text-[#0070BA] dark:hover:text-white">
+            <Link href="/#demo" className="hover:text-[#0070BA] dark:hover:text-white">
               See It In Action
             </Link>
-            <Link href="#calculator" className="hover:text-[#0070BA] dark:hover:text-white">
+            <Link href="/#calculator" className="hover:text-[#0070BA] dark:hover:text-white">
               Payment Calculator
             </Link>
-            <Link href="#benefits" className="hover:text-[#0070BA] dark:hover:text-white">
+            <Link href="/#benefits" className="hover:text-[#0070BA] dark:hover:text-white">
               Who It's For
+            </Link>
+            <Link href="/dashboard" className="text-[#0070BA] dark:text-sky-400 font-bold hover:underline">
+              Live Dashboard
             </Link>
             <Link href="/auth?mode=login" className="hover:text-[#0070BA] dark:hover:text-white">
               Sign In
