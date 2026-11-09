@@ -59,12 +59,21 @@ export default function ProjectsView({ onOpenNewProject, onSelectProject }: Proj
           return (
             <div
               key={project.id}
-              className="p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-4 flex flex-col justify-between hover:border-slate-300 dark:hover:border-white/20 transition-all"
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelectProject(project.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelectProject(project.id);
+                }
+              }}
+              className="group p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-4 flex flex-col justify-between cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-[#0070BA]/50 dark:hover:border-sky-400/50 hover:shadow-xl hover:shadow-slate-900/5 dark:hover:shadow-black/20 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]/40 text-left"
             >
               {/* Top: Name & Total Amount */}
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
                     {project.title}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -104,14 +113,12 @@ export default function ProjectsView({ onOpenNewProject, onSelectProject }: Proj
                   <span>Next deadline: {project.targetDeadline}</span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => onSelectProject(project.id)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/10 hover:bg-[#0070BA] hover:text-white dark:hover:bg-[#0070BA] dark:hover:text-white text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-white/10 group-hover:bg-[#0070BA] group-hover:text-white dark:group-hover:bg-[#0070BA] dark:group-hover:text-white text-xs font-bold text-slate-700 dark:text-slate-200 transition-all shadow-2xs"
                 >
                   <span>View Project</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </button>
+                  <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </div>
               </div>
             </div>
           );

@@ -361,11 +361,32 @@ export default function DashboardOverview({
             return (
               <div
                 key={project.id}
-                className="p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-3 flex flex-col justify-between"
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (onSelectProject) {
+                    onSelectProject(project.id);
+                  } else {
+                    setActiveProjectId(project.id);
+                    setActiveTab("projects");
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    if (onSelectProject) {
+                      onSelectProject(project.id);
+                    } else {
+                      setActiveProjectId(project.id);
+                      setActiveTab("projects");
+                    }
+                  }
+                }}
+                className="group p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-3 flex flex-col justify-between cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-[#0070BA]/50 dark:hover:border-sky-400/50 hover:shadow-xl hover:shadow-slate-900/5 dark:hover:shadow-black/20 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]/40 text-left"
               >
                 <div>
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
                       {project.title}
                     </h3>
                     <span className="text-xs font-mono font-bold text-slate-900 dark:text-white shrink-0">
@@ -399,21 +420,12 @@ export default function DashboardOverview({
                     Status: <strong className="text-slate-800 dark:text-slate-200 capitalize">{project.status}</strong>
                   </span>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (onSelectProject) {
-                        onSelectProject(project.id);
-                      } else {
-                        setActiveProjectId(project.id);
-                        setActiveTab("projects");
-                      }
-                    }}
-                    className="text-xs font-bold text-[#0070BA] dark:text-sky-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  <div
+                    className="text-xs font-bold text-[#0070BA] dark:text-sky-400 group-hover:underline flex items-center gap-1"
                   >
                     <span>View Project</span>
-                    <ArrowRight className="h-3 w-3" />
-                  </button>
+                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                  </div>
                 </div>
               </div>
             );

@@ -108,11 +108,20 @@ export default function MilestonesView({
             return (
               <div
                 key={milestone.id}
-                className="p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-300 dark:hover:border-white/20 transition-all"
+                role="button"
+                tabIndex={0}
+                onClick={() => onSelectProject(project.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectProject(project.id);
+                  }
+                }}
+                className="group p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-[#0070BA]/50 dark:hover:border-sky-400/50 hover:shadow-lg hover:shadow-slate-900/5 dark:hover:shadow-black/20 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]/40 text-left"
               >
                 <div className="space-y-1 min-w-0 pr-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
                       {milestone.title}
                     </h3>
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusInfo.badgeClass}`}>
@@ -148,7 +157,10 @@ export default function MilestonesView({
                           milestone.status === "awaiting_client_approval") && (
                           <button
                             type="button"
-                            onClick={() => onOpenAudit(project, milestone)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenAudit(project, milestone);
+                            }}
                             className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors"
                           >
                             Review Work
@@ -159,7 +171,10 @@ export default function MilestonesView({
                           milestone.status === "payment_pending") && (
                           <button
                             type="button"
-                            onClick={() => onOpenPayPal(project, milestone)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenPayPal(project, milestone);
+                            }}
                             className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer flex items-center gap-1.5 transition-colors"
                           >
                             <PayPalIcon className="h-3.5 w-3.5" />
@@ -174,7 +189,10 @@ export default function MilestonesView({
                           milestone.status === "revision_requested") && (
                           <button
                             type="button"
-                            onClick={() => onOpenSubmission(project, milestone)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenSubmission(project, milestone);
+                            }}
                             className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors"
                           >
                             {milestone.status === "changes_requested" || milestone.status === "revision_requested"
@@ -186,17 +204,12 @@ export default function MilestonesView({
                     )}
 
                     {/* View in Project Workspace */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveProjectId(project.id);
-                        setActiveTab("projects");
-                      }}
-                      className="p-2 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                    <div
+                      className="p-2 rounded-lg border border-slate-200 dark:border-white/10 group-hover:bg-[#0070BA] group-hover:text-white dark:group-hover:bg-[#0070BA] dark:group-hover:text-white text-slate-500 transition-all shadow-2xs"
                       title="Open project workspace"
                     >
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </div>
                   </div>
                 </div>
               </div>
