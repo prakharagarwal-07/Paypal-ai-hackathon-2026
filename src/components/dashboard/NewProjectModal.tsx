@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { X, Plus, Trash2, Send, FileText, CheckCircle2 } from "lucide-react";
+import { X, Plus, Trash2, Send, FileText, CheckCircle2, AlertCircle } from "lucide-react";
 import {
   FREELANCER_OPTIONS,
   CLIENT_OPTIONS,
@@ -26,7 +26,7 @@ interface DraftMilestone {
 }
 
 export default function NewProjectModal({ isOpen, onClose, initialProject }: NewProjectModalProps) {
-  const { role, userProfiles, createProject, resubmitProposal } = useDashboard();
+  const { role, userProfiles, createProject, resubmitProposal, showAlert } = useDashboard();
 
   const isClient = role === "client";
 
@@ -36,6 +36,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     initialProject?.category || (isClient ? "Web Development" : "Custom Web Application")
   );
   const [targetDeadline, setTargetDeadline] = useState(initialProject?.targetDeadline || "Dec 25, 2026");
+  const [formError, setFormError] = useState<string | null>(null);
 
   // Selection indexes & custom contact
   const [selectedFreelancerIndex, setSelectedFreelancerIndex] = useState(0);
@@ -143,7 +144,12 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
 
   const handleSaveOrSend = (asDraft: boolean) => {
     if (!title.trim() || !description.trim()) {
-      alert("Please provide a project name and description.");
+      setFormError("Please provide both a project name and description before proceeding.");
+      showAlert({
+        title: "Missing Project Scope",
+        message: "Please enter a project title and description to define what deliverables will be built.",
+        type: "warning",
+      });
       return;
     }
 
@@ -276,6 +282,21 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
 
         {/* Scrollable Form */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+          {formError && (
+            <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs flex items-center justify-between gap-2 shadow-2xs">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-500 shrink-0" />
+                <span className="font-medium">{formError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFormError(null)}
+                className="text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           {/* Project Details */}
           <div className="space-y-3">
             <h3 className="font-bold text-slate-900 dark:text-white text-xs">

@@ -57,6 +57,19 @@ export const DEFAULT_USER_PROFILES: UserProfiles = {
   },
 };
 
+export interface AlertState {
+  isOpen: boolean;
+  title?: string;
+  message: string;
+  type?: "info" | "warning" | "error" | "success";
+  confirmText?: string;
+  cancelText?: string;
+  isConfirm?: boolean;
+  isDestructive?: boolean;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+}
+
 interface DashboardContextType {
   role: "client" | "freelancer";
   setRole: (role: "client" | "freelancer") => void;
@@ -80,6 +93,24 @@ interface DashboardContextType {
   toast: { message: string; type: "success" | "info" | "warning" } | null;
   showToast: (message: string, type?: "success" | "info" | "warning") => void;
   hideToast: () => void;
+  alertState: AlertState | null;
+  showAlert: (options: {
+    title?: string;
+    message: string;
+    type?: "info" | "warning" | "error" | "success";
+    confirmText?: string;
+    onConfirm?: () => void;
+  }) => void;
+  showConfirm: (options: {
+    title?: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+    onCancel?: () => void;
+  }) => void;
+  closeAlert: () => void;
 
   // Actions
   createProject: (
@@ -147,7 +178,60 @@ export function DashboardProvider({
   const [statusFilter, setStatusFilterState] = useState<string>("all");
   const [userProfiles, setUserProfiles] = useState<UserProfiles>(DEFAULT_USER_PROFILES);
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" | "warning" } | null>(null);
+  const [alertState, setAlertState] = useState<AlertState | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  const showAlert = (options: {
+    title?: string;
+    message: string;
+    type?: "info" | "warning" | "error" | "success";
+    confirmText?: string;
+    onConfirm?: () => void;
+  }) => {
+    setAlertState({
+      isOpen: true,
+      title: options.title,
+      message: options.message,
+      type: options.type || "warning",
+      confirmText: options.confirmText || "OK",
+      isConfirm: false,
+      onConfirm: () => {
+        setAlertState(null);
+        if (options.onConfirm) options.onConfirm();
+      },
+    });
+  };
+
+  const showConfirm = (options: {
+    title?: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isDestructive?: boolean;
+    onConfirm: () => void;
+    onCancel?: () => void;
+  }) => {
+    setAlertState({
+      isOpen: true,
+      title: options.title || "Confirm Action",
+      message: options.message,
+      type: options.isDestructive ? "error" : "warning",
+      confirmText: options.confirmText || "Confirm",
+      cancelText: options.cancelText || "Cancel",
+      isConfirm: true,
+      isDestructive: options.isDestructive,
+      onConfirm: () => {
+        setAlertState(null);
+        options.onConfirm();
+      },
+      onCancel: () => {
+        setAlertState(null);
+        if (options.onCancel) options.onCancel();
+      },
+    });
+  };
+
+  const closeAlert = () => setAlertState(null);
 
   const setActiveTab = (tab: DashboardTab) => {
     // Map legacy alias IDs to new standard IDs
@@ -936,6 +1020,10 @@ export function DashboardProvider({
         toast,
         showToast,
         hideToast,
+        alertState,
+        showAlert,
+        showConfirm,
+        closeAlert,
         createProject,
         updateProject,
         archiveProject,

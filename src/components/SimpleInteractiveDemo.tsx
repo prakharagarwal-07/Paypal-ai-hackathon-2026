@@ -14,6 +14,7 @@ export default function SimpleInteractiveDemo() {
   const [hasMissingWork, setHasMissingWork] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
   const handlePay = () => {
     setIsProcessing(true);
@@ -26,6 +27,7 @@ export default function SimpleInteractiveDemo() {
   const handleReset = () => {
     setIsPaid(false);
     setIsProcessing(false);
+    setRequestSent(false);
   };
 
   return (
@@ -194,15 +196,34 @@ export default function SimpleInteractiveDemo() {
               </div>
 
               {hasMissingWork ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    alert("A polite request was sent to the freelancer asking them to finish the payment button before you release funds.")
-                  }
-                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-md shadow-amber-500/20 transition-all cursor-pointer"
-                >
-                  Ask Freelancer to Finish Payment Button
-                </button>
+                <div className="flex flex-col sm:items-end gap-1.5 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRequestSent(true);
+                      setTimeout(() => setRequestSent(false), 3500);
+                    }}
+                    className={`w-full sm:w-auto px-5 py-3 rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                      requestSent
+                        ? "bg-emerald-600 text-white shadow-emerald-600/20"
+                        : "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20"
+                    }`}
+                  >
+                    {requestSent ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        <span>Request Sent to Freelancer</span>
+                      </>
+                    ) : (
+                      <span>Ask Freelancer to Finish Payment Button</span>
+                    )}
+                  </button>
+                  {requestSent && (
+                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                      Notification dispatched to freelancer's dashboard
+                    </span>
+                  )}
+                </div>
               ) : (
                 <button
                   type="button"

@@ -21,6 +21,7 @@ import RevisionRequestModal from "@/components/dashboard/RevisionRequestModal";
 import PayPalPaymentModal from "@/components/dashboard/PayPalPaymentModal";
 import NewProjectModal from "@/components/dashboard/NewProjectModal";
 import EditProjectModal from "@/components/dashboard/EditProjectModal";
+import UIAlertDialog from "@/components/dashboard/UIAlertDialog";
 
 import WebThreads from "@/components/WebThreads";
 import { CheckCircle2, AlertCircle, X, Sparkles } from "lucide-react";
@@ -34,6 +35,7 @@ function DashboardInner() {
     setActiveProjectId,
     toast,
     hideToast,
+    alertState,
   } = useDashboard();
 
   // Navigation & Drawer states
@@ -328,6 +330,22 @@ function DashboardInner() {
           project={activeProject}
           isOpen={isEditProjectModalOpen}
           onClose={() => setIsEditProjectModalOpen(false)}
+        />
+      )}
+
+      {/* GLOBAL UI ALERT & CONFIRM DIALOG */}
+      {alertState && (
+        <UIAlertDialog
+          isOpen={alertState.isOpen}
+          title={alertState.title}
+          message={alertState.message}
+          type={alertState.type}
+          confirmText={alertState.confirmText}
+          cancelText={alertState.cancelText}
+          isConfirm={alertState.isConfirm}
+          isDestructive={alertState.isDestructive}
+          onConfirm={alertState.onConfirm || (() => {})}
+          onCancel={alertState.onCancel}
         />
       )}
     </div>

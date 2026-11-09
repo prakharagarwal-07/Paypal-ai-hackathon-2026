@@ -49,6 +49,7 @@ export default function ProjectWorkspace({
     acceptProposal,
     requestProposalChanges,
     rejectProposal,
+    showConfirm,
   } = useDashboard();
   const [expandedMilestones, setExpandedMilestones] = useState<Record<string, boolean>>({});
   const [allExpanded, setAllExpanded] = useState(false);
@@ -173,9 +174,14 @@ export default function ProjectWorkspace({
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm("Are you sure you want to decline this project proposal?")) {
-                      rejectProposal(activeProject.id);
-                    }
+                    showConfirm({
+                      title: "Decline Project Proposal?",
+                      message: `Are you sure you want to decline the proposal for "${activeProject.title}"? This will notify the counterparty.`,
+                      confirmText: "Yes, Decline",
+                      cancelText: "Keep Proposal",
+                      isDestructive: true,
+                      onConfirm: () => rejectProposal(activeProject.id),
+                    });
                   }}
                   className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors"
                 >

@@ -310,7 +310,7 @@ function AuthForm() {
               {mode === "login" && (
                 <button
                   type="button"
-                  onClick={() => alert("Password reset link will be sent to your registered email.")}
+                  onClick={() => setSuccessMsg("Password reset instructions have been sent to your email address.")}
                   className="text-[11px] text-[#0070BA] dark:text-sky-400 font-medium hover:underline cursor-pointer"
                 >
                   Forgot password?

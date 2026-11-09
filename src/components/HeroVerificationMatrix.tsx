@@ -166,6 +166,7 @@ export default function HeroVerificationMatrix() {
   const [scenarioKey, setScenarioKey] = useState<ScenarioKey>("pass");
   const [isSimulatingPayment, setIsSimulatingPayment] = useState(false);
   const [paidSuccess, setPaidSuccess] = useState(false);
+  const [statusFeedback, setStatusFeedback] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"ai-report" | "submission-files">("ai-report");
 
   const scenario = SCENARIOS[scenarioKey];
@@ -402,21 +403,26 @@ export default function HeroVerificationMatrix() {
                 <div className="text-xs text-slate-400">
                   <span className="font-semibold text-slate-200">Recommendation: </span>
                   {scenario.recommendation}
+                  {statusFeedback && (
+                    <span className="block mt-1 text-sky-400 font-semibold animate-in fade-in">
+                      ✓ {statusFeedback}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   {!scenario.canPay ? (
                     <button
-                      onClick={() => alert("Revision Request Sent to Freelancer with Gemini feedback notes!")}
-                      className="w-full sm:w-auto px-4 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition-colors"
+                      onClick={() => setStatusFeedback("Revision request with Gemini feedback checklist transmitted to freelancer.")}
+                      className="w-full sm:w-auto px-4 py-2 rounded-lg border border-amber-500/30 bg-amber-500/10 text-xs font-bold text-amber-300 hover:bg-amber-500/20 transition-colors cursor-pointer"
                     >
                       Request Revisions (AI Assisted)
                     </button>
                   ) : (
                     <>
                       <button
-                        onClick={() => alert("Revision feedback modal triggered.")}
-                        className="px-3 py-2 rounded-lg border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors"
+                        onClick={() => setStatusFeedback("Changes requested: Revision notice dispatched.")}
+                        className="px-3 py-2 rounded-lg border border-slate-700 text-xs font-medium text-slate-300 hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         Request Changes
                       </button>
