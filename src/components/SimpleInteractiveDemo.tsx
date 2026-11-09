@@ -177,9 +177,9 @@ export default function SimpleInteractiveDemo() {
               </p>
               <button
                 onClick={handleReset}
-                className="mt-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline"
+                className="mt-3 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
               >
-                Reset Example
+                Try Another Action
               </button>
             </div>
           ) : (

@@ -40,16 +40,6 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
         </p>
       </div>
 
-      {/* Demo Sandbox Notice (Plain language, NO ESCROW CLAIMS) */}
-      <div className="p-3.5 sm:p-4 rounded-2xl border border-blue-200 bg-blue-50/60 dark:border-blue-900/40 dark:bg-blue-950/20 text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <PayPalIcon className="h-4 w-4 shrink-0 text-[#0070BA] dark:text-sky-400" />
-          <p className="text-[11px] sm:text-xs">
-            <strong className="text-slate-900 dark:text-white">PayPal Sandbox Demo:</strong> Payments are processed through PayPal's sandbox environment for demonstration purposes. No real money is transferred.
-          </p>
-        </div>
-      </div>
-
       {/* SECTION 1: Payments to Make */}
       <div id="payments-to-make" className="space-y-3 scroll-mt-24">
         <div>

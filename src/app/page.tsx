@@ -134,7 +134,7 @@ export default function HomePage() {
                   href="/auth?mode=login"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 hover:border-[#0070BA]/60 px-6 py-3.5 text-sm font-semibold text-slate-800 shadow-sm hover:text-[#0070BA] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:hover:border-sky-400/60 dark:hover:text-sky-300 transition-all"
                 >
-                  <span>Explore Demo Account</span>
+                  <span>Sign In to Workspace</span>
                 </Link>
               </div>
             </div>

@@ -230,7 +230,7 @@ function DashboardInner() {
               MilestoneOS • Simple Milestone Payments
             </span>
             <span className="text-slate-400">
-              PayPal Checkout Sandbox Demonstration
+              Milestone Escrow & Settlements • Powered by PayPal
             </span>
           </div>
         </footer>

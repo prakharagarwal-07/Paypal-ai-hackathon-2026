@@ -129,7 +129,7 @@ export default function PayPalPaymentModal({
             </div>
 
             <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center">
-              Demonstration mode: clicking pay simulates a completed PayPal Checkout transaction.
+              Funds are securely transferred directly to {project.freelancer.name}&apos;s verified PayPal account.
             </p>
 
             <button

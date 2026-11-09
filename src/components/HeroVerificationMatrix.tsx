@@ -193,20 +193,17 @@ export default function HeroVerificationMatrix() {
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
               <Sparkles className="h-3 w-3" />
-              Live Interactive Prototype
+              Acceptance Verification Engine
             </span>
             <span className="text-xs text-slate-400 font-mono">
-              Milestone #2 of 4 • ₹15,000
+              Milestone #2 of 4 • $1,400 USD
             </span>
           </div>
-          <h3 className="mt-1 text-base sm:text-lg font-bold text-white tracking-tight">
-            {scenario.title}
-          </h3>
         </div>
 
         {/* Scenario Switcher Controls */}
         <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs font-medium">
-          <span className="text-slate-400 px-2 hidden lg:inline">Simulate AI Submission:</span>
+          <span className="text-slate-400 px-2 hidden lg:inline">Deliverable Scenarios:</span>
           <button
             onClick={() => handleResetScenario("pass")}
             className={`px-2.5 py-1 rounded transition-colors ${
@@ -394,9 +391,9 @@ export default function HeroVerificationMatrix() {
                   </span>
                   <button
                     onClick={() => setPaidSuccess(false)}
-                    className="text-xs text-slate-400 hover:text-white underline ml-2"
+                    className="text-xs text-slate-400 hover:text-white underline ml-2 cursor-pointer"
                   >
-                    Reset Demo
+                    Test Again
                   </button>
                 </div>
               </div>

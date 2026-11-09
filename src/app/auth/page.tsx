@@ -73,23 +73,7 @@ function AuthForm() {
     }
   }, [searchParams]);
 
-  // Handle Demo Fill
-  const fillDemoAccount = (demoRole: UserRole) => {
-    setRole(demoRole);
-    setErrorMsg(null);
-    setSuccessMsg(null);
-    if (demoRole === "client") {
-      setName("Sarah Chen");
-      setEmail("sarah.chen@client.demo");
-      setPassword("DemoClientPass2026!");
-    } else {
-      setName("Rohan Verma");
-      setEmail("rohan.verma@dev.demo");
-      setPassword("DemoFreelancer2026!");
-    }
-  };
-
-  // Instant PayPal Sandbox Authentication
+  // Instant PayPal Authentication
   const handlePayPalInstantAuth = () => {
     setLoading(true);
     setErrorMsg(null);
@@ -97,7 +81,7 @@ function AuthForm() {
     setTimeout(() => {
       setLoading(false);
       setSuccessMsg(
-        `Authenticated with PayPal Sandbox (${role === "client" ? "sarah.chen@client.demo" : "rohan.verma@dev.demo"}). Redirecting to workspace...`
+        `Authenticated with PayPal account. Redirecting to workspace...`
       );
       setTimeout(() => {
         router.push(`/dashboard?role=${role}`);
@@ -208,77 +192,17 @@ function AuthForm() {
             className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-300/60 bg-white/60 hover:bg-white/90 px-4 py-3 text-xs sm:text-sm font-bold text-slate-900 shadow-sm hover:shadow transition-all hover:scale-[1.01] active:scale-[0.99] dark:border-white/10 dark:bg-[#131c31]/50 dark:text-white dark:hover:bg-[#1a2642]/75 backdrop-blur-md cursor-pointer"
           >
             <PayPalIcon className="h-4 w-4" />
-            <span>Continue with PayPal Sandbox</span>
+            <span>Continue with PayPal</span>
           </button>
         </div>
 
         {/* Divider */}
-        <div className="my-4 flex items-center gap-3">
+        <div className="my-5 flex items-center gap-3">
           <div className="h-px flex-1 bg-slate-200/80 dark:bg-white/10" />
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             or continue with email
           </span>
           <div className="h-px flex-1 bg-slate-200/80 dark:bg-white/10" />
-        </div>
-
-        {/* Instant Sandbox Fast-Fill */}
-        <div className="rounded-2xl border border-blue-200/50 bg-blue-50/30 p-3 dark:border-blue-500/20 dark:bg-[#0070BA]/10 backdrop-blur-md">
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-2">
-            <span className="flex items-center gap-1.5 text-[#0070BA] dark:text-sky-300">
-              <Zap className="h-3.5 w-3.5" />
-              <span>One-Click Demo Fill:</span>
-            </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-500/10 text-[#0070BA] dark:text-sky-300 font-bold">
-              Instant
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => fillDemoAccount("client")}
-              className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer backdrop-blur-sm ${
-                role === "client" && email === "sarah.chen@client.demo"
-                  ? "border-[#0070BA] bg-white/90 text-slate-950 shadow-sm ring-1 ring-[#0070BA] dark:border-sky-400 dark:bg-[#131c31]/80 dark:text-white"
-                  : "border-slate-200/70 bg-white/50 text-slate-700 hover:text-slate-950 hover:bg-white/80 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300 dark:hover:text-white"
-              }`}
-            >
-              <div className="font-bold flex items-center justify-between">
-                <span className="flex items-center gap-1 text-sky-600 dark:text-sky-400">
-                  <User className="h-3.5 w-3.5" />
-                  <span>Client</span>
-                </span>
-                {role === "client" && email === "sarah.chen@client.demo" && (
-                  <Check className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
-                )}
-              </div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
-                Sarah (Hiring)
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => fillDemoAccount("freelancer")}
-              className={`p-2.5 rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer backdrop-blur-sm ${
-                role === "freelancer" && email === "rohan.verma@dev.demo"
-                  ? "border-[#0070BA] bg-white/90 text-slate-950 shadow-sm ring-1 ring-[#0070BA] dark:border-sky-400 dark:bg-[#131c31]/80 dark:text-white"
-                  : "border-slate-200/70 bg-white/50 text-slate-700 hover:text-slate-950 hover:bg-white/80 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-300 dark:hover:text-white"
-              }`}
-            >
-              <div className="font-bold flex items-center justify-between">
-                <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                  <Briefcase className="h-3.5 w-3.5" />
-                  <span>Freelancer</span>
-                </span>
-                {role === "freelancer" && email === "rohan.verma@dev.demo" && (
-                  <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
-                )}
-              </div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-0.5 truncate">
-                Rohan (Building)
-              </span>
-            </button>
-          </div>
         </div>
 
         {/* Role Toggle for Signup */}

@@ -45,9 +45,9 @@ export default function FeaturesGrid() {
     },
     {
       icon: Layers,
-      title: "Sponsor Partner Extensibility",
-      tag: "Hackathon Architecture",
-      desc: "Engineered with modular hooks to integrate AG Grid for high-density milestone ledger analytics and APIMatic for PayPal contract validation.",
+      title: "API & Webhook Extensibility",
+      tag: "Enterprise Architecture",
+      desc: "Engineered with modular webhooks and REST endpoints to integrate finance ledgers, CI/CD pipelines, and automated contract validation.",
     },
   ];
 

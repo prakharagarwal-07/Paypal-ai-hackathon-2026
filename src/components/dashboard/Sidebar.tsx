@@ -10,7 +10,6 @@ import {
   Sparkles,
   Wallet,
   ArrowLeft,
-  RotateCcw,
   ChevronDown,
   X,
   Plus,
@@ -31,7 +30,6 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
     projects,
     activeProjectId,
     setActiveProjectId,
-    resetToFactoryDefaults,
   } = useDashboard();
 
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
@@ -294,21 +292,11 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
           <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
             <Link
               href="/"
-              className="hover:text-slate-900 dark:hover:text-white flex items-center gap-1 transition-colors"
+              className="hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition-colors"
             >
-              <ArrowLeft className="h-3 w-3" />
-              <span>Home</span>
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>Back to Home</span>
             </Link>
-
-            <button
-              type="button"
-              onClick={resetToFactoryDefaults}
-              title="Reset all demo data"
-              className="hover:text-[#0070BA] dark:hover:text-sky-400 flex items-center gap-1 cursor-pointer transition-colors"
-            >
-              <RotateCcw className="h-3 w-3" />
-              <span>Reset</span>
-            </button>
           </div>
         </div>
       </aside>
