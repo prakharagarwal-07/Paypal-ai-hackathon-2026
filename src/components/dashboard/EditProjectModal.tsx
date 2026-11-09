@@ -45,11 +45,11 @@ export default function EditProjectModal({ project, isOpen, onClose }: EditProje
         {/* Header */}
         <div className="p-5 border-b border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 flex items-center justify-between shrink-0">
           <div>
-            <h2 className="text-base font-black text-slate-900 dark:text-white">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white">
               Edit Project Settings
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Contract ID: {project.id}
+              Project ID: {project.id}
             </p>
           </div>
 

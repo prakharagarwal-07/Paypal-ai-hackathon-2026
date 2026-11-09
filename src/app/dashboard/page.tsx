@@ -7,8 +7,8 @@ import { Milestone, ProjectContract } from "@/lib/dashboard-data";
 import Sidebar from "@/components/dashboard/Sidebar";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import NotificationDrawer from "@/components/dashboard/NotificationDrawer";
-import ClientOverview from "@/components/dashboard/ClientOverview";
-import FreelancerOverview from "@/components/dashboard/FreelancerOverview";
+import DashboardOverview from "@/components/dashboard/DashboardOverview";
+import ProjectsView from "@/components/dashboard/ProjectsView";
 import ProjectWorkspace from "@/components/dashboard/ProjectWorkspace";
 import MilestonesView from "@/components/dashboard/MilestonesView";
 import AIAuditCenter from "@/components/dashboard/AIAuditCenter";
@@ -23,13 +23,15 @@ import NewProjectModal from "@/components/dashboard/NewProjectModal";
 import EditProjectModal from "@/components/dashboard/EditProjectModal";
 
 import WebThreads from "@/components/WebThreads";
-import { CheckCircle2, AlertCircle, X, Sparkles, ShieldCheck } from "lucide-react";
+import { CheckCircle2, AlertCircle, X, Sparkles } from "lucide-react";
 
 function DashboardInner() {
   const {
     role,
     activeTab,
+    setActiveTab,
     activeProject,
+    setActiveProjectId,
     toast,
     hideToast,
   } = useDashboard();
@@ -37,6 +39,7 @@ function DashboardInner() {
   // Navigation & Drawer states
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [viewingWorkspace, setViewingWorkspace] = useState(false);
 
   // Modal target states
   const [auditTarget, setAuditTarget] = useState<{
@@ -66,39 +69,36 @@ function DashboardInner() {
     <div className="relative min-h-screen bg-[#F8FAFD] dark:bg-[#070B14] text-slate-900 dark:text-slate-100 flex transition-colors duration-200">
       {/* 
         SUBTLE AMBIENT WEBTHREADS BACKGROUND:
-        Low opacity (25%-30%) so all dashboard data is crisp and 100% readable
+        Calm, quiet background lines that don't compete with readable content
       */}
-      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-30 dark:opacity-20 transition-opacity">
+      <div className="fixed inset-0 z-0 h-screen w-screen overflow-hidden pointer-events-none opacity-20 dark:opacity-15 transition-opacity">
         <WebThreads
           colors={["#0070BA", "#00457C", "#009CDE", "#38BDF8", "#00E599"]}
           coreColor="#FFFFFF"
           lightMode={false}
-          threadCount={7}
-          speed={0.11}
-          frequency={3.5}
-          spread={0.24}
+          threadCount={6}
+          speed={0.09}
+          frequency={3.0}
+          spread={0.22}
           position={0.5}
-          glow={0.016}
-          brightness={0.7}
-          thickness={0.9}
+          glow={0.012}
+          brightness={0.6}
+          thickness={0.8}
           fade={0.015}
           mouseInteraction={true}
           pulseOnClick={false}
         />
       </div>
 
-      {/* AMBIENT LIGHTING ORB */}
-      <div className="fixed top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-gradient-to-tr from-blue-600/10 via-sky-500/10 to-teal-400/5 rounded-full blur-[160px] pointer-events-none -z-10" />
-
-      {/* SIDEBAR NAVIGATION (Desktop static, mobile slide-over) */}
+      {/* SIDEBAR NAVIGATION (Desktop fixed, mobile slide-over) */}
       <Sidebar
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
         onOpenNewProject={() => setIsNewProjectModalOpen(true)}
       />
 
-      {/* MAIN CONTENT CONTAINER (Padded left for desktop sidebar) */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-72 relative z-10">
+      {/* MAIN CONTENT CONTAINER */}
+      <div className="flex-1 flex flex-col min-w-0 lg:pl-64 relative z-10">
         {/* HEADER */}
         <DashboardHeader
           onToggleMobileSidebar={() => setMobileSidebarOpen(true)}
@@ -108,7 +108,7 @@ function DashboardInner() {
 
         {/* TOAST FEEDBACK NOTIFICATION */}
         {toast && (
-          <div className="fixed top-20 right-4 sm:right-8 z-50 max-w-md rounded-2xl border border-blue-300 bg-white/95 p-4 text-xs shadow-2xl backdrop-blur-xl dark:border-blue-500/40 dark:bg-[#0D182E]/95 text-slate-900 dark:text-white animate-in slide-in-from-top-4 duration-300 flex items-start gap-3">
+          <div className="fixed top-20 right-4 sm:right-8 z-50 max-w-md rounded-2xl border border-blue-200 bg-white/95 p-4 text-xs shadow-xl backdrop-blur-md dark:border-blue-900/40 dark:bg-[#0D1527]/95 text-slate-900 dark:text-white animate-in slide-in-from-top-4 duration-300 flex items-start gap-3">
             <div
               className={`flex h-7 w-7 items-center justify-center rounded-xl text-white shrink-0 ${
                 toast.type === "success"
@@ -145,50 +145,63 @@ function DashboardInner() {
         )}
 
         {/* MAIN BODY AREA */}
-        <main className="flex-1 px-4 sm:px-8 py-8 max-w-7xl mx-auto w-full">
-          {activeTab === "overview" && (
+        <main className="flex-1 px-4 sm:px-8 py-8 max-w-6xl mx-auto w-full">
+          {/* TAB 1: Dashboard (Overview) */}
+          {(activeTab === "dashboard" || activeTab === "overview") && (
+            <DashboardOverview
+              onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+              onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
+              onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+              onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+            />
+          )}
+
+          {/* TAB 2: My Projects / Workspace */}
+          {activeTab === "projects" && (
             <>
-              {role === "client" ? (
-                <ClientOverview
+              {viewingWorkspace ? (
+                <ProjectWorkspace
+                  onBackToProjects={() => setViewingWorkspace(false)}
                   onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+                  onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
                   onOpenRevision={(p, m) => setRevisionTarget({ project: p, milestone: m })}
                   onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
-                  onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+                  onOpenEditProject={() => setIsEditProjectModalOpen(true)}
                 />
               ) : (
-                <FreelancerOverview
-                  onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
-                  onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+                <ProjectsView
+                  onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+                  onSelectProject={(projectId) => {
+                    setActiveProjectId(projectId);
+                    setViewingWorkspace(true);
+                  }}
                 />
               )}
             </>
           )}
 
-          {activeTab === "projects" && (
-            <ProjectWorkspace
-              onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
-              onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
-              onOpenRevision={(p, m) => setRevisionTarget({ project: p, milestone: m })}
-              onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
-              onOpenEditProject={() => setIsEditProjectModalOpen(true)}
-            />
-          )}
-
+          {/* TAB 3: Milestones */}
           {activeTab === "milestones" && (
             <MilestonesView
               onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
               onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
-              onOpenRevision={(p, m) => setRevisionTarget({ project: p, milestone: m })}
               onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+              onSelectProject={(projectId) => {
+                setActiveProjectId(projectId);
+                setActiveTab("projects");
+                setViewingWorkspace(true);
+              }}
             />
           )}
 
-          {activeTab === "ai-audits" && (
+          {/* TAB 4: Work Review */}
+          {(activeTab === "work-review" || activeTab === "ai-audits") && (
             <AIAuditCenter
               onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
             />
           )}
 
+          {/* TAB 5: Payments */}
           {activeTab === "payments" && (
             <PaymentsView
               onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
@@ -197,14 +210,13 @@ function DashboardInner() {
         </main>
 
         {/* FOOTER */}
-        <footer className="py-6 text-center text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200/80 dark:border-white/10 bg-white/40 dark:bg-transparent backdrop-blur-md">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <footer className="py-6 text-center text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200/80 dark:border-white/10 bg-white/40 dark:bg-transparent backdrop-blur-xs">
+          <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>
-              MilestoneOS • PayPal AI Hackathon 2026 • Verified Milestones & Secure PayPal Payouts
+              MilestoneOS • Simple Milestone Payments
             </span>
-            <span className="flex items-center gap-1.5 font-semibold text-emerald-600 dark:text-emerald-400">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              PayPal Orders v2 Escrow Active
+            <span className="text-slate-400">
+              PayPal Checkout Sandbox Demonstration
             </span>
           </div>
         </footer>
@@ -256,7 +268,7 @@ function DashboardInner() {
         />
       )}
 
-      {/* PAYPAL SANDBOX PAYMENT MODAL */}
+      {/* PAYPAL PAYMENT MODAL */}
       {payPalTarget && (
         <PayPalPaymentModal
           project={payPalTarget.project}
@@ -300,7 +312,7 @@ export default function DashboardPage() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-[#F8FAFD] dark:bg-[#070B14] text-slate-500 text-xs font-mono">
-          Loading MilestoneOS Dashboard...
+          Loading MilestoneOS...
         </div>
       }
     >

@@ -1,19 +1,8 @@
 "use client";
 
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract } from "@/lib/dashboard-data";
-import {
-  Wallet,
-  ShieldCheck,
-  CheckCircle2,
-  Clock,
-  Receipt,
-  ExternalLink,
-  ArrowRight,
-  AlertCircle,
-  Copy,
-  Check,
-} from "lucide-react";
+import { Milestone, ProjectContract, TransactionRecord } from "@/lib/dashboard-data";
+import { CheckCircle2, Clock, Copy, Check, X } from "lucide-react";
 import { PayPalIcon } from "./icons";
 import { useState } from "react";
 
@@ -24,18 +13,17 @@ interface PaymentsViewProps {
 export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
   const { projects, transactions, role } = useDashboard();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedTx, setSelectedTx] = useState<TransactionRecord | null>(null);
 
-  // Calculate totals
-  const totalBudget = projects.reduce((sum, p) => sum + p.totalBudget, 0);
-  const totalReleased = projects.reduce((sum, p) => sum + p.escrowReleased, 0);
-  const totalLocked = totalBudget - totalReleased;
-
-  // Milestones approved for payment / awaiting action
-  const approvedAwaitingPayment = projects.flatMap((p) =>
+  // 1. Payments to Make (milestones approved and ready for payment)
+  const paymentsToMake = projects.flatMap((p) =>
     p.milestones
-      .filter((m) => m.status === "payment_pending")
+      .filter((m) => m.status === "approved" || m.status === "payment_pending")
       .map((m) => ({ project: p, milestone: m }))
   );
+
+  // 2. Recent Payments (latest 3 completed payments)
+  const recentPayments = transactions.slice(0, 3);
 
   const copyTxId = (id: string) => {
     navigator.clipboard?.writeText(id);
@@ -44,193 +32,188 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* 1. Header & Escrow Vault Summary */}
-      <div className="p-6 sm:p-8 rounded-3xl border border-blue-200/80 bg-gradient-to-br from-blue-50/80 via-sky-50/30 to-white dark:border-blue-500/20 dark:from-[#0D182E] dark:via-[#091124] dark:to-[#070B14] shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-400/10 dark:text-sky-300">
-              <PayPalIcon className="h-4 w-4" />
-              <span>PayPal Sandbox Orders v2 Vault</span>
-            </div>
+    <div className="space-y-8">
+      {/* 1. Clear, Simple Heading & Subtitle */}
+      <div>
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          Payments & Transactions
+        </h1>
+        <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          View payments made and payments waiting to be completed.
+        </p>
+      </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Escrow Vault & Payout Ledger
-            </h2>
-
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              Every milestone contract is backed by PayPal Escrow. Funds are locked at contract signing and released immediately to the freelancer upon criteria satisfaction.
-            </p>
-          </div>
-
-          {/* Vault breakdown strip */}
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 shrink-0">
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#131C31] border border-slate-200/80 dark:border-white/10">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                Total Escrow Locked
-              </span>
-              <span className="text-xl sm:text-2xl font-black font-mono text-[#0070BA] dark:text-sky-300 block mt-0.5">
-                ${totalLocked.toLocaleString()} USD
-              </span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#131C31] border border-slate-200/80 dark:border-white/10">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                Total Disbursed
-              </span>
-              <span className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 block mt-0.5">
-                ${totalReleased.toLocaleString()} USD
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Sandbox Disclaimer */}
-        <div className="mt-6 pt-4 border-t border-slate-200/60 dark:border-white/10 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-[#0070BA] dark:text-sky-400 shrink-0" />
-          <span>
-            <strong className="text-slate-700 dark:text-slate-300">Demonstration Simulation:</strong> Payouts interact with PayPal's simulated Orders v2 authorization flow generating sandbox receipts. No real currency is transferred.
-          </span>
+      {/* Demo Sandbox Notice (Plain language, NO ESCROW CLAIMS) */}
+      <div className="p-3.5 sm:p-4 rounded-2xl border border-blue-200 bg-blue-50/60 dark:border-blue-900/40 dark:bg-blue-950/20 text-xs text-slate-700 dark:text-slate-300 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <PayPalIcon className="h-4 w-4 shrink-0 text-[#0070BA] dark:text-sky-400" />
+          <p className="text-[11px] sm:text-xs">
+            <strong className="text-slate-900 dark:text-white">PayPal Sandbox Demo:</strong> Payments are processed through PayPal's sandbox environment for demonstration purposes. No real money is transferred.
+          </p>
         </div>
       </div>
 
-      {/* 2. Milestones Approved for Payment (Awaiting Action) */}
-      {approvedAwaitingPayment.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping" />
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">
-              Approved Milestones Ready for Payout ({approvedAwaitingPayment.length})
-            </h3>
-          </div>
+      {/* SECTION 1: Payments to Make */}
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            1. Payments to Make ({paymentsToMake.length})
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Approved milestones waiting for payment release.
+          </p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {approvedAwaitingPayment.map(({ project, milestone }) => (
+        {paymentsToMake.length === 0 ? (
+          <div className="p-6 text-center text-slate-400 text-xs border border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
+            No payments are waiting to be made right now.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {paymentsToMake.map(({ project, milestone }) => (
               <div
                 key={milestone.id}
-                className="p-5 rounded-3xl border border-emerald-300 bg-emerald-50/40 dark:border-emerald-500/30 dark:bg-emerald-950/20 shadow-xs flex items-center justify-between gap-4"
+                className="p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div>
-                  <span className="text-[10px] font-mono font-bold uppercase text-emerald-700 dark:text-emerald-300">
-                    Stage 0{milestone.stageNumber} • {project.title}
-                  </span>
-                  <h4 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     {milestone.title}
-                  </h4>
-                  <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-300 mt-1">
-                    <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
-                      ${milestone.amount.toLocaleString()} USD
-                    </span>
-                    <span>•</span>
-                    <span>Recipient: {project.freelancer.name}</span>
-                  </div>
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Project: <strong className="text-slate-700 dark:text-slate-300 font-medium">{project.title}</strong>
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Freelancer: <strong className="text-slate-700 dark:text-slate-300 font-medium">{project.freelancer.name}</strong>
+                  </p>
                 </div>
 
-                {role === "client" ? (
-                  <button
-                    type="button"
-                    onClick={() => onOpenPayPal(project, milestone)}
-                    className="btn-gradient-glow px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold shadow-md cursor-pointer flex items-center gap-1.5 shrink-0"
-                  >
-                    <PayPalIcon className="h-4 w-4" />
-                    <span>Release Funds</span>
-                  </button>
-                ) : (
-                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 shrink-0">
-                    Awaiting Client Payout
-                  </span>
-                )}
+                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                  <div className="text-left sm:text-right">
+                    <span className="text-[10px] text-slate-400 block font-medium">Amount Due</span>
+                    <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
+                      ${milestone.amount.toLocaleString()} USD
+                    </span>
+                  </div>
+
+                  {role === "client" ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenPayPal(project, milestone)}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
+                    >
+                      <PayPalIcon className="h-3.5 w-3.5" />
+                      <span>Pay Now</span>
+                    </button>
+                  ) : (
+                    <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
+                      Awaiting Client Payment
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* 3. Transaction History Table */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-black text-slate-900 dark:text-white">
-              PayPal Settlement History ({transactions.length})
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Immutable ledger of milestone releases and sandbox transaction IDs.
-            </p>
+      {/* SECTION 2: Recent Payments */}
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            2. Recent Payments
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Latest completed milestone payments.
+          </p>
+        </div>
+
+        {recentPayments.length === 0 ? (
+          <div className="p-6 text-center text-slate-400 text-xs border border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
+            No payments have been completed yet.
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {recentPayments.map((tx) => (
+              <div
+                key={tx.id}
+                onClick={() => setSelectedTx(tx)}
+                className="p-4 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-2 cursor-pointer hover:border-slate-300 dark:hover:border-white/20 transition-all"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400 font-mono">{tx.paidAt}</span>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                    Payment Completed
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                    {tx.milestoneTitle}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                    {tx.projectTitle}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
+                  <span className="text-slate-500">To: {tx.payee}</span>
+                  <span className="font-mono font-bold text-slate-900 dark:text-white">
+                    ${tx.amount.toLocaleString()} USD
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* SECTION 3: Transaction History */}
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">
+            3. Transaction History
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            A complete record of all completed milestone transactions. Click any transaction to view details.
+          </p>
         </div>
 
-        <div className="rounded-3xl border border-slate-200/80 bg-white dark:border-white/10 dark:bg-[#0D1527] overflow-hidden shadow-xs">
+        <div className="rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+              <thead className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-semibold text-[11px]">
                 <tr>
-                  <th className="p-4">Transaction Reference</th>
-                  <th className="p-4">Contract & Stage</th>
-                  <th className="p-4">Amount</th>
-                  <th className="p-4">Parties</th>
-                  <th className="p-4">Timestamp</th>
-                  <th className="p-4">Status</th>
+                  <th className="p-3.5">Transaction ID</th>
+                  <th className="p-3.5">Date</th>
+                  <th className="p-3.5">Project / Milestone</th>
+                  <th className="p-3.5">Amount</th>
+                  <th className="p-3.5">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-700 dark:text-slate-300">
                 {transactions.map((tx) => (
-                  <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-white/5 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-mono font-bold text-[#0070BA] dark:text-sky-300">
-                          {tx.paypalTransactionId}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => copyTxId(tx.paypalTransactionId)}
-                          className="text-slate-400 hover:text-slate-700 dark:hover:text-white p-0.5 cursor-pointer"
-                          title="Copy ID"
-                        >
-                          {copiedId === tx.paypalTransactionId ? (
-                            <Check className="h-3 w-3 text-emerald-500" />
-                          ) : (
-                            <Copy className="h-3 w-3" />
-                          )}
-                        </button>
-                      </div>
-                      <span className="text-[10px] text-slate-400 block font-mono">
-                        PayPal Orders v2 Capture
-                      </span>
+                  <tr
+                    key={tx.id}
+                    onClick={() => setSelectedTx(tx)}
+                    className="hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <td className="p-3.5 font-mono font-medium text-[#0070BA] dark:text-sky-300">
+                      {tx.paypalTransactionId}
                     </td>
-
-                    <td className="p-4">
-                      <span className="font-bold text-slate-900 dark:text-white block truncate max-w-[220px]">
+                    <td className="p-3.5 text-slate-500">{tx.paidAt}</td>
+                    <td className="p-3.5">
+                      <span className="font-bold text-slate-900 dark:text-white block">
                         {tx.milestoneTitle}
                       </span>
-                      <span className="text-[10px] text-slate-400 block truncate max-w-[220px]">
-                        {tx.projectTitle}
-                      </span>
+                      <span className="text-[11px] text-slate-400 block">{tx.projectTitle}</span>
                     </td>
-
-                    <td className="p-4 font-mono font-bold text-slate-900 dark:text-white">
-                      ${tx.amount.toLocaleString()}.00 USD
+                    <td className="p-3.5 font-mono font-bold text-slate-900 dark:text-white">
+                      ${tx.amount.toLocaleString()} USD
                     </td>
-
-                    <td className="p-4">
-                      <div className="text-[11px]">
-                        <span className="text-slate-400">To:</span>{" "}
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {tx.payee}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        From: {tx.payer}
-                      </div>
-                    </td>
-
-                    <td className="p-4 font-mono text-[11px] text-slate-500">
-                      {tx.paidAt}
-                    </td>
-
-                    <td className="p-4">
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 font-bold text-[10px] uppercase tracking-wider">
-                        <CheckCircle2 className="h-3 w-3" />
-                        Settled
+                    <td className="p-3.5">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                        Completed
                       </span>
                     </td>
                   </tr>
@@ -240,6 +223,71 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Transaction Details Modal */}
+      {selectedTx && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-[#0D1527] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                Transaction Details
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedTx(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Transaction ID:</span>
+                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                  {selectedTx.paypalTransactionId}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Date & Time:</span>
+                <span className="text-slate-700 dark:text-slate-300">{selectedTx.paidAt}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Milestone:</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{selectedTx.milestoneTitle}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Project:</span>
+                <span className="text-slate-700 dark:text-slate-300">{selectedTx.projectTitle}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Recipient:</span>
+                <span className="text-slate-700 dark:text-slate-300">{selectedTx.payee}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-400">Sender:</span>
+                <span className="text-slate-700 dark:text-slate-300">{selectedTx.payer}</span>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5 text-sm">
+                <span className="font-bold text-slate-900 dark:text-white">Amount Paid:</span>
+                <span className="font-mono font-black text-slate-900 dark:text-white">
+                  ${selectedTx.amount.toLocaleString()} USD
+                </span>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedTx(null)}
+                className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-xs font-bold text-slate-800 dark:text-white transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

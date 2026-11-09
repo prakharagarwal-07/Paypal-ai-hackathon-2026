@@ -14,7 +14,15 @@ import {
   MilestoneSubmission,
 } from "./dashboard-data";
 
-export type DashboardTab = "overview" | "projects" | "milestones" | "ai-audits" | "payments";
+export type DashboardTab =
+  | "dashboard"
+  | "projects"
+  | "milestones"
+  | "work-review"
+  | "payments"
+  // Legacy aliases
+  | "overview"
+  | "ai-audits";
 
 interface DashboardContextType {
   role: "client" | "freelancer";
@@ -36,7 +44,7 @@ interface DashboardContextType {
   hideToast: () => void;
 
   // Actions
-  createProject: (newProject: Omit<ProjectContract, "id" | "createdAt" | "escrowReleased" | "activityLog">) => string;
+  createProject: (newProject: Omit<ProjectContract, "id" | "createdAt" | "totalPaid" | "escrowFunded" | "escrowReleased" | "activityLog">) => string;
   updateProject: (projectId: string, updates: Partial<ProjectContract>) => void;
   archiveProject: (projectId: string) => void;
   submitMilestoneDeliverables: (
@@ -45,15 +53,17 @@ interface DashboardContextType {
     deliverables: {
       demoUrl: string;
       githubRepo: string;
-      githubPr: string;
+      githubPr?: string;
       loomVideo?: string;
       notes: string;
     },
     isRevision?: boolean
   ) => void;
   requestRevision: (projectId: string, milestoneId: string, reason: string) => void;
+  requestChanges: (projectId: string, milestoneId: string, reason: string) => void;
   approveMilestone: (projectId: string, milestoneId: string) => void;
   releasePayPalPayment: (projectId: string, milestoneId: string) => string;
+  makePayment: (projectId: string, milestoneId: string) => string;
   markNotificationRead: (id: string) => void;
   clearAllNotifications: () => void;
   resetToFactoryDefaults: () => void;
@@ -62,11 +72,11 @@ interface DashboardContextType {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PROJECTS: "milestoneos_projects_v2",
-  TRANSACTIONS: "milestoneos_transactions_v2",
-  NOTIFICATIONS: "milestoneos_notifications_v2",
-  ROLE: "milestoneos_role_v2",
-  ACTIVE_PROJECT: "milestoneos_active_proj_v2",
+  PROJECTS: "milestoneos_projects_v4",
+  TRANSACTIONS: "milestoneos_transactions_v4",
+  NOTIFICATIONS: "milestoneos_notifications_v4",
+  ROLE: "milestoneos_role_v4",
+  ACTIVE_PROJECT: "milestoneos_active_proj_v4",
 };
 
 export function DashboardProvider({
@@ -77,9 +87,9 @@ export function DashboardProvider({
   initialRole?: "client" | "freelancer";
 }) {
   const [role, setRoleState] = useState<"client" | "freelancer">(initialRole);
-  const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
+  const [activeTab, setActiveTabState] = useState<DashboardTab>("dashboard");
   const [projects, setProjects] = useState<ProjectContract[]>(INITIAL_PROJECTS);
-  const [activeProjectId, setActiveProjectIdState] = useState<string>("proj_paypal_ai_2026");
+  const [activeProjectId, setActiveProjectIdState] = useState<string>("proj_online_store_2026");
   const [transactions, setTransactions] = useState<TransactionRecord[]>(INITIAL_TRANSACTIONS);
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -87,7 +97,18 @@ export function DashboardProvider({
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" | "warning" } | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load state from localStorage on client mount
+  const setActiveTab = (tab: DashboardTab) => {
+    // Map legacy alias IDs to new standard IDs
+    if (tab === "overview") {
+      setActiveTabState("dashboard");
+    } else if (tab === "ai-audits") {
+      setActiveTabState("work-review");
+    } else {
+      setActiveTabState(tab);
+    }
+  };
+
+  // Load from localStorage on client mount
   useEffect(() => {
     try {
       const savedProjects = localStorage.getItem(STORAGE_KEYS.PROJECTS);
@@ -117,7 +138,7 @@ export function DashboardProvider({
     setIsLoaded(true);
   }, []);
 
-  // Save changes to localStorage
+  // Save to localStorage
   useEffect(() => {
     if (!isLoaded) return;
     try {
@@ -135,7 +156,7 @@ export function DashboardProvider({
     setToast({ message, type });
     setTimeout(() => {
       setToast(null);
-    }, 6500);
+    }, 5000);
   };
 
   const hideToast = () => setToast(null);
@@ -143,7 +164,7 @@ export function DashboardProvider({
   const setRole = (newRole: "client" | "freelancer") => {
     setRoleState(newRole);
     showToast(
-      `Switched to ${newRole === "client" ? "Client View (Sarah Chen)" : "Freelancer Workbench (Rohan Verma)"}`,
+      `Switched to ${newRole === "client" ? "Client View (Sarah Chen)" : "Freelancer View (Rohan Verma)"}`,
       "info"
     );
   };
@@ -156,7 +177,7 @@ export function DashboardProvider({
 
   // Action: Create Project
   const createProject = (
-    newProjectData: Omit<ProjectContract, "id" | "createdAt" | "escrowReleased" | "activityLog">
+    newProjectData: Omit<ProjectContract, "id" | "createdAt" | "totalPaid" | "escrowFunded" | "escrowReleased" | "activityLog">
   ): string => {
     const id = `proj_${Date.now()}`;
     const now = new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
@@ -165,6 +186,8 @@ export function DashboardProvider({
       ...newProjectData,
       id,
       createdAt: now,
+      totalPaid: 0,
+      escrowFunded: newProjectData.totalBudget,
       escrowReleased: 0,
       activityLog: [
         {
@@ -172,7 +195,7 @@ export function DashboardProvider({
           timestamp: "Just now",
           actor: newProjectData.client.name,
           actorRole: "client",
-          action: `Created new project contract "${newProjectData.title}" and locked $${newProjectData.totalBudget.toLocaleString()} in PayPal Escrow Vault.`,
+          action: `Created new project "${newProjectData.title}" with budget of $${newProjectData.totalBudget.toLocaleString()} USD.`,
         },
       ],
     };
@@ -180,19 +203,18 @@ export function DashboardProvider({
     setProjects((prev) => [newProject, ...prev]);
     setActiveProjectIdState(id);
 
-    // Notification
     const notif: NotificationItem = {
       id: `notif_${Date.now()}`,
       timestamp: "Just now",
-      title: "New Project Contract Initialized",
-      message: `Project "${newProject.title}" created with $${newProject.totalBudget.toLocaleString()} locked in escrow.`,
+      title: "New Project Created",
+      message: `Project "${newProject.title}" has been created.`,
       type: "system",
       unread: true,
       projectId: id,
     };
     setNotifications((prev) => [notif, ...prev]);
 
-    showToast(`Contract "${newProject.title}" created with $${newProject.totalBudget.toLocaleString()} in escrow!`, "success");
+    showToast(`Project "${newProject.title}" created successfully!`, "success");
     return id;
   };
 
@@ -212,14 +234,14 @@ export function DashboardProvider({
     showToast("Project moved to archive.", "info");
   };
 
-  // Action: Submit Milestone Deliverables (Freelancer)
+  // Action: Submit Milestone Deliverables
   const submitMilestoneDeliverables = (
     projectId: string,
     milestoneId: string,
     deliverables: {
       demoUrl: string;
       githubRepo: string;
-      githubPr: string;
+      githubPr?: string;
       loomVideo?: string;
       notes: string;
     },
@@ -242,29 +264,24 @@ export function DashboardProvider({
 
           const submissionVersion = m.submissions.length + 1;
 
-          // Build realistic simulated Gemini demonstration assessment
-          const simulatedAudit: AIAssessment = {
+          const simpleAudit: AIAssessment = {
             overallScore: isRevision ? 98 : 95,
             summary: isRevision
-              ? "Demonstration AI Audit (Simulated Gemini 2.5 Flash): Revision requirements fully verified. Missing headers resolved, zero regressions found."
-              : "Demonstration AI Audit (Simulated Gemini 2.5 Flash): Deliverable staging URL and GitHub pull request verified against all acceptance criteria.",
+              ? "Automated review checked the revised work against the requested changes. All requirements met."
+              : "Automated review checked the submitted links and files against milestone requirements. Requirements appear satisfied.",
             status: "approved",
             verifiedAt: nowStr,
             isDemonstration: true,
-            criteria: m.acceptanceCriteria.map((crit, idx) => ({
+            criteria: m.acceptanceCriteria.map((crit) => ({
               ...crit,
-              status: "satisfied",
-              evidence: `Automated test passed: HTTP response validated and code pattern confirmed in PR #${submissionVersion + 3}.`,
-              aiNotes: "Satisfied: Code implementation meets acceptance requirements.",
+              status: "met",
+              evidence: "Checked against submitted links: requirement verified.",
+              aiNotes: "Requirement appears satisfied.",
             })),
             automatedChecks: [
-              { name: "Live Staging Response", passed: true, detail: "HTTPS 200 OK (118ms)" },
-              { name: "GitHub Pull Request & Diffs", passed: true, detail: `Branch merged cleanly, 0 merge conflicts` },
-              { name: "Static Analysis & Typings", passed: true, detail: "0 TypeScript errors detected" },
+              { name: "Website link responds", passed: true, detail: "Link opens successfully" },
+              { name: "Code repository accessible", passed: true, detail: "Code verified" },
             ],
-            suggestedRevisions: isRevision
-              ? []
-              : ["Recommend monitoring production API latency under peak concurrent webhook delivery."],
           };
 
           const newSubmission: MilestoneSubmission = {
@@ -277,17 +294,14 @@ export function DashboardProvider({
             githubPr: deliverables.githubPr,
             loomVideo: deliverables.loomVideo,
             notes: deliverables.notes,
-            attachments: [
-              { name: "automated-test-summary.json", size: "142 KB", type: "application/json" },
-            ],
-            aiAssessment: simulatedAudit,
+            aiAssessment: simpleAudit,
           };
 
           return {
             ...m,
-            status: "awaiting_client_approval" as MilestoneStatus,
+            status: "submitted" as MilestoneStatus,
             submissions: [...m.submissions, newSubmission],
-            latestAudit: simulatedAudit,
+            latestAudit: simpleAudit,
           };
         });
 
@@ -303,16 +317,8 @@ export function DashboardProvider({
               actor: project.freelancer.name,
               actorRole: "freelancer",
               action: isRevision
-                ? `Resubmitted revised deliverables for Stage 0${targetMilestone?.stageNumber || ""}: "${targetMilestone?.title || ""}"`
-                : `Submitted completed deliverables for Stage 0${targetMilestone?.stageNumber || ""}: "${targetMilestone?.title || ""}"`,
-              milestoneTitle: targetMilestone?.title,
-            },
-            {
-              id: `act_${Date.now() + 1}`,
-              timestamp: "Just now",
-              actor: "MilestoneOS AI Auditor",
-              actorRole: "ai_system",
-              action: `Demonstration AI Audit complete: 95% match verified across acceptance criteria.`,
+                ? `Resubmitted revised work for Milestone ${targetMilestone?.stageNumber}: "${targetMilestone?.title}"`
+                : `Submitted work for Milestone ${targetMilestone?.stageNumber}: "${targetMilestone?.title}"`,
               milestoneTitle: targetMilestone?.title,
             },
             ...project.activityLog,
@@ -327,8 +333,8 @@ export function DashboardProvider({
     const notif: NotificationItem = {
       id: `notif_${Date.now()}`,
       timestamp: "Just now",
-      title: isRevision ? "Revised Work Resubmitted" : "Work Submitted for Review",
-      message: `${targetProj?.freelancer.name} submitted Stage 0${targetM?.stageNumber || ""}: "${targetM?.title || ""}". AI scored 95%.`,
+      title: isRevision ? "Revised Work Submitted" : "Work Submitted for Review",
+      message: `${targetProj?.freelancer.name} submitted work for Milestone ${targetM?.stageNumber}: "${targetM?.title}".`,
       type: "submission",
       unread: true,
       projectId,
@@ -338,13 +344,13 @@ export function DashboardProvider({
 
     showToast(
       isRevision
-        ? "Revised work submitted! Gemini AI verified all criteria. Client notified to review."
-        : "Work submitted! Gemini AI completed demonstration audit (95% score). Client notified.",
+        ? "Revised work submitted! Client notified to review."
+        : "Work submitted! The client has been notified to review.",
       "success"
     );
   };
 
-  // Action: Request Revision (Client)
+  // Action: Request Changes (Client)
   const requestRevision = (projectId: string, milestoneId: string, reason: string) => {
     const nowStr = new Date().toLocaleDateString("en-US", {
       month: "short",
@@ -377,7 +383,7 @@ export function DashboardProvider({
 
           return {
             ...m,
-            status: "revision_requested" as MilestoneStatus,
+            status: "changes_requested" as MilestoneStatus,
             submissions: updatedSubmissions,
           };
         });
@@ -393,7 +399,7 @@ export function DashboardProvider({
               timestamp: "Just now",
               actor: project.client.name,
               actorRole: "client",
-              action: `Requested revision on Stage 0${targetMilestone?.stageNumber}: "${targetMilestone?.title}"`,
+              action: `Requested changes on Milestone ${targetMilestone?.stageNumber}: "${targetMilestone?.title}"`,
               details: reason,
               milestoneTitle: targetMilestone?.title,
             },
@@ -409,8 +415,8 @@ export function DashboardProvider({
     const notif: NotificationItem = {
       id: `notif_${Date.now()}`,
       timestamp: "Just now",
-      title: "Revision Requested",
-      message: `${targetProj?.client.name} requested changes on Stage 0${targetM?.stageNumber}: "${targetM?.title}".`,
+      title: "Changes Requested",
+      message: `${targetProj?.client.name} requested changes on Milestone ${targetM?.stageNumber}: "${targetM?.title}".`,
       type: "revision",
       unread: true,
       projectId,
@@ -418,8 +424,10 @@ export function DashboardProvider({
     };
     setNotifications((prev) => [notif, ...prev]);
 
-    showToast("Revision request sent to freelancer with your explanation.", "warning");
+    showToast("Change request sent to the freelancer.", "info");
   };
+
+  const requestChanges = requestRevision;
 
   // Action: Approve Milestone (Client)
   const approveMilestone = (projectId: string, milestoneId: string) => {
@@ -431,7 +439,7 @@ export function DashboardProvider({
           if (m.id !== milestoneId) return m;
           return {
             ...m,
-            status: "payment_pending" as MilestoneStatus,
+            status: "approved" as MilestoneStatus,
           };
         });
 
@@ -446,7 +454,7 @@ export function DashboardProvider({
               timestamp: "Just now",
               actor: project.client.name,
               actorRole: "client",
-              action: `Approved Stage 0${targetMilestone?.stageNumber}: "${targetMilestone?.title}" (Awaiting PayPal Payout Release)`,
+              action: `Approved Milestone ${targetMilestone?.stageNumber}: "${targetMilestone?.title}" (Ready for Payment)`,
               milestoneTitle: targetMilestone?.title,
             },
             ...project.activityLog,
@@ -461,8 +469,8 @@ export function DashboardProvider({
     const notif: NotificationItem = {
       id: `notif_${Date.now()}`,
       timestamp: "Just now",
-      title: "Milestone Approved!",
-      message: `Stage 0${targetM?.stageNumber} was approved by ${targetProj?.client.name}. $${targetM?.amount.toLocaleString()} is ready for PayPal payment release.`,
+      title: "Milestone Approved",
+      message: `Milestone ${targetM?.stageNumber} was approved by ${targetProj?.client.name}. Payment of $${targetM?.amount.toLocaleString()} USD is now ready.`,
       type: "approval",
       unread: true,
       projectId,
@@ -470,10 +478,10 @@ export function DashboardProvider({
     };
     setNotifications((prev) => [notif, ...prev]);
 
-    showToast(`Milestone approved! $${targetM?.amount.toLocaleString()} is now ready for PayPal payout.`, "success");
+    showToast(`Milestone approved! $${targetM?.amount.toLocaleString()} is now ready for payment.`, "success");
   };
 
-  // Action: Release PayPal Payment (Client)
+  // Action: Make Payment via PayPal Sandbox (Client)
   const releasePayPalPayment = (projectId: string, milestoneId: string): string => {
     const txId = `PAYID-SBX-${Math.floor(100000 + Math.random() * 900000)}-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
     const nowStr = new Date().toLocaleDateString("en-US", {
@@ -512,6 +520,7 @@ export function DashboardProvider({
 
         return {
           ...project,
+          totalPaid: project.totalPaid + paidAmount,
           escrowReleased: project.escrowReleased + paidAmount,
           milestones: updatedMilestones,
           activityLog: [
@@ -520,7 +529,7 @@ export function DashboardProvider({
               timestamp: "Just now",
               actor: project.client.name,
               actorRole: "paypal",
-              action: `Released $${paidAmount.toLocaleString()} USD via PayPal Sandbox (TX: ${txId})`,
+              action: `Completed payment of $${paidAmount.toLocaleString()} USD via PayPal Sandbox (Receipt: ${txId})`,
               milestoneTitle,
             },
             ...project.activityLog,
@@ -529,7 +538,7 @@ export function DashboardProvider({
       })
     );
 
-    // Add to transaction record
+    // Record transaction
     const newTx: TransactionRecord = {
       id: `tx_${Date.now()}`,
       milestoneId,
@@ -542,7 +551,7 @@ export function DashboardProvider({
       paypalTransactionId: txId,
       status: "completed",
       isSimulated: true,
-      payer: `${clientName} (Apex Global Commerce)`,
+      payer: `${clientName} (Apex Commerce)`,
       payee: freelancerName,
     };
     setTransactions((prev) => [newTx, ...prev]);
@@ -551,8 +560,8 @@ export function DashboardProvider({
     const notif: NotificationItem = {
       id: `notif_${Date.now()}`,
       timestamp: "Just now",
-      title: "PayPal Escrow Payout Released",
-      message: `$${paidAmount.toLocaleString()} USD sent to ${freelancerName} via PayPal Sandbox (${txId}).`,
+      title: "Payment Completed",
+      message: `$${paidAmount.toLocaleString()} USD paid to ${freelancerName} via PayPal Sandbox (${txId}).`,
       type: "payment",
       unread: true,
       projectId,
@@ -561,12 +570,14 @@ export function DashboardProvider({
     setNotifications((prev) => [notif, ...prev]);
 
     showToast(
-      `$${paidAmount.toLocaleString()} USD released via PayPal Sandbox! Transaction: ${txId}`,
+      `Payment of $${paidAmount.toLocaleString()} USD completed via PayPal Sandbox! Transaction: ${txId}`,
       "success"
     );
 
     return txId;
   };
+
+  const makePayment = releasePayPalPayment;
 
   const markNotificationRead = (id: string) => {
     setNotifications((prev) =>
@@ -591,9 +602,9 @@ export function DashboardProvider({
     setProjects(INITIAL_PROJECTS);
     setTransactions(INITIAL_TRANSACTIONS);
     setNotifications(INITIAL_NOTIFICATIONS);
-    setActiveProjectIdState("proj_paypal_ai_2026");
+    setActiveProjectIdState("proj_online_store_2026");
     setRoleState("client");
-    setActiveTab("overview");
+    setActiveTabState("dashboard");
     showToast("Dashboard reset to initial demonstration state.", "info");
   };
 
@@ -622,8 +633,10 @@ export function DashboardProvider({
         archiveProject,
         submitMilestoneDeliverables,
         requestRevision,
+        requestChanges,
         approveMilestone,
         releasePayPalPayment,
+        makePayment,
         markNotificationRead,
         clearAllNotifications,
         resetToFactoryDefaults,
