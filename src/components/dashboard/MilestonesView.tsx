@@ -2,8 +2,19 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus, MilestoneStatus } from "@/lib/dashboard-data";
-import { ArrowRight, CheckCircle2, Clock } from "lucide-react";
+import { Milestone, ProjectContract, getFriendlyStatus } from "@/lib/dashboard-data";
+import {
+  FolderGit2,
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  Sparkles,
+  AlertCircle,
+  Wallet,
+  Calendar,
+  Layers,
+  Check,
+} from "lucide-react";
 import { PayPalIcon } from "./icons";
 
 interface MilestonesViewProps {
@@ -14,10 +25,10 @@ interface MilestonesViewProps {
 }
 
 const STATUS_FILTERS: { id: string; label: string }[] = [
-  { id: "all", label: "All" },
+  { id: "all", label: "All Statuses" },
   { id: "submitted", label: "Submitted for Review" },
   { id: "changes_requested", label: "Changes Requested" },
-  { id: "approved", label: "Approved" },
+  { id: "approved", label: "Approved (Payment Ready)" },
   { id: "in_progress", label: "In Progress" },
   { id: "paid", label: "Payment Completed" },
   { id: "not_started", label: "Not Started" },
@@ -29,188 +40,355 @@ export default function MilestonesView({
   onOpenPayPal,
   onSelectProject,
 }: MilestonesViewProps) {
-  const { projects, role, searchQuery, setActiveProjectId, setActiveTab } = useDashboard();
-  const [selectedFilter, setSelectedFilter] = useState<string>("all");
+  const { projects, role, searchQuery } = useDashboard();
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
 
-  const allMilestones = projects.flatMap((p) =>
-    p.milestones.map((m) => ({ project: p, milestone: m }))
-  );
-
-  const filtered = allMilestones.filter(({ project, milestone }) => {
-    if (selectedFilter !== "all") {
-      if (selectedFilter === "submitted") {
-        if (milestone.status !== "submitted" && milestone.status !== "awaiting_client_approval" && milestone.status !== "under_ai_review") {
-          return false;
-        }
-      } else if (selectedFilter === "changes_requested") {
-        if (milestone.status !== "changes_requested" && milestone.status !== "revision_requested") {
-          return false;
-        }
-      } else if (selectedFilter === "approved") {
-        if (milestone.status !== "approved" && milestone.status !== "payment_pending") {
-          return false;
-        }
-      } else if (milestone.status !== selectedFilter) {
-        return false;
-      }
+  // Filter projects by selected project ID and search query
+  const projectsToDisplay = projects.filter((p) => {
+    if (selectedProjectId !== "all" && p.id !== selectedProjectId) {
+      return false;
     }
-
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      return (
-        milestone.title.toLowerCase().includes(q) ||
-        project.title.toLowerCase().includes(q)
+      const hasMilestoneMatch = p.milestones.some((m) =>
+        m.title.toLowerCase().includes(q)
       );
+      const hasProjectMatch = p.title.toLowerCase().includes(q);
+      return hasMilestoneMatch || hasProjectMatch;
     }
     return true;
   });
+
+  // Helper to filter milestones in a project
+  const getFilteredMilestones = (project: ProjectContract) => {
+    return project.milestones.filter((milestone) => {
+      if (selectedStatus !== "all") {
+        if (selectedStatus === "submitted") {
+          if (
+            milestone.status !== "submitted" &&
+            milestone.status !== "awaiting_client_approval" &&
+            milestone.status !== "under_ai_review"
+          ) {
+            return false;
+          }
+        } else if (selectedStatus === "changes_requested") {
+          if (
+            milestone.status !== "changes_requested" &&
+            milestone.status !== "revision_requested"
+          ) {
+            return false;
+          }
+        } else if (selectedStatus === "approved") {
+          if (
+            milestone.status !== "approved" &&
+            milestone.status !== "payment_pending"
+          ) {
+            return false;
+          }
+        } else if (milestone.status !== selectedStatus) {
+          return false;
+        }
+      }
+
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          milestone.title.toLowerCase().includes(q) ||
+          project.title.toLowerCase().includes(q)
+        );
+      }
+
+      return true;
+    });
+  };
+
+  // Count total matching milestones across displayed projects
+  const totalMatchingMilestones = projectsToDisplay.reduce(
+    (sum, p) => sum + getFilteredMilestones(p).length,
+    0
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          Milestones
+          Milestones by Project
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          Individual stages of work and their current status.
+          Track individual stages of work clearly classified and organized under each project.
         </p>
       </div>
 
-      {/* Simple Status Filter Tabs */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-        {STATUS_FILTERS.map((f) => (
+      {/* Filter Row 1: Filter by Project */}
+      <div className="space-y-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+          Filter by Project:
+        </span>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
           <button
-            key={f.id}
             type="button"
-            onClick={() => setSelectedFilter(f.id)}
+            onClick={() => setSelectedProjectId("all")}
             className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-              selectedFilter === f.id
+              selectedProjectId === "all"
                 ? "bg-[#0070BA] text-white shadow-2xs font-bold"
                 : "bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            {f.label}
+            All Projects ({projects.length})
           </button>
-        ))}
+
+          {projects.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelectedProjectId(p.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                selectedProjectId === p.id
+                  ? "bg-[#0070BA] text-white shadow-2xs font-bold"
+                  : "bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <span>{p.title}</span>
+              <span className="ml-1.5 opacity-70">({p.milestones.length})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Milestones Cards List */}
-      <div className="space-y-3">
-        {filtered.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 text-xs border border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
-            No milestones found with this status.
+      {/* Filter Row 2: Filter by Milestone Status */}
+      <div className="space-y-2">
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+          Filter by Status:
+        </span>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+          {STATUS_FILTERS.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => setSelectedStatus(f.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                selectedStatus === f.id
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs font-bold"
+                  : "bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Project Groupings List */}
+      <div className="space-y-6">
+        {totalMatchingMilestones === 0 ? (
+          <div className="p-12 text-center text-slate-400 text-xs border border-dashed border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-[#0D1527]">
+            No milestones found matching your selected filters.
           </div>
         ) : (
-          filtered.map(({ project, milestone }) => {
-            const statusInfo = getFriendlyStatus(milestone.status);
+          projectsToDisplay.map((project) => {
+            const projectMilestones = getFilteredMilestones(project);
+            if (projectMilestones.length === 0) return null;
+
+            const completedCount = project.milestones.filter((m) => m.status === "paid").length;
+            const progress = Math.round((completedCount / project.milestones.length) * 100);
+            const otherParty = role === "client" ? project.freelancer.name : project.client.name;
 
             return (
               <div
-                key={milestone.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => onSelectProject(project.id)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    onSelectProject(project.id);
-                  }
-                }}
-                className="group p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer transition-all duration-200 hover:-translate-y-0.5 hover:border-[#0070BA]/50 dark:hover:border-sky-400/50 hover:shadow-lg hover:shadow-slate-900/5 dark:hover:shadow-black/20 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]/40 text-left"
+                key={project.id}
+                className="rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] overflow-hidden shadow-xs space-y-0"
               >
-                <div className="space-y-1 min-w-0 pr-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
-                      {milestone.title}
-                    </h3>
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusInfo.badgeClass}`}>
-                      {statusInfo.label}
-                    </span>
+                {/* Project Header Bar */}
+                <div className="p-4 sm:p-5 bg-slate-50/80 dark:bg-white/[0.02] border-b border-slate-200/80 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <FolderGit2 className="h-4 w-4 text-[#0070BA] dark:text-sky-400" />
+                      <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                        {project.title}
+                      </h2>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          project.status === "completed"
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                            : "bg-blue-50 text-[#0070BA] dark:bg-blue-950/40 dark:text-sky-300 border border-blue-200 dark:border-blue-800"
+                        }`}
+                      >
+                        {project.status === "completed" ? "Completed & Settled" : "Active Project"}
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      With <strong className="text-slate-700 dark:text-slate-300">{otherParty}</strong> • Total Budget: <span className="font-mono font-bold">${project.totalBudget.toLocaleString()} USD</span> • {completedCount} of {project.milestones.length} stages completed ({progress}%)
+                    </p>
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Project: <strong className="text-slate-700 dark:text-slate-300 font-medium">{project.title}</strong>
-                  </p>
-
-                  <div className="flex items-center gap-3 text-xs text-slate-400 pt-0.5">
-                    <span>Due: {milestone.dueDate}</span>
-                    <span>•</span>
-                    <span>{milestone.acceptanceCriteria.length} requirements</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onSelectProject(project.id)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/10 hover:bg-[#0070BA] hover:text-white dark:hover:bg-[#0070BA] dark:hover:text-white text-xs font-bold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 transition-all cursor-pointer shadow-2xs self-start sm:self-auto shrink-0"
+                  >
+                    <span>Open Project Workspace</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
                 </div>
 
-                {/* Amount & Obvious Action Button */}
-                <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
-                  <div className="text-left sm:text-right">
-                    <span className="text-[10px] text-slate-400 block font-medium">Milestone Amount</span>
-                    <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
-                      ${milestone.amount.toLocaleString()} USD
-                    </span>
-                  </div>
+                {/* Milestones inside this project */}
+                <div className="divide-y divide-slate-100 dark:divide-white/5">
+                  {projectMilestones.map((milestone) => {
+                    const statusInfo = getFriendlyStatus(milestone.status);
+                    const isPaid = milestone.status === "paid";
+                    const isSubmitted =
+                      milestone.status === "submitted" ||
+                      milestone.status === "under_ai_review" ||
+                      milestone.status === "awaiting_client_approval";
+                    const isChangesRequested =
+                      milestone.status === "changes_requested" ||
+                      milestone.status === "revision_requested";
+                    const isApproved =
+                      milestone.status === "approved" || milestone.status === "payment_pending";
 
-                  <div className="flex items-center gap-2">
-                    {/* Primary Role Action */}
-                    {role === "client" ? (
-                      <>
-                        {(milestone.status === "submitted" ||
-                          milestone.status === "awaiting_client_approval") && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenAudit(project, milestone);
-                            }}
-                            className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors"
-                          >
-                            Review Work
-                          </button>
-                        )}
+                    return (
+                      <div
+                        key={milestone.id}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => onSelectProject(project.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onSelectProject(project.id);
+                          }
+                        }}
+                        className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50/60 dark:hover:bg-white/[0.02] cursor-pointer transition-colors group text-left"
+                      >
+                        {/* Milestone details */}
+                        <div className="space-y-1 min-w-0 pr-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-mono font-bold text-slate-400">
+                              Stage 0{milestone.stageNumber}
+                            </span>
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
+                              {milestone.title}
+                            </h3>
+                            <span
+                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${statusInfo.badgeClass}`}
+                            >
+                              {statusInfo.label}
+                            </span>
+                          </div>
 
-                        {(milestone.status === "approved" ||
-                          milestone.status === "payment_pending") && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenPayPal(project, milestone);
-                            }}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer flex items-center gap-1.5 transition-colors"
-                          >
-                            <PayPalIcon className="h-3.5 w-3.5" />
-                            <span>Pay Now</span>
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {(milestone.status === "in_progress" ||
-                          milestone.status === "changes_requested" ||
-                          milestone.status === "revision_requested") && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onOpenSubmission(project, milestone);
-                            }}
-                            className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors"
-                          >
-                            {milestone.status === "changes_requested" || milestone.status === "revision_requested"
-                              ? "Update Work"
-                              : "Submit Work"}
-                          </button>
-                        )}
-                      </>
-                    )}
+                          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
+                            {milestone.description}
+                          </p>
 
-                    {/* View in Project Workspace */}
-                    <div
-                      className="p-2 rounded-lg border border-slate-200 dark:border-white/10 group-hover:bg-[#0070BA] group-hover:text-white dark:group-hover:bg-[#0070BA] dark:group-hover:text-white text-slate-500 transition-all shadow-2xs"
-                      title="Open project workspace"
-                    >
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </div>
-                  </div>
+                          <div className="flex items-center gap-3 text-xs text-slate-400 pt-0.5">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              <span>Due {milestone.dueDate}</span>
+                            </span>
+                            <span>•</span>
+                            <span>{milestone.acceptanceCriteria.length} requirements</span>
+                          </div>
+                        </div>
+
+                        {/* Amount & Primary Action */}
+                        <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
+                          <div className="text-left sm:text-right">
+                            <span className="text-[10px] text-slate-400 block font-medium">Milestone Amount</span>
+                            <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
+                              ${milestone.amount.toLocaleString()} USD
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Primary Role Action */}
+                            {role === "client" ? (
+                              <>
+                                {isSubmitted && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onOpenAudit(project, milestone);
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs"
+                                  >
+                                    Review Work
+                                  </button>
+                                )}
+
+                                {isApproved && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onOpenPayPal(project, milestone);
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
+                                  >
+                                    <PayPalIcon className="h-3.5 w-3.5" />
+                                    <span>Pay Now</span>
+                                  </button>
+                                )}
+
+                                {isPaid && (
+                                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                                    <Check className="h-3 w-3 stroke-[3]" />
+                                    <span>Paid</span>
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <>
+                                {(milestone.status === "in_progress" || isChangesRequested) && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onOpenSubmission(project, milestone);
+                                    }}
+                                    className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs"
+                                  >
+                                    {isChangesRequested ? "Update Work" : "Submit Work"}
+                                  </button>
+                                )}
+
+                                {isSubmitted && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      onOpenAudit(project, milestone);
+                                    }}
+                                    className="text-xs text-[#0070BA] dark:text-sky-400 font-semibold hover:underline"
+                                  >
+                                    View Submission
+                                  </button>
+                                )}
+
+                                {isPaid && (
+                                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                                    <Check className="h-3 w-3 stroke-[3]" />
+                                    <span>Paid</span>
+                                  </span>
+                                )}
+                              </>
+                            )}
+
+                            {/* Chevron indicating clickability */}
+                            <div
+                              className="p-1.5 rounded-lg text-slate-400 group-hover:text-[#0070BA] dark:group-hover:text-sky-400 group-hover:translate-x-0.5 transition-all"
+                              title="Open in project workspace"
+                            >
+                              <ArrowRight className="h-4 w-4" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
