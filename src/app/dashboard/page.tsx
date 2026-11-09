@@ -153,6 +153,15 @@ function DashboardInner() {
               onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
               onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
               onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+              onSelectProject={(projectId) => {
+                setActiveProjectId(projectId);
+                setActiveTab("projects");
+                setViewingWorkspace(true);
+              }}
+              onNavigateToProjects={() => {
+                setViewingWorkspace(false);
+                setActiveTab("projects");
+              }}
             />
           )}
 

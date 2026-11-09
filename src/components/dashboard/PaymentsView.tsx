@@ -54,7 +54,7 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
       </div>
 
       {/* SECTION 1: Payments to Make */}
-      <div className="space-y-3">
+      <div id="payments-to-make" className="space-y-3 scroll-mt-24">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white">
             1. Payments to Make ({paymentsToMake.length})
@@ -168,7 +168,7 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
       </div>
 
       {/* SECTION 3: Transaction History */}
-      <div className="space-y-3">
+      <div id="transaction-history" className="space-y-3 scroll-mt-24">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white">
             3. Transaction History

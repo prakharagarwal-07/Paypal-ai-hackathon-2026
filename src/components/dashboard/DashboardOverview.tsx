@@ -8,6 +8,7 @@ import {
   Wallet,
   Receipt,
   ArrowRight,
+  ArrowUpRight,
   Clock,
   CheckCircle2,
   AlertCircle,
@@ -20,6 +21,8 @@ interface DashboardOverviewProps {
   onOpenSubmission: (project: ProjectContract, milestone: Milestone) => void;
   onOpenPayPal: (project: ProjectContract, milestone: Milestone) => void;
   onOpenNewProject: () => void;
+  onSelectProject?: (projectId: string) => void;
+  onNavigateToProjects?: () => void;
 }
 
 export default function DashboardOverview({
@@ -27,6 +30,8 @@ export default function DashboardOverview({
   onOpenSubmission,
   onOpenPayPal,
   onOpenNewProject,
+  onSelectProject,
+  onNavigateToProjects,
 }: DashboardOverviewProps) {
   const {
     projects,
@@ -134,63 +139,135 @@ export default function DashboardOverview({
         </p>
       </div>
 
-      {/* 2. Four Clean, Compact Summary Cards */}
+      {/* 2. Four Clean, Compact Summary Cards (Clickable) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Active Projects */}
-        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527]">
+        <button
+          type="button"
+          onClick={() => {
+            if (onNavigateToProjects) {
+              onNavigateToProjects();
+            } else {
+              setActiveTab("projects");
+            }
+          }}
+          title="Click to view all active projects"
+          className="group p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] text-left w-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-[#0070BA]/50 dark:hover:border-sky-400/50 hover:shadow-lg hover:shadow-sky-500/5 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]/40"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-semibold">Active Projects</span>
-            <FolderGit2 className="h-4 w-4 text-[#0070BA] dark:text-sky-400" />
+            <span className="text-xs font-semibold group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+              Active Projects
+            </span>
+            <div className="flex items-center gap-1.5">
+              <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <FolderGit2 className="h-4 w-4 text-[#0070BA] dark:text-sky-400 transition-transform group-hover:scale-110" />
+            </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">
             {totalProjects}
           </div>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-            In progress
-          </span>
-        </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            <span>In progress</span>
+            <span className="text-[#0070BA] dark:text-sky-400 font-semibold inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              View <ArrowRight className="h-3 w-3" />
+            </span>
+          </div>
+        </button>
 
         {/* Pending Reviews */}
-        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527]">
+        <button
+          type="button"
+          onClick={() => setActiveTab("work-review")}
+          title="Click to check submitted work and AI reports"
+          className="group p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] text-left w-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-amber-400/60 dark:hover:border-amber-400/50 hover:shadow-lg hover:shadow-amber-500/5 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-amber-500/40"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-semibold">Pending Reviews</span>
-            <Sparkles className="h-4 w-4 text-amber-500" />
+            <span className="text-xs font-semibold group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+              Pending Reviews
+            </span>
+            <div className="flex items-center gap-1.5">
+              <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <Sparkles className="h-4 w-4 text-amber-500 transition-transform group-hover:scale-110" />
+            </div>
           </div>
           <div className="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
             {pendingReviews.length}
           </div>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-            {pendingReviews.length === 1 ? "1 milestone waiting" : `${pendingReviews.length} milestones waiting`}
-          </span>
-        </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            <span>
+              {pendingReviews.length === 1 ? "1 milestone waiting" : `${pendingReviews.length} milestones waiting`}
+            </span>
+            <span className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              Review <ArrowRight className="h-3 w-3" />
+            </span>
+          </div>
+        </button>
 
         {/* Payments Due */}
-        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527]">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("payments");
+            setTimeout(() => {
+              document.getElementById("payments-to-make")?.scrollIntoView({ behavior: "smooth" });
+            }, 60);
+          }}
+          title="Click to view payments waiting to be completed"
+          className="group p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] text-left w-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-blue-400/60 dark:hover:border-[#0070BA]/50 hover:shadow-lg hover:shadow-blue-500/5 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]/40"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-semibold">Payments Due</span>
-            <Wallet className="h-4 w-4 text-[#0070BA] dark:text-sky-400" />
+            <span className="text-xs font-semibold group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+              Payments Due
+            </span>
+            <div className="flex items-center gap-1.5">
+              <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <Wallet className="h-4 w-4 text-[#0070BA] dark:text-sky-400 transition-transform group-hover:scale-110" />
+            </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white font-mono mt-1">
             ${paymentsDueTotal.toLocaleString()}
           </div>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-            {paymentsDue.length} approved milestone{paymentsDue.length === 1 ? "" : "s"}
-          </span>
-        </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            <span>
+              {paymentsDue.length} approved milestone{paymentsDue.length === 1 ? "" : "s"}
+            </span>
+            <span className="text-[#0070BA] dark:text-sky-400 font-semibold inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              Pay <ArrowRight className="h-3 w-3" />
+            </span>
+          </div>
+        </button>
 
         {/* Total Paid */}
-        <div className="p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527]">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab("payments");
+            setTimeout(() => {
+              document.getElementById("transaction-history")?.scrollIntoView({ behavior: "smooth" });
+            }, 60);
+          }}
+          title="Click to view transaction history"
+          className="group p-4 sm:p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] text-left w-full cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-emerald-400/60 dark:hover:border-emerald-400/50 hover:shadow-lg hover:shadow-emerald-500/5 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/40"
+        >
           <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1">
-            <span className="text-xs font-semibold">Total Paid</span>
-            <Receipt className="h-4 w-4 text-emerald-500" />
+            <span className="text-xs font-semibold group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+              Total Paid
+            </span>
+            <div className="flex items-center gap-1.5">
+              <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              <Receipt className="h-4 w-4 text-emerald-500 transition-transform group-hover:scale-110" />
+            </div>
           </div>
           <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1">
             ${totalPaid.toLocaleString()}
           </div>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
-            Through PayPal Sandbox
-          </span>
-        </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+            <span>Through PayPal Sandbox</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              Records <ArrowRight className="h-3 w-3" />
+            </span>
+          </div>
+        </button>
       </div>
 
       {/* 3. Actions Needed */}
@@ -261,7 +338,13 @@ export default function DashboardOverview({
           </h2>
           <button
             type="button"
-            onClick={() => setActiveTab("projects")}
+            onClick={() => {
+              if (onNavigateToProjects) {
+                onNavigateToProjects();
+              } else {
+                setActiveTab("projects");
+              }
+            }}
             className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>View All</span>
@@ -319,8 +402,12 @@ export default function DashboardOverview({
                   <button
                     type="button"
                     onClick={() => {
-                      setActiveProjectId(project.id);
-                      setActiveTab("projects");
+                      if (onSelectProject) {
+                        onSelectProject(project.id);
+                      } else {
+                        setActiveProjectId(project.id);
+                        setActiveTab("projects");
+                      }
                     }}
                     className="text-xs font-bold text-[#0070BA] dark:text-sky-400 hover:underline flex items-center gap-1 cursor-pointer"
                   >
