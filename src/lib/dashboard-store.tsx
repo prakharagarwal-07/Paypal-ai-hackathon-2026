@@ -72,11 +72,11 @@ interface DashboardContextType {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PROJECTS: "milestoneos_projects_v4",
-  TRANSACTIONS: "milestoneos_transactions_v4",
-  NOTIFICATIONS: "milestoneos_notifications_v4",
-  ROLE: "milestoneos_role_v4",
-  ACTIVE_PROJECT: "milestoneos_active_proj_v4",
+  PROJECTS: "milestoneos_projects_v5",
+  TRANSACTIONS: "milestoneos_transactions_v5",
+  NOTIFICATIONS: "milestoneos_notifications_v5",
+  ROLE: "milestoneos_role_v5",
+  ACTIVE_PROJECT: "milestoneos_active_proj_v5",
 };
 
 export function DashboardProvider({

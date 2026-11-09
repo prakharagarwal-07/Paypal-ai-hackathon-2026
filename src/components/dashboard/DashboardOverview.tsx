@@ -353,84 +353,118 @@ export default function DashboardOverview({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {projects.map((project) => {
-            const completedCount = project.milestones.filter((m) => m.status === "paid").length;
-            const progress = Math.round((completedCount / project.milestones.length) * 100);
-            const otherParty = role === "client" ? project.freelancer.name : project.client.name;
+          {projects
+            .filter((p) => p.status === "active")
+            .map((project) => {
+              const completedCount = project.milestones.filter((m) => m.status === "paid").length;
+              const progress = Math.round((completedCount / project.milestones.length) * 100);
+              const otherParty = role === "client" ? project.freelancer.name : project.client.name;
 
-            return (
-              <div
-                key={project.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => {
-                  if (onSelectProject) {
-                    onSelectProject(project.id);
-                  } else {
-                    setActiveProjectId(project.id);
-                    setActiveTab("projects");
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
+              return (
+                <div
+                  key={project.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
                     if (onSelectProject) {
                       onSelectProject(project.id);
                     } else {
                       setActiveProjectId(project.id);
                       setActiveTab("projects");
                     }
-                  }
-                }}
-                className="group p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-3 flex flex-col justify-between cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-[#0070BA]/50 dark:hover:border-sky-400/50 hover:shadow-xl hover:shadow-slate-900/5 dark:hover:shadow-black/20 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]/40 text-left"
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
-                      {project.title}
-                    </h3>
-                    <span className="text-xs font-mono font-bold text-slate-900 dark:text-white shrink-0">
-                      ${project.totalBudget.toLocaleString()} USD
-                    </span>
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      if (onSelectProject) {
+                        onSelectProject(project.id);
+                      } else {
+                        setActiveProjectId(project.id);
+                        setActiveTab("projects");
+                      }
+                    }
+                  }}
+                  className="group p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-3 flex flex-col justify-between cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:border-[#0070BA]/50 dark:hover:border-sky-400/50 hover:shadow-xl hover:shadow-slate-900/5 dark:hover:shadow-black/20 active:translate-y-0 focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]/40 text-left"
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
+                        {project.title}
+                      </h3>
+                      <span className="text-xs font-mono font-bold text-slate-900 dark:text-white shrink-0">
+                        ${project.totalBudget.toLocaleString()} USD
+                      </span>
+                    </div>
+
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      With {otherParty} • Next deadline: {project.targetDeadline}
+                    </p>
                   </div>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    With {otherParty} • Next deadline: {project.targetDeadline}
-                  </p>
-                </div>
-
-                {/* Progress bar */}
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-1 text-slate-500 dark:text-slate-400">
-                    <span>
-                      {completedCount} of {project.milestones.length} milestones completed
-                    </span>
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">{progress}%</span>
+                  {/* Progress bar */}
+                  <div>
+                    <div className="flex items-center justify-between text-xs mb-1 text-slate-500 dark:text-slate-400">
+                      <span>
+                        {completedCount} of {project.milestones.length} milestones completed
+                      </span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{progress}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#0070BA] dark:bg-sky-400 transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+
+                  <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Status: <strong className="text-slate-800 dark:text-slate-200 capitalize">{project.status}</strong>
+                    </span>
+
                     <div
-                      className="h-full bg-[#0070BA] dark:bg-sky-400 transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
+                      className="text-xs font-bold text-[#0070BA] dark:text-sky-400 group-hover:underline flex items-center gap-1"
+                    >
+                      <span>View Project</span>
+                      <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
+                    </div>
                   </div>
                 </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Status: <strong className="text-slate-800 dark:text-slate-200 capitalize">{project.status}</strong>
-                  </span>
-
-                  <div
-                    className="text-xs font-bold text-[#0070BA] dark:text-sky-400 group-hover:underline flex items-center gap-1"
-                  >
-                    <span>View Project</span>
-                    <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
         </div>
+
+        {/* Completed Projects Quick Banner */}
+        {projects.some((p) => p.status === "completed") && (
+          <div className="p-3.5 rounded-2xl border border-emerald-200/80 bg-emerald-50/30 dark:border-emerald-900/40 dark:bg-emerald-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+              <div>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  Completed & Fully Settled Projects:
+                </span>{" "}
+                <span className="text-slate-600 dark:text-slate-300">
+                  {projects.filter((p) => p.status === "completed").length} project (100% paid via PayPal Sandbox)
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (onNavigateToProjects) {
+                  onNavigateToProjects();
+                } else {
+                  setActiveTab("projects");
+                }
+              }}
+              className="text-emerald-700 dark:text-emerald-300 font-bold hover:underline flex items-center gap-1 cursor-pointer shrink-0"
+            >
+              <span>View Completed Projects</span>
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 5. Recent Activity */}

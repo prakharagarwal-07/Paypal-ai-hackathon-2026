@@ -140,29 +140,72 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
 
             {/* Dropdown Menu */}
             {projectDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0D1527] shadow-xl p-1.5 divide-y divide-slate-100 dark:divide-white/5">
+              <div className="absolute top-full left-0 right-0 mt-1 z-30 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0D1527] shadow-xl p-1.5 divide-y divide-slate-100 dark:divide-white/5 max-h-72 overflow-y-auto">
+                {/* Active Projects */}
                 <div className="space-y-1 pb-1">
-                  {projects.map((proj) => (
-                    <button
-                      key={proj.id}
-                      type="button"
-                      onClick={() => {
-                        setActiveProjectId(proj.id);
-                        setProjectDropdownOpen(false);
-                      }}
-                      className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex items-center justify-between ${
-                        proj.id === activeProjectId
-                          ? "bg-blue-50 dark:bg-[#0070BA]/20 text-[#0070BA] dark:text-sky-300 font-bold"
-                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
-                      }`}
-                    >
-                      <span className="truncate">{proj.title}</span>
-                      <span className="text-[10px] opacity-75 shrink-0 ml-1.5">
-                        ${proj.totalBudget.toLocaleString()}
-                      </span>
-                    </button>
-                  ))}
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-0.5 block">
+                    Active Projects
+                  </span>
+                  {projects
+                    .filter((p) => p.status === "active")
+                    .map((proj) => (
+                      <button
+                        key={proj.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveProjectId(proj.id);
+                          setProjectDropdownOpen(false);
+                        }}
+                        className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex items-center justify-between cursor-pointer ${
+                          proj.id === activeProjectId
+                            ? "bg-blue-50 dark:bg-[#0070BA]/20 text-[#0070BA] dark:text-sky-300 font-bold"
+                            : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
+                        }`}
+                      >
+                        <span className="truncate">{proj.title}</span>
+                        <span className="text-[10px] opacity-75 shrink-0 ml-1.5">
+                          ${proj.totalBudget.toLocaleString()}
+                        </span>
+                      </button>
+                    ))}
                 </div>
+
+                {/* Completed Projects */}
+                {projects.some((p) => p.status === "completed") && (
+                  <div className="space-y-1 py-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 px-2 py-0.5 flex items-center gap-1">
+                      <span>Completed Projects</span>
+                      <span className="text-[9px] px-1 py-0.2 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-mono">
+                        100% Paid
+                      </span>
+                    </span>
+                    {projects
+                      .filter((p) => p.status === "completed")
+                      .map((proj) => (
+                        <button
+                          key={proj.id}
+                          type="button"
+                          onClick={() => {
+                            setActiveProjectId(proj.id);
+                            setProjectDropdownOpen(false);
+                          }}
+                          className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex items-center justify-between cursor-pointer ${
+                            proj.id === activeProjectId
+                              ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold"
+                              : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5"
+                          }`}
+                        >
+                          <span className="truncate flex items-center gap-1">
+                            <span className="text-emerald-500 font-bold">✓</span>
+                            <span>{proj.title}</span>
+                          </span>
+                          <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold shrink-0 ml-1.5">
+                            ${proj.totalBudget.toLocaleString()}
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                )}
 
                 {role === "client" && (
                   <div className="pt-1">

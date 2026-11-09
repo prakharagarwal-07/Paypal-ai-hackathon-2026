@@ -88,6 +88,34 @@ export default function ProjectWorkspace({
         </button>
       )}
 
+      {/* Completed Project Banner */}
+      {activeProject.status === "completed" && (
+        <div className="p-4 sm:p-5 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 via-white to-blue-50/40 dark:border-emerald-900/40 dark:from-emerald-950/30 dark:via-[#0D1527] dark:to-blue-950/20 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="h-9 w-9 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <Check className="h-5 w-5 stroke-[3]" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <strong className="text-sm font-bold text-slate-900 dark:text-white">
+                  Project Completed & 100% Paid Out
+                </strong>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  PayPal Settled
+                </span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
+                All {activeProject.milestones.length} milestones were delivered, verified, and settled on {activeProject.targetDeadline}. Total paid: <strong className="font-mono font-bold text-emerald-700 dark:text-emerald-400">${activeProject.totalPaid.toLocaleString()} USD</strong>.
+              </p>
+            </div>
+          </div>
+
+          <span className="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs self-start sm:self-auto shadow-xs">
+            100% Settled
+          </span>
+        </div>
+      )}
+
       {/* SECTION 1: Project Overview */}
       <div className="p-6 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
