@@ -37,19 +37,14 @@ export default function SubmissionModal({
   const latestSubmission = milestone.submissions[milestone.submissions.length - 1];
   const revisionFeedback = latestSubmission?.revisionRequest;
 
-  const [demoUrl, setDemoUrl] = useState(
-    latestSubmission?.demoUrl || "https://staging.online-storefront.demo/checkout"
-  );
-  const [githubRepo, setGithubRepo] = useState(
-    latestSubmission?.githubRepo || "https://github.com/rohan-dev/online-storefront"
-  );
-  const [loomVideo, setLoomVideo] = useState(
-    latestSubmission?.loomVideo || "https://loom.com/share/work-demo"
-  );
+  const [demoUrl, setDemoUrl] = useState(latestSubmission?.demoUrl || "");
+  const [githubRepo, setGithubRepo] = useState(latestSubmission?.githubRepo || "");
+  const [loomVideo, setLoomVideo] = useState(latestSubmission?.loomVideo || "");
   const [notes, setNotes] = useState(
-    isRevision
-      ? "Updated the order receipt to clearly display the order number in the subject line and receipt body."
-      : "Completed all requirements for this milestone. Ready for client review."
+    latestSubmission?.notes ||
+    (isRevision
+      ? ""
+      : "")
   );
 
   const [isRunningCheck, setIsRunningCheck] = useState(false);

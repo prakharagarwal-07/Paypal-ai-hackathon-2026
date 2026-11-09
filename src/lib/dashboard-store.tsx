@@ -25,9 +25,46 @@ export type DashboardTab =
   | "overview"
   | "ai-audits";
 
+export interface UserProfiles {
+  client: {
+    name: string;
+    email: string;
+    avatar: string;
+    company: string;
+  };
+  freelancer: {
+    name: string;
+    email: string;
+    avatar: string;
+    title: string;
+    rating: number;
+  };
+}
+
+export const DEFAULT_USER_PROFILES: UserProfiles = {
+  client: {
+    name: "Sarah Chen",
+    email: "sarah.chen@apexcommerce.com",
+    avatar: "SC",
+    company: "Apex Commerce",
+  },
+  freelancer: {
+    name: "Rohan Verma",
+    email: "rohan.verma@craftdev.io",
+    avatar: "RV",
+    title: "Senior Full-Stack Engineer",
+    rating: 4.98,
+  },
+};
+
 interface DashboardContextType {
   role: "client" | "freelancer";
   setRole: (role: "client" | "freelancer") => void;
+  userProfiles: UserProfiles;
+  updateUserProfile: (
+    role: "client" | "freelancer",
+    data: Partial<{ name: string; email: string; company?: string; title?: string }>
+  ) => void;
   activeTab: DashboardTab;
   setActiveTab: (tab: DashboardTab) => void;
   projects: ProjectContract[];
@@ -83,11 +120,14 @@ interface DashboardContextType {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PROJECTS: "milestoneos_projects_v6",
-  TRANSACTIONS: "milestoneos_transactions_v6",
-  NOTIFICATIONS: "milestoneos_notifications_v6",
-  ROLE: "milestoneos_role_v6",
-  ACTIVE_PROJECT: "milestoneos_active_proj_v6",
+  PROJECTS: "milestoneos_projects_v7",
+  TRANSACTIONS: "milestoneos_transactions_v7",
+  NOTIFICATIONS: "milestoneos_notifications_v7",
+  ROLE: "milestoneos_role_v7",
+  ACTIVE_TAB: "milestoneos_tab_v7",
+  ACTIVE_PROJECT: "milestoneos_active_proj_v7",
+  STATUS_FILTER: "milestoneos_status_filter_v7",
+  PROFILES: "milestoneos_profiles_v7",
 };
 
 export function DashboardProvider({
@@ -104,19 +144,56 @@ export function DashboardProvider({
   const [transactions, setTransactions] = useState<TransactionRecord[]>(INITIAL_TRANSACTIONS);
   const [notifications, setNotifications] = useState<NotificationItem[]>(INITIAL_NOTIFICATIONS);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilterState] = useState<string>("all");
+  const [userProfiles, setUserProfiles] = useState<UserProfiles>(DEFAULT_USER_PROFILES);
   const [toast, setToast] = useState<{ message: string; type: "success" | "info" | "warning" } | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const setActiveTab = (tab: DashboardTab) => {
     // Map legacy alias IDs to new standard IDs
-    if (tab === "overview") {
-      setActiveTabState("dashboard");
-    } else if (tab === "ai-audits") {
-      setActiveTabState("work-review");
-    } else {
-      setActiveTabState(tab);
-    }
+    const resolvedTab = tab === "overview" ? "dashboard" : tab === "ai-audits" ? "work-review" : tab;
+    setActiveTabState(resolvedTab);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, resolvedTab);
+    } catch (_) {}
+  };
+
+  const setStatusFilter = (filter: string) => {
+    setStatusFilterState(filter);
+    try {
+      localStorage.setItem(STORAGE_KEYS.STATUS_FILTER, filter);
+    } catch (_) {}
+  };
+
+  const updateUserProfile = (
+    profileRole: "client" | "freelancer",
+    data: Partial<{ name: string; email: string; company?: string; title?: string }>
+  ) => {
+    setUserProfiles((prev) => {
+      const initials = (data.name || prev[profileRole].name)
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+
+      const updated = {
+        ...prev,
+        [profileRole]: {
+          ...prev[profileRole],
+          ...data,
+          avatar: initials || prev[profileRole].avatar,
+        },
+      };
+
+      try {
+        localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(updated));
+      } catch (_) {}
+
+      return updated;
+    });
+
+    showToast("Profile settings updated successfully.", "success");
   };
 
   // Load from localStorage on client mount
@@ -127,6 +204,9 @@ export function DashboardProvider({
       const savedNotifications = localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS);
       const savedRole = localStorage.getItem(STORAGE_KEYS.ROLE);
       const savedActiveProj = localStorage.getItem(STORAGE_KEYS.ACTIVE_PROJECT);
+      const savedTab = localStorage.getItem(STORAGE_KEYS.ACTIVE_TAB) as DashboardTab | null;
+      const savedFilter = localStorage.getItem(STORAGE_KEYS.STATUS_FILTER);
+      const savedProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
 
       if (savedProjects) {
         setProjects(JSON.parse(savedProjects));
@@ -143,13 +223,22 @@ export function DashboardProvider({
       if (savedActiveProj) {
         setActiveProjectIdState(savedActiveProj);
       }
+      if (savedTab) {
+        setActiveTabState(savedTab);
+      }
+      if (savedFilter) {
+        setStatusFilterState(savedFilter);
+      }
+      if (savedProfiles) {
+        setUserProfiles(JSON.parse(savedProfiles));
+      }
     } catch (e) {
       console.warn("Could not load from localStorage:", e);
     }
     setIsLoaded(true);
   }, []);
 
-  // Save to localStorage
+  // Save to localStorage whenever state changes
   useEffect(() => {
     if (!isLoaded) return;
     try {
@@ -157,11 +246,14 @@ export function DashboardProvider({
       localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions));
       localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
       localStorage.setItem(STORAGE_KEYS.ROLE, role);
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_TAB, activeTab);
       localStorage.setItem(STORAGE_KEYS.ACTIVE_PROJECT, activeProjectId);
+      localStorage.setItem(STORAGE_KEYS.STATUS_FILTER, statusFilter);
+      localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(userProfiles));
     } catch (e) {
       console.warn("Could not save to localStorage:", e);
     }
-  }, [projects, transactions, notifications, role, activeProjectId, isLoaded]);
+  }, [projects, transactions, notifications, role, activeTab, activeProjectId, statusFilter, userProfiles, isLoaded]);
 
   const showToast = (message: string, type: "success" | "info" | "warning" = "success") => {
     setToast({ message, type });
@@ -174,14 +266,21 @@ export function DashboardProvider({
 
   const setRole = (newRole: "client" | "freelancer") => {
     setRoleState(newRole);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ROLE, newRole);
+    } catch (_) {}
+    const actorName = userProfiles[newRole].name;
     showToast(
-      `Switched to ${newRole === "client" ? "Client View (Sarah Chen)" : "Freelancer View (Rohan Verma)"}`,
+      `Switched to ${newRole === "client" ? `Client View (${actorName})` : `Freelancer View (${actorName})`}`,
       "info"
     );
   };
 
   const setActiveProjectId = (id: string) => {
     setActiveProjectIdState(id);
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_PROJECT, id);
+    } catch (_) {}
   };
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
@@ -820,6 +919,8 @@ export function DashboardProvider({
       value={{
         role,
         setRole,
+        userProfiles,
+        updateUserProfile,
         activeTab,
         setActiveTab,
         projects,

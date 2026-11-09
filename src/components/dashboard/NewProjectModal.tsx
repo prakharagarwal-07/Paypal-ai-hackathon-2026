@@ -26,7 +26,7 @@ interface DraftMilestone {
 }
 
 export default function NewProjectModal({ isOpen, onClose, initialProject }: NewProjectModalProps) {
-  const { role, createProject, resubmitProposal } = useDashboard();
+  const { role, userProfiles, createProject, resubmitProposal } = useDashboard();
 
   const isClient = role === "client";
 
@@ -37,9 +37,13 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
   );
   const [targetDeadline, setTargetDeadline] = useState(initialProject?.targetDeadline || "Dec 25, 2026");
 
-  // Selection indexes
+  // Selection indexes & custom contact
   const [selectedFreelancerIndex, setSelectedFreelancerIndex] = useState(0);
   const [selectedClientIndex, setSelectedClientIndex] = useState(0);
+  const [useCustomContact, setUseCustomContact] = useState(false);
+  const [customName, setCustomName] = useState("");
+  const [customEmail, setCustomEmail] = useState("");
+  const [customOrgTitle, setCustomOrgTitle] = useState("");
 
   const [milestones, setMilestones] = useState<DraftMilestone[]>(
     initialProject
@@ -165,24 +169,35 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
       };
     });
 
+    const partnerInitials = (customName || "CP")
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+
     const clientData = isClient
+      ? userProfiles.client
+      : useCustomContact && customName.trim()
       ? {
-          name: "Sarah Chen",
-          email: "sarah.chen@client.demo",
-          avatar: "SC",
-          company: "Apex Commerce",
+          name: customName.trim(),
+          email: customEmail.trim() || "client@company.com",
+          avatar: partnerInitials || "CL",
+          company: customOrgTitle.trim() || "Client Organization",
         }
       : selectedClient;
 
     const freelancerData = isClient
-      ? selectedFreelancer
-      : {
-          name: "Rohan Verma",
-          email: "rohan.verma@dev.demo",
-          avatar: "RV",
-          title: "Web Developer",
-          rating: 4.98,
-        };
+      ? useCustomContact && customName.trim()
+        ? {
+            name: customName.trim(),
+            email: customEmail.trim() || "freelancer@domain.com",
+            avatar: partnerInitials || "FL",
+            title: customOrgTitle.trim() || "Specialist Developer",
+            rating: 5.0,
+          }
+        : selectedFreelancer
+      : userProfiles.freelancer;
 
     if (initialProject) {
       // Resubmitting revised proposal
@@ -233,7 +248,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
               </span>
               <span className="text-xs text-slate-400">•</span>
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                {isClient ? "Logged in as Sarah Chen" : "Logged in as Rohan Verma"}
+                Logged in as {userProfiles[role].name}
               </span>
             </div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -314,13 +329,48 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
               />
             </div>
 
-            {/* Other Party Selection (Already known contacts) */}
+            {/* Other Party Selection (Already known contacts or custom) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  {isClient ? "Select Freelancer *" : "Select Client *"}
-                </label>
-                {isClient ? (
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    {isClient ? "Select Freelancer *" : "Select Client *"}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setUseCustomContact(!useCustomContact)}
+                    className="text-[10px] text-[#0070BA] dark:text-sky-400 font-bold hover:underline cursor-pointer"
+                  >
+                    {useCustomContact ? "← Known Contacts" : "+ Custom Details"}
+                  </button>
+                </div>
+
+                {useCustomContact ? (
+                  <div className="space-y-2 p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
+                    <input
+                      type="text"
+                      required
+                      value={customName}
+                      onChange={(e) => setCustomName(e.target.value)}
+                      placeholder={isClient ? "Freelancer Full Name *" : "Client Full Name *"}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
+                    />
+                    <input
+                      type="email"
+                      value={customEmail}
+                      onChange={(e) => setCustomEmail(e.target.value)}
+                      placeholder="Email Address"
+                      className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white font-mono"
+                    />
+                    <input
+                      type="text"
+                      value={customOrgTitle}
+                      onChange={(e) => setCustomOrgTitle(e.target.value)}
+                      placeholder={isClient ? "Role / Title (e.g. Senior Frontend Dev)" : "Company (e.g. Acme Inc)"}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
+                    />
+                  </div>
+                ) : isClient ? (
                   <select
                     value={selectedFreelancerIndex}
                     onChange={(e) => setSelectedFreelancerIndex(Number(e.target.value))}
@@ -345,9 +395,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                     ))}
                   </select>
                 )}
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  Both parties already have an established connection.
-                </span>
+                {!useCustomContact && (
+                  <span className="text-[10px] text-slate-400 block mt-1">
+                    Both parties already have an established connection.
+                  </span>
+                )}
               </div>
 
               <div>

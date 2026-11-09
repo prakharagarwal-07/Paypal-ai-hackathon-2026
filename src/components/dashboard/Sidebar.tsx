@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useDashboard, DashboardTab } from "@/lib/dashboard-store";
 import ThemeToggle from "@/components/ThemeToggle";
+import EditProfileModal from "./EditProfileModal";
 import {
   LayoutDashboard,
   FolderGit2,
@@ -13,6 +14,7 @@ import {
   ChevronDown,
   X,
   Plus,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -25,6 +27,7 @@ interface SidebarProps {
 export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }: SidebarProps) {
   const {
     role,
+    userProfiles,
     activeTab,
     setActiveTab,
     projects,
@@ -33,8 +36,10 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
   } = useDashboard();
 
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+  const currentProfile = userProfiles[role];
 
   // Exactly the 5 requested beginner-friendly sections
   const navItems: { id: DashboardTab; label: string; icon: React.ReactNode; badge?: string | number }[] = [
@@ -266,25 +271,33 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
 
         {/* Bottom Profile & Actions */}
         <div className="p-3 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-black/20">
-          {/* Active User Card */}
-          <div className="flex items-center justify-between gap-2.5 p-2 rounded-xl bg-white dark:bg-[#0D1527] border border-slate-200/80 dark:border-white/10 shadow-2xs mb-2.5">
-            <div className="flex items-center gap-2 min-w-0">
+          {/* Active User Card (Clickable to Edit) */}
+          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white dark:bg-[#0D1527] border border-slate-200/80 dark:border-white/10 shadow-2xs mb-2.5">
+            <button
+              type="button"
+              onClick={() => setProfileModalOpen(true)}
+              className="flex items-center gap-2 min-w-0 text-left hover:opacity-85 transition-opacity cursor-pointer flex-1"
+              title="Click to edit profile"
+            >
               <div
                 className={`h-7 w-7 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0 ${
                   role === "client" ? "bg-[#0070BA]" : "bg-emerald-600"
                 }`}
               >
-                {role === "client" ? "SC" : "RV"}
+                {currentProfile.avatar || (role === "client" ? "SC" : "RV")}
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                  {role === "client" ? "Sarah Chen" : "Rohan Verma"}
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate flex items-center gap-1">
+                  <span>{currentProfile.name}</span>
+                  <Settings className="h-2.5 w-2.5 text-slate-400 opacity-60" />
                 </p>
                 <span className="text-[10px] text-slate-400 block truncate">
-                  {role === "client" ? "Client View" : "Freelancer View"}
+                  {role === "client"
+                    ? (currentProfile as any).company || "Client View"
+                    : (currentProfile as any).title || "Freelancer View"}
                 </span>
               </div>
-            </div>
+            </button>
             <ThemeToggle />
           </div>
 
@@ -300,6 +313,12 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
           </div>
         </div>
       </aside>
+
+      {/* Edit Profile Modal */}
+      <EditProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+      />
     </>
   );
 }

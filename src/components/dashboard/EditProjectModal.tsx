@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Save, Archive, Trash2, ShieldCheck } from "lucide-react";
 import { ProjectContract } from "@/lib/dashboard-data";
 import { useDashboard } from "@/lib/dashboard-store";
@@ -19,6 +19,14 @@ export default function EditProjectModal({ project, isOpen, onClose }: EditProje
   const [category, setCategory] = useState(project.category);
   const [targetDeadline, setTargetDeadline] = useState(project.targetDeadline);
   const [status, setStatus] = useState(project.status);
+
+  useEffect(() => {
+    setTitle(project.title);
+    setDescription(project.description);
+    setCategory(project.category);
+    setTargetDeadline(project.targetDeadline);
+    setStatus(project.status);
+  }, [project, isOpen]);
 
   if (!isOpen) return null;
 

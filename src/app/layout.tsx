@@ -34,6 +34,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var theme = localStorage.getItem('milestoneos-theme');
+                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${jakartaSans.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-[var(--bg-main)] text-slate-900 antialiased selection:bg-blue-500/20 selection:text-blue-700 dark:bg-[#0B0F19] dark:text-slate-100 dark:selection:text-sky-300 transition-colors duration-200`}
       >

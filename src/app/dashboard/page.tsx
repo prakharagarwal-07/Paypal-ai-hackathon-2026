@@ -39,7 +39,26 @@ function DashboardInner() {
   // Navigation & Drawer states
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [viewingWorkspace, setViewingWorkspace] = useState(false);
+  const [viewingWorkspace, setViewingWorkspaceState] = useState(false);
+
+  // Restore workspace view state on refresh
+  useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = localStorage.getItem("milestoneos_workspace_view_v7");
+        if (saved === "true") {
+          setViewingWorkspaceState(true);
+        }
+      } catch (_) {}
+    }
+  });
+
+  const setViewingWorkspace = (val: boolean) => {
+    setViewingWorkspaceState(val);
+    try {
+      localStorage.setItem("milestoneos_workspace_view_v7", val ? "true" : "false");
+    } catch (_) {}
+  };
 
   // Modal target states
   const [auditTarget, setAuditTarget] = useState<{

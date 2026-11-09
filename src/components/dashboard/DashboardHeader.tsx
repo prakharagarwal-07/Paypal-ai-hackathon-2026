@@ -20,9 +20,12 @@ export default function DashboardHeader({
     searchQuery,
     setSearchQuery,
     notifications,
+    userProfiles,
   } = useDashboard();
 
   const unreadCount = notifications.filter((n) => n.unread).length;
+  const clientFirstName = userProfiles.client.name.split(" ")[0] || "Client";
+  const freelancerFirstName = userProfiles.freelancer.name.split(" ")[0] || "Freelancer";
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md px-4 sm:px-8 py-3 dark:border-white/10 dark:bg-[#070B14]/90 transition-colors">
@@ -63,7 +66,7 @@ export default function DashboardHeader({
               }`}
             >
               <User className="h-3.5 w-3.5" />
-              <span>Client (Sarah)</span>
+              <span>Client ({clientFirstName})</span>
             </button>
 
             <button
@@ -76,7 +79,7 @@ export default function DashboardHeader({
               }`}
             >
               <Briefcase className="h-3.5 w-3.5" />
-              <span>Freelancer (Rohan)</span>
+              <span>Freelancer ({freelancerFirstName})</span>
             </button>
           </div>
         </div>
