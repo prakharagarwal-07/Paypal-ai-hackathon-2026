@@ -207,6 +207,11 @@ function DashboardInner() {
           {(activeTab === "work-review" || activeTab === "ai-audits") && (
             <AIAuditCenter
               onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
+              onSelectProject={(projectId) => {
+                setActiveProjectId(projectId);
+                setActiveTab("projects");
+                setViewingWorkspace(true);
+              }}
             />
           )}
 
