@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { ProjectContract } from "@/lib/dashboard-data";
+import { ProjectContract, getFriendlyProjectStatus } from "@/lib/dashboard-data";
 import {
   Plus,
   ArrowRight,
@@ -14,6 +14,9 @@ import {
   Layers,
   Sparkles,
   ShieldCheck,
+  Clock,
+  AlertCircle,
+  FileText,
 } from "lucide-react";
 import CompletedProjectModal from "./CompletedProjectModal";
 
@@ -24,7 +27,7 @@ interface ProjectsViewProps {
 
 export default function ProjectsView({ onOpenNewProject, onSelectProject }: ProjectsViewProps) {
   const { projects, role, searchQuery } = useDashboard();
-  const [filterTab, setFilterTab] = useState<"all" | "active" | "completed">("all");
+  const [filterTab, setFilterTab] = useState<"all" | "active" | "proposals" | "completed">("all");
   const [selectedCompletedProject, setSelectedCompletedProject] = useState<ProjectContract | null>(null);
 
   const filteredProjects = projects.filter((p) => {
@@ -39,6 +42,12 @@ export default function ProjectsView({ onOpenNewProject, onSelectProject }: Proj
     return true;
   });
 
+  const proposalProjects = filteredProjects.filter(
+    (p) =>
+      p.status === "awaiting_acceptance" ||
+      p.status === "changes_requested" ||
+      p.status === "draft"
+  );
   const activeProjects = filteredProjects.filter((p) => p.status === "active");
   const completedProjects = filteredProjects.filter((p) => p.status === "completed");
 
@@ -55,20 +64,18 @@ export default function ProjectsView({ onOpenNewProject, onSelectProject }: Proj
           </p>
         </div>
 
-        {role === "client" && (
-          <button
-            type="button"
-            onClick={onOpenNewProject}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Create New Project</span>
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={onOpenNewProject}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs shrink-0"
+        >
+          <Plus className="h-4 w-4" />
+          <span>{role === "client" ? "Create Project" : "Propose Project"}</span>
+        </button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200/80 dark:border-white/10 pb-3">
         <button
           type="button"
           onClick={() => setFilterTab("all")}
@@ -79,6 +86,21 @@ export default function ProjectsView({ onOpenNewProject, onSelectProject }: Proj
           }`}
         >
           All Projects ({filteredProjects.length})
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setFilterTab("proposals")}
+          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            filterTab === "proposals"
+              ? "bg-amber-600 text-white shadow-2xs"
+              : "bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          <span>Proposals & Pending</span>
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-200/50 dark:bg-amber-900/50">
+            {proposalProjects.length}
+          </span>
         </button>
 
         <button
@@ -111,6 +133,128 @@ export default function ProjectsView({ onOpenNewProject, onSelectProject }: Proj
           </span>
         </button>
       </div>
+
+      {/* PROPOSALS & PENDING AGREEMENTS */}
+      {(filterTab === "all" || filterTab === "proposals") && proposalProjects.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>Proposals & Pending Agreements</span>
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700">
+                  {proposalProjects.length} pending
+                </span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Project proposals awaiting mutual agreement or revision before work can begin.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {proposalProjects.map((project) => {
+              const statusInfo = getFriendlyProjectStatus(project.status, project.initiatedBy, role);
+              const otherPartyName = role === "client" ? project.freelancer.name : project.client.name;
+              const initiatorName =
+                project.initiatedBy === "client" ? project.client.name : project.freelancer.name;
+              const isSender = role === project.initiatedBy;
+
+              return (
+                <div
+                  key={project.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelectProject(project.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onSelectProject(project.id);
+                    }
+                  }}
+                  className={`group p-5 rounded-2xl border bg-white dark:bg-[#0D1527] space-y-4 flex flex-col justify-between cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl text-left ${
+                    statusInfo.isActionNeededForMe
+                      ? "border-amber-300 dark:border-amber-700/80 ring-2 ring-amber-300/30"
+                      : "border-slate-200 dark:border-white/10"
+                  }`}
+                >
+                  {/* Top: Name & Total Amount */}
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${statusInfo.badgeClass}`}>
+                        {statusInfo.label}
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Initiated by: <strong className="text-slate-700 dark:text-slate-300">{initiatorName}</strong>
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-base font-bold text-slate-900 dark:text-white group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
+                          {project.title}
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          {role === "client" ? "Freelancer: " : "Client: "}
+                          <strong className="text-slate-800 dark:text-slate-200 font-semibold">{otherPartyName}</strong>
+                        </p>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-[10px] text-slate-400 block font-medium">Proposed Budget</span>
+                        <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
+                          ${project.totalBudget.toLocaleString()} USD
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                    {project.description}
+                  </p>
+
+                  {/* Milestones count & target deadline */}
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-white/5">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 text-slate-400" />
+                      <span>Target: {project.targetDeadline}</span>
+                    </div>
+
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">
+                      {project.milestones.length} milestone stage{project.milestones.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+
+                  {/* Action Button */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-end">
+                    <div
+                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-2xs ${
+                        statusInfo.isActionNeededForMe
+                          ? "bg-amber-600 text-white hover:bg-amber-500"
+                          : "bg-slate-100 dark:bg-white/10 group-hover:bg-[#0070BA] group-hover:text-white dark:group-hover:bg-[#0070BA] dark:group-hover:text-white text-slate-700 dark:text-slate-200"
+                      }`}
+                    >
+                      <span>
+                        {statusInfo.isActionNeededForMe
+                          ? "Review Proposal"
+                          : isSender
+                          ? "View Proposal"
+                          : "View Details"}
+                      </span>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {filterTab === "proposals" && proposalProjects.length === 0 && (
+        <div className="p-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-[#0D1527]">
+          No pending proposals found. All projects are active or completed.
+        </div>
+      )}
 
       {/* SECTION 1: ACTIVE PROJECTS */}
       {(filterTab === "all" || filterTab === "active") && (

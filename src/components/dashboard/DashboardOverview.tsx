@@ -61,15 +61,29 @@ export default function DashboardOverview({
 
   // Actions Needed list (items that need user attention)
   const actionsNeeded: {
-    type: "review" | "payment" | "submit" | "revision";
+    type: "review" | "payment" | "submit" | "revision" | "proposal";
     title: string;
     description: string;
     actionLabel: string;
     project: ProjectContract;
-    milestone: Milestone;
+    milestone?: Milestone;
   }[] = [];
 
   if (role === "client") {
+    // 0. Incoming proposals sent by freelancer to client
+    const incomingProposals = projects.filter(
+      (p) => p.status === "awaiting_acceptance" && p.initiatedBy === "freelancer"
+    );
+    incomingProposals.forEach((project) => {
+      actionsNeeded.push({
+        type: "proposal",
+        title: `Review incoming proposal from ${project.freelancer.name}`,
+        description: `${project.freelancer.name} proposed "${project.title}" ($${project.totalBudget.toLocaleString()} USD across ${project.milestones.length} milestones). Review terms to accept or request changes.`,
+        actionLabel: "Review",
+        project,
+      });
+    });
+
     // 1. Milestones submitted for review
     pendingReviews.forEach(({ project, milestone }) => {
       actionsNeeded.push({
@@ -95,6 +109,34 @@ export default function DashboardOverview({
     });
   } else {
     // Freelancer actions
+    // 0. Incoming projects initiated by client awaiting freelancer acceptance
+    const incomingProjects = projects.filter(
+      (p) => p.status === "awaiting_acceptance" && p.initiatedBy === "client"
+    );
+    incomingProjects.forEach((project) => {
+      actionsNeeded.push({
+        type: "proposal",
+        title: `Project assignment from ${project.client.name}`,
+        description: `${project.client.name} created project "${project.title}" ($${project.totalBudget.toLocaleString()} USD). Review milestones and accept to begin work.`,
+        actionLabel: "Review",
+        project,
+      });
+    });
+
+    // 0b. Proposals with changes requested
+    const proposalChanges = projects.filter(
+      (p) => p.status === "changes_requested" && p.initiatedBy === "freelancer"
+    );
+    proposalChanges.forEach((project) => {
+      actionsNeeded.push({
+        type: "proposal",
+        title: `Changes requested on proposal "${project.title}"`,
+        description: `${project.client.name} requested changes to your project proposal. Review feedback to revise and resubmit.`,
+        actionLabel: "Revise",
+        project,
+      });
+    });
+
     // 1. Milestones with changes requested
     const changesRequested = allMilestones.filter(
       (item) => item.milestone.status === "changes_requested" || item.milestone.status === "revision_requested"
@@ -289,18 +331,29 @@ export default function DashboardOverview({
 
           <div className="space-y-3">
             {actionsNeeded.map((item, idx) => {
-              const handleViewWorkReview = () => {
-                setActiveProjectId(item.project.id);
-                setActiveTab("work-review");
-                onOpenAudit(item.project, item.milestone);
-              };
-
-              // Determine border and theme styles based on action type
+              const isProposal = item.type === "proposal";
               const isRevision = item.type === "revision";
               const isReview = item.type === "review";
               const isPayment = item.type === "payment";
 
-              const borderAccent = isRevision
+              const handleActionClick = () => {
+                setActiveProjectId(item.project.id);
+                if (isProposal) {
+                  setActiveTab("projects");
+                } else if (item.milestone) {
+                  setActiveTab("work-review");
+                  onOpenAudit(item.project, item.milestone);
+                } else {
+                  setActiveTab("projects");
+                }
+              };
+
+              // Determine border and theme styles based on action type
+              const borderAccent = isProposal
+                ? item.project.status === "changes_requested"
+                  ? "border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50/40 via-white to-white dark:from-amber-950/20 dark:via-[#0D1527] dark:to-[#0D1527]"
+                  : "border-l-4 border-l-[#0070BA] bg-gradient-to-r from-blue-50/40 via-white to-white dark:from-blue-950/20 dark:via-[#0D1527] dark:to-[#0D1527]"
+                : isRevision
                 ? "border-l-4 border-l-amber-500 bg-gradient-to-r from-amber-50/40 via-white to-white dark:from-amber-950/20 dark:via-[#0D1527] dark:to-[#0D1527]"
                 : isReview
                 ? "border-l-4 border-l-[#0070BA] bg-gradient-to-r from-blue-50/40 via-white to-white dark:from-blue-950/20 dark:via-[#0D1527] dark:to-[#0D1527]"
@@ -308,7 +361,11 @@ export default function DashboardOverview({
                 ? "border-l-4 border-l-emerald-500 bg-gradient-to-r from-emerald-50/40 via-white to-white dark:from-emerald-950/20 dark:via-[#0D1527] dark:to-[#0D1527]"
                 : "border-l-4 border-l-sky-500 bg-gradient-to-r from-sky-50/40 via-white to-white dark:from-sky-950/20 dark:via-[#0D1527] dark:to-[#0D1527]";
 
-              const iconBadge = isRevision ? (
+              const iconBadge = isProposal ? (
+                <div className="p-2.5 rounded-xl bg-indigo-100 text-[#0070BA] dark:bg-indigo-950/50 dark:text-sky-400 shrink-0 shadow-2xs">
+                  <FolderGit2 className="h-4 w-4" />
+                </div>
+              ) : isRevision ? (
                 <div className="p-2.5 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400 shrink-0 shadow-2xs">
                   <AlertCircle className="h-4 w-4" />
                 </div>
@@ -326,7 +383,11 @@ export default function DashboardOverview({
                 </div>
               );
 
-              const statusBadgeText = isRevision
+              const statusBadgeText = isProposal
+                ? item.project.status === "changes_requested"
+                  ? "Changes Requested"
+                  : "Mutual Agreement Pending"
+                : isRevision
                 ? "Changes Requested"
                 : isReview
                 ? "Review Submitted Work"
@@ -334,13 +395,21 @@ export default function DashboardOverview({
                 ? "Approved for Payment"
                 : "Work In Progress";
 
-              const statusBadgeClass = isRevision
+              const statusBadgeClass = isProposal
+                ? item.project.status === "changes_requested"
+                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                  : "bg-blue-100 text-[#0070BA] dark:bg-blue-900/40 dark:text-sky-300 border border-blue-200 dark:border-blue-800"
+                : isRevision
                 ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
                 : isReview
                 ? "bg-blue-100 text-[#0070BA] dark:bg-blue-900/40 dark:text-sky-300 border border-blue-200 dark:border-blue-800"
                 : isPayment
                 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                 : "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800";
+
+              const displayAmount = item.milestone
+                ? item.milestone.amount
+                : item.project.totalBudget;
 
               return (
                 <div
@@ -363,18 +432,22 @@ export default function DashboardOverview({
                         </span>
 
                         <span className="text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300">
-                          ${item.milestone.amount.toLocaleString()} USD
+                          ${displayAmount.toLocaleString()} USD
                         </span>
                       </div>
 
-                      {/* Milestone Title */}
+                      {/* Title */}
                       <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white pt-0.5">
-                        Stage 0{item.milestone.stageNumber}: {item.milestone.title}
+                        {item.milestone
+                          ? `Stage 0${item.milestone.stageNumber}: ${item.milestone.title}`
+                          : item.title}
                       </h3>
 
                       {/* Description with explicitly highlighted project name */}
                       <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {isRevision ? (
+                        {isProposal ? (
+                          <span>{item.description}</span>
+                        ) : isRevision ? (
                           <>
                             <strong className="text-slate-800 dark:text-slate-200 font-semibold">{item.project.client.name}</strong> requested updates on project{" "}
                             <strong className="text-[#0070BA] dark:text-sky-300 font-bold underline decoration-[#0070BA]/30 underline-offset-2">
@@ -398,7 +471,7 @@ export default function DashboardOverview({
                             </strong>
                             . Send payment to <strong className="text-slate-800 dark:text-slate-200 font-semibold">{item.project.freelancer.name}</strong> via PayPal Sandbox.
                           </>
-                        ) : (
+                        ) : item.milestone ? (
                           <>
                             Due on {item.milestone.dueDate} for project{" "}
                             <strong className="text-[#0070BA] dark:text-sky-300 font-bold underline decoration-[#0070BA]/30 underline-offset-2">
@@ -406,18 +479,18 @@ export default function DashboardOverview({
                             </strong>
                             . Check requirements and submit deliverables.
                           </>
-                        )}
+                        ) : null}
                       </p>
                     </div>
                   </div>
 
                   {/* Primary Action Button */}
                   <div className="shrink-0 flex items-center gap-2 self-start sm:self-center pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5 w-full sm:w-auto justify-end">
-                    {isPayment ? (
+                    {isPayment && item.milestone ? (
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={handleViewWorkReview}
+                          onClick={handleActionClick}
                           className="px-3.5 py-2 rounded-xl bg-white dark:bg-white/10 hover:bg-slate-100 dark:hover:bg-white/20 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-white/10 cursor-pointer flex items-center gap-1.5 transition-colors shadow-2xs"
                         >
                           <Eye className="h-3.5 w-3.5 text-[#0070BA] dark:text-sky-400" />
@@ -425,7 +498,7 @@ export default function DashboardOverview({
                         </button>
                         <button
                           type="button"
-                          onClick={() => onOpenPayPal(item.project, item.milestone)}
+                          onClick={() => onOpenPayPal(item.project, item.milestone!)}
                           className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
                         >
                           <PayPalIcon className="h-3.5 w-3.5" />
@@ -435,11 +508,11 @@ export default function DashboardOverview({
                     ) : (
                       <button
                         type="button"
-                        onClick={handleViewWorkReview}
+                        onClick={handleActionClick}
                         className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer flex items-center justify-center gap-1.5 transition-all shadow-xs hover:shadow-sm"
                       >
                         <Eye className="h-3.5 w-3.5" />
-                        <span>View</span>
+                        <span>{item.actionLabel || "View"}</span>
                       </button>
                     )}
                   </div>

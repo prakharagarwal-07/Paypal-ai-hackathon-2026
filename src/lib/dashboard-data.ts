@@ -124,6 +124,16 @@ export interface NotificationItem {
   milestoneId?: string;
 }
 
+export type ProjectStatus =
+  | "draft"
+  | "awaiting_acceptance"
+  | "changes_requested"
+  | "accepted"
+  | "rejected"
+  | "active"
+  | "completed"
+  | "archived";
+
 export interface ProjectContract {
   id: string;
   title: string;
@@ -150,9 +160,15 @@ export interface ProjectContract {
   currency: string;
   createdAt: string;
   targetDeadline: string;
-  status: "active" | "completed" | "archived";
+  status: ProjectStatus;
   milestones: Milestone[];
   activityLog: ActivityItem[];
+  // Shared proposal and initiation fields
+  initiatedBy: "client" | "freelancer";
+  proposalStatus?: "draft" | "awaiting_acceptance" | "changes_requested" | "accepted" | "rejected";
+  proposalFeedback?: string;
+  acceptedAt?: string;
+  termsAgreed?: boolean;
 }
 
 export function getFriendlyStatus(status: MilestoneStatus): {
@@ -224,6 +240,99 @@ export function getFriendlyCriterionStatus(status: CriterionStatus): {
   }
 }
 
+export function getFriendlyProjectStatus(
+  status: ProjectStatus,
+  initiatedBy?: "client" | "freelancer",
+  currentRole?: "client" | "freelancer"
+): {
+  label: string;
+  badgeClass: string;
+  isActionNeededForMe?: boolean;
+} {
+  switch (status) {
+    case "completed":
+      return {
+        label: "Completed & Settled",
+        badgeClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800",
+      };
+    case "active":
+    case "accepted":
+      return {
+        label: "Active Contract",
+        badgeClass: "bg-blue-50 text-[#0070BA] dark:bg-blue-950/40 dark:text-sky-300 border border-blue-200 dark:border-blue-800",
+      };
+    case "awaiting_acceptance": {
+      const isRecipient = currentRole && initiatedBy && currentRole !== initiatedBy;
+      if (isRecipient) {
+        return {
+          label: "Incoming Proposal (Action Required)",
+          badgeClass: "bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700 font-bold",
+          isActionNeededForMe: true,
+        };
+      }
+      return {
+        label: "Proposal Sent (Awaiting Acceptance)",
+        badgeClass: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800",
+      };
+    }
+    case "changes_requested": {
+      const isSender = currentRole && initiatedBy && currentRole === initiatedBy;
+      if (isSender) {
+        return {
+          label: "Changes Requested (Revise & Resubmit)",
+          badgeClass: "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700 font-bold",
+          isActionNeededForMe: true,
+        };
+      }
+      return {
+        label: "Changes Requested (Awaiting Revision)",
+        badgeClass: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800",
+      };
+    }
+    case "rejected":
+      return {
+        label: "Proposal Declined",
+        badgeClass: "bg-slate-100 text-slate-600 dark:bg-white/5 dark:text-slate-400 border border-slate-200 dark:border-white/10",
+      };
+    case "draft":
+      return {
+        label: "Draft Proposal",
+        badgeClass: "bg-slate-50 text-slate-600 dark:bg-white/5 dark:text-slate-400 border border-dashed border-slate-300 dark:border-white/10",
+      };
+    case "archived":
+      return {
+        label: "Archived",
+        badgeClass: "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400",
+      };
+    default:
+      return {
+        label: "Active",
+        badgeClass: "bg-blue-50 text-[#0070BA] dark:bg-blue-950/40 dark:text-sky-300",
+      };
+  }
+}
+
+export const CLIENT_OPTIONS = [
+  {
+    name: "Sarah Chen",
+    email: "sarah.chen@client.demo",
+    avatar: "SC",
+    company: "Apex Commerce",
+  },
+  {
+    name: "David Kim",
+    email: "david.kim@fintech.demo",
+    avatar: "DK",
+    company: "NextGen Labs",
+  },
+  {
+    name: "Amara Patel",
+    email: "amara.patel@retail.demo",
+    avatar: "AP",
+    company: "Lumina Brands",
+  },
+];
+
 export const FREELANCER_OPTIONS = [
   {
     name: "Rohan Verma",
@@ -275,6 +384,9 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     createdAt: "Oct 28, 2026",
     targetDeadline: "Nov 25, 2026",
     status: "active",
+    initiatedBy: "client",
+    proposalStatus: "accepted",
+    termsAgreed: true,
     activityLog: [
       {
         id: "act_101",
@@ -558,6 +670,9 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     createdAt: "Nov 01, 2026",
     targetDeadline: "Dec 10, 2026",
     status: "active",
+    initiatedBy: "client",
+    proposalStatus: "accepted",
+    termsAgreed: true,
     activityLog: [
       {
         id: "act_201",
@@ -695,6 +810,97 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     ],
   },
   {
+    id: "proj_ai_recommendation_2026",
+    title: "AI Search & Smart Recommendation Engine",
+    description: "Semantic search engine with vector search indexing and personalized product recommendations for the online storefront.",
+    category: "AI & Full-Stack",
+    client: {
+      name: "Sarah Chen",
+      email: "sarah.chen@client.demo",
+      avatar: "SC",
+      company: "Apex Commerce",
+    },
+    freelancer: {
+      name: "Rohan Verma",
+      email: "rohan.verma@dev.demo",
+      avatar: "RV",
+      title: "Web Developer",
+      rating: 4.98,
+    },
+    totalBudget: 3600,
+    totalPaid: 0,
+    escrowFunded: 0,
+    escrowReleased: 0,
+    currency: "USD",
+    createdAt: "Nov 08, 2026",
+    targetDeadline: "Dec 20, 2026",
+    status: "awaiting_acceptance",
+    initiatedBy: "freelancer",
+    proposalStatus: "awaiting_acceptance",
+    termsAgreed: false,
+    activityLog: [
+      {
+        id: "act_ai_01",
+        timestamp: "Nov 08, 2026 • 10:15 AM",
+        actor: "Rohan Verma",
+        actorRole: "freelancer",
+        action: "Proposed new project 'AI Search & Smart Recommendation Engine' ($3,600 USD) to Sarah Chen for acceptance.",
+      },
+    ],
+    milestones: [
+      {
+        id: "ms_ai_01",
+        stageNumber: 1,
+        title: "Semantic Vector Search & Query API",
+        description: "Vector indexing for product catalog, natural language search queries, and fast debounced search bar.",
+        amount: 1800,
+        currency: "USD",
+        dueDate: "Dec 05, 2026",
+        status: "not_started",
+        acceptanceCriteria: [
+          {
+            id: "crit_ai_01",
+            title: "Semantic vector search returns relevant products",
+            description: "Natural language queries return relevant products with similarity scoring.",
+            status: "needs_manual_review",
+          },
+          {
+            id: "crit_ai_02",
+            title: "Fast debounced search UI with instant suggestions",
+            description: "User search input queries API within 250ms with auto-suggestions.",
+            status: "needs_manual_review",
+          },
+        ],
+        submissions: [],
+      },
+      {
+        id: "ms_ai_02",
+        stageNumber: 2,
+        title: "Personalized Recommendations & PDP Widget",
+        description: "Co-purchase recommendation algorithm, 'Frequently Bought Together' widget, and analytics tracking.",
+        amount: 1800,
+        currency: "USD",
+        dueDate: "Dec 20, 2026",
+        status: "not_started",
+        acceptanceCriteria: [
+          {
+            id: "crit_ai_03",
+            title: "Product detail page renders related items carousel",
+            description: "Clean mobile and desktop responsive carousel of related items.",
+            status: "needs_manual_review",
+          },
+          {
+            id: "crit_ai_04",
+            title: "Click-through telemetry events recorded accurately",
+            description: "Recommendation clicks and conversions emit tracking events.",
+            status: "needs_manual_review",
+          },
+        ],
+        submissions: [],
+      },
+    ],
+  },
+  {
     id: "proj_sub_billing_completed",
     title: "Mobile App & PayPal Subscription Billing",
     description: "Recurring monthly billing integration, automated PDF invoices, and account dashboard for iOS and Android.",
@@ -720,6 +926,9 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     createdAt: "Oct 01, 2026",
     targetDeadline: "Oct 24, 2026",
     status: "completed",
+    initiatedBy: "client",
+    proposalStatus: "accepted",
+    termsAgreed: true,
     activityLog: [
       {
         id: "act_301",
@@ -876,6 +1085,15 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
 ];
 
 export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: "notif_proposal_ai",
+    timestamp: "1 hour ago",
+    title: "New Project Proposal Received",
+    message: "Rohan Verma proposed 'AI Search & Smart Recommendation Engine' ($3,600 USD) for your acceptance.",
+    type: "system",
+    unread: true,
+    projectId: "proj_ai_recommendation_2026",
+  },
   {
     id: "notif_1",
     timestamp: "10 mins ago",

@@ -12,6 +12,7 @@ import {
   INITIAL_TRANSACTIONS,
   AIAssessment,
   MilestoneSubmission,
+  ActivityItem,
 } from "./dashboard-data";
 
 export type DashboardTab =
@@ -44,9 +45,19 @@ interface DashboardContextType {
   hideToast: () => void;
 
   // Actions
-  createProject: (newProject: Omit<ProjectContract, "id" | "createdAt" | "totalPaid" | "escrowFunded" | "escrowReleased" | "activityLog">) => string;
+  createProject: (
+    newProject: Omit<
+      ProjectContract,
+      "id" | "createdAt" | "totalPaid" | "escrowFunded" | "escrowReleased" | "activityLog"
+    >,
+    asDraft?: boolean
+  ) => string;
   updateProject: (projectId: string, updates: Partial<ProjectContract>) => void;
   archiveProject: (projectId: string) => void;
+  acceptProposal: (projectId: string) => void;
+  requestProposalChanges: (projectId: string, feedback: string) => void;
+  rejectProposal: (projectId: string, reason?: string) => void;
+  resubmitProposal: (projectId: string, updatedData: Partial<ProjectContract>) => void;
   submitMilestoneDeliverables: (
     projectId: string,
     milestoneId: string,
@@ -72,11 +83,11 @@ interface DashboardContextType {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PROJECTS: "milestoneos_projects_v5",
-  TRANSACTIONS: "milestoneos_transactions_v5",
-  NOTIFICATIONS: "milestoneos_notifications_v5",
-  ROLE: "milestoneos_role_v5",
-  ACTIVE_PROJECT: "milestoneos_active_proj_v5",
+  PROJECTS: "milestoneos_projects_v6",
+  TRANSACTIONS: "milestoneos_transactions_v6",
+  NOTIFICATIONS: "milestoneos_notifications_v6",
+  ROLE: "milestoneos_role_v6",
+  ACTIVE_PROJECT: "milestoneos_active_proj_v6",
 };
 
 export function DashboardProvider({
@@ -175,27 +186,41 @@ export function DashboardProvider({
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
 
-  // Action: Create Project
+  // Action: Create Project / Propose Project
   const createProject = (
-    newProjectData: Omit<ProjectContract, "id" | "createdAt" | "totalPaid" | "escrowFunded" | "escrowReleased" | "activityLog">
+    newProjectData: Omit<
+      ProjectContract,
+      "id" | "createdAt" | "totalPaid" | "escrowFunded" | "escrowReleased" | "activityLog"
+    >,
+    asDraft: boolean = false
   ): string => {
     const id = `proj_${Date.now()}`;
     const now = new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+
+    const isClientInitiator = newProjectData.initiatedBy === "client";
+    const senderName = isClientInitiator ? newProjectData.client.name : newProjectData.freelancer.name;
+    const recipientName = isClientInitiator ? newProjectData.freelancer.name : newProjectData.client.name;
+    const initialStatus = asDraft ? "draft" : "awaiting_acceptance";
 
     const newProject: ProjectContract = {
       ...newProjectData,
       id,
       createdAt: now,
       totalPaid: 0,
-      escrowFunded: newProjectData.totalBudget,
+      escrowFunded: 0,
       escrowReleased: 0,
+      status: initialStatus,
+      proposalStatus: asDraft ? "draft" : "awaiting_acceptance",
+      termsAgreed: false,
       activityLog: [
         {
           id: `act_${Date.now()}`,
           timestamp: "Just now",
-          actor: newProjectData.client.name,
-          actorRole: "client",
-          action: `Created new project "${newProjectData.title}" with budget of $${newProjectData.totalBudget.toLocaleString()} USD.`,
+          actor: senderName,
+          actorRole: isClientInitiator ? "client" : "freelancer",
+          action: asDraft
+            ? `Created draft project "${newProjectData.title}" ($${newProjectData.totalBudget.toLocaleString()} USD).`
+            : `${senderName} submitted project proposal "${newProjectData.title}" to ${recipientName} for acceptance.`,
         },
       ],
     };
@@ -203,19 +228,201 @@ export function DashboardProvider({
     setProjects((prev) => [newProject, ...prev]);
     setActiveProjectIdState(id);
 
+    if (!asDraft) {
+      const notif: NotificationItem = {
+        id: `notif_${Date.now()}`,
+        timestamp: "Just now",
+        title: isClientInitiator ? "New Project Initiated" : "New Project Proposal",
+        message: `${senderName} sent a project proposal for "${newProject.title}" ($${newProject.totalBudget.toLocaleString()} USD).`,
+        type: "system",
+        unread: true,
+        projectId: id,
+      };
+      setNotifications((prev) => [notif, ...prev]);
+    }
+
+    showToast(
+      asDraft
+        ? `Draft "${newProject.title}" saved.`
+        : `Proposal "${newProject.title}" sent to ${recipientName}!`,
+      "success"
+    );
+    return id;
+  };
+
+  // Action: Accept Proposal
+  const acceptProposal = (projectId: string) => {
+    const nowStr = new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+
+        const accepterName = role === "client" ? project.client.name : project.freelancer.name;
+
+        // Activate milestones: stage 1 becomes in_progress, others not_started
+        const updatedMilestones = project.milestones.map((m, idx) => ({
+          ...m,
+          status: idx === 0 ? ("in_progress" as const) : ("not_started" as const),
+        }));
+
+        const newLog: ActivityItem = {
+          id: `act_${Date.now()}`,
+          timestamp: "Just now",
+          actor: accepterName,
+          actorRole: role,
+          action: `${accepterName} accepted the project proposal. The agreement is now active and binding.`,
+        };
+
+        return {
+          ...project,
+          status: "active" as const,
+          proposalStatus: "accepted" as const,
+          acceptedAt: nowStr,
+          termsAgreed: true,
+          milestones: updatedMilestones,
+          activityLog: [newLog, ...project.activityLog],
+        };
+      })
+    );
+
+    const project = projects.find((p) => p.id === projectId);
+    const projTitle = project?.title || "Project";
+
     const notif: NotificationItem = {
       id: `notif_${Date.now()}`,
       timestamp: "Just now",
-      title: "New Project Created",
-      message: `Project "${newProject.title}" has been created.`,
-      type: "system",
+      title: "Proposal Accepted & Contract Active",
+      message: `The project "${projTitle}" has been accepted. Work on agreed milestones may now begin.`,
+      type: "approval",
       unread: true,
-      projectId: id,
+      projectId,
     };
     setNotifications((prev) => [notif, ...prev]);
 
-    showToast(`Project "${newProject.title}" created successfully!`, "success");
-    return id;
+    showToast(`Proposal accepted! Contract "${projTitle}" is now active.`, "success");
+  };
+
+  // Action: Request Changes on Proposal
+  const requestProposalChanges = (projectId: string, feedback: string) => {
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+
+        const requesterName = role === "client" ? project.client.name : project.freelancer.name;
+
+        const newLog: ActivityItem = {
+          id: `act_${Date.now()}`,
+          timestamp: "Just now",
+          actor: requesterName,
+          actorRole: role,
+          action: `${requesterName} requested changes to the project proposal: "${feedback}".`,
+        };
+
+        return {
+          ...project,
+          status: "changes_requested" as const,
+          proposalStatus: "changes_requested" as const,
+          proposalFeedback: feedback,
+          activityLog: [newLog, ...project.activityLog],
+        };
+      })
+    );
+
+    const project = projects.find((p) => p.id === projectId);
+    const projTitle = project?.title || "Project";
+
+    const notif: NotificationItem = {
+      id: `notif_${Date.now()}`,
+      timestamp: "Just now",
+      title: "Proposal Changes Requested",
+      message: `Changes requested on proposal "${projTitle}": ${feedback}`,
+      type: "revision",
+      unread: true,
+      projectId,
+    };
+    setNotifications((prev) => [notif, ...prev]);
+
+    showToast("Feedback sent. Proposal marked as Changes Requested.", "info");
+  };
+
+  // Action: Reject Proposal
+  const rejectProposal = (projectId: string, reason?: string) => {
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+
+        const declinerName = role === "client" ? project.client.name : project.freelancer.name;
+
+        const newLog: ActivityItem = {
+          id: `act_${Date.now()}`,
+          timestamp: "Just now",
+          actor: declinerName,
+          actorRole: role,
+          action: `${declinerName} declined the project proposal${reason ? `: "${reason}"` : "."}`,
+        };
+
+        return {
+          ...project,
+          status: "rejected" as const,
+          proposalStatus: "rejected" as const,
+          proposalFeedback: reason,
+          activityLog: [newLog, ...project.activityLog],
+        };
+      })
+    );
+
+    showToast("Project proposal declined.", "info");
+  };
+
+  // Action: Resubmit Revised Proposal
+  const resubmitProposal = (projectId: string, updatedData: Partial<ProjectContract>) => {
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+
+        const senderName = role === "client" ? project.client.name : project.freelancer.name;
+
+        const newLog: ActivityItem = {
+          id: `act_${Date.now()}`,
+          timestamp: "Just now",
+          actor: senderName,
+          actorRole: role,
+          action: `${senderName} revised and resubmitted the project proposal for acceptance.`,
+        };
+
+        return {
+          ...project,
+          ...updatedData,
+          status: "awaiting_acceptance" as const,
+          proposalStatus: "awaiting_acceptance" as const,
+          proposalFeedback: undefined,
+          activityLog: [newLog, ...project.activityLog],
+        };
+      })
+    );
+
+    const project = projects.find((p) => p.id === projectId);
+    const projTitle = project?.title || "Project";
+
+    const notif: NotificationItem = {
+      id: `notif_${Date.now()}`,
+      timestamp: "Just now",
+      title: "Revised Proposal Submitted",
+      message: `Revised proposal submitted for "${projTitle}". Ready for review.`,
+      type: "submission",
+      unread: true,
+      projectId,
+    };
+    setNotifications((prev) => [notif, ...prev]);
+
+    showToast(`Revised proposal for "${projTitle}" submitted!`, "success");
   };
 
   // Action: Update Project
@@ -631,6 +838,10 @@ export function DashboardProvider({
         createProject,
         updateProject,
         archiveProject,
+        acceptProposal,
+        requestProposalChanges,
+        rejectProposal,
+        resubmitProposal,
         submitMilestoneDeliverables,
         requestRevision,
         requestChanges,

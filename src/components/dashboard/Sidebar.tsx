@@ -207,21 +207,19 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
                   </div>
                 )}
 
-                {role === "client" && (
-                  <div className="pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProjectDropdownOpen(false);
-                        onOpenNewProject();
-                      }}
-                      className="w-full text-left p-2 rounded-lg text-xs font-bold text-[#0070BA] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-[#0070BA]/10 transition-colors flex items-center gap-1.5"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      <span>+ Create New Project</span>
-                    </button>
-                  </div>
-                )}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProjectDropdownOpen(false);
+                      onOpenNewProject();
+                    }}
+                    className="w-full text-left p-2 rounded-lg text-xs font-bold text-[#0070BA] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-[#0070BA]/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    <span>{role === "client" ? "+ Create Project" : "+ Propose Project"}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

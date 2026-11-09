@@ -104,17 +104,20 @@ export default function DashboardHeader({
             )}
           </button>
 
-          {/* New Project CTA */}
-          {role === "client" && (
-            <button
-              type="button"
-              onClick={onOpenNewProject}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold shadow-xs hover:bg-[#005a96] cursor-pointer transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">New Project</span>
-            </button>
-          )}
+          {/* Project Initiation Action (Both Roles) */}
+          <button
+            type="button"
+            onClick={onOpenNewProject}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold shadow-xs hover:bg-[#005a96] cursor-pointer transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">
+              {role === "client" ? "Create Project" : "Propose Project"}
+            </span>
+            <span className="sm:hidden">
+              {role === "client" ? "New" : "Propose"}
+            </span>
+          </button>
         </div>
       </div>
     </header>

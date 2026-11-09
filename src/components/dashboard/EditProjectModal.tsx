@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Save, Archive, Trash2 } from "lucide-react";
+import { X, Save, Archive, Trash2, ShieldCheck } from "lucide-react";
 import { ProjectContract } from "@/lib/dashboard-data";
 import { useDashboard } from "@/lib/dashboard-store";
 
@@ -64,6 +64,17 @@ export default function EditProjectModal({ project, isOpen, onClose }: EditProje
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 flex-1 overflow-y-auto">
+          {project.termsAgreed && (
+            <div className="p-3.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 flex items-start gap-2.5 text-xs text-blue-950 dark:text-blue-200 shadow-2xs">
+              <ShieldCheck className="h-4 w-4 text-[#0070BA] dark:text-sky-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Agreed Contract Terms Locked</p>
+                <p className="text-[11px] text-blue-800 dark:text-blue-300 mt-0.5 leading-relaxed">
+                  Budget (${project.totalBudget.toLocaleString()} USD across {project.milestones.length} milestones) and milestone acceptance criteria are mutually agreed between {project.client.name} and {project.freelancer.name}. Any milestone alterations require a formal proposal resubmission.
+                </p>
+              </div>
+            </div>
+          )}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               Project Title *
@@ -112,7 +123,10 @@ export default function EditProjectModal({ project, isOpen, onClose }: EditProje
               onChange={(e) => setStatus(e.target.value as any)}
               className="w-full rounded-xl border border-slate-300/80 bg-white px-3.5 py-2.5 text-xs text-slate-900 dark:border-white/15 dark:bg-[#131C31] dark:text-white cursor-pointer"
             >
-              <option value="active">Active</option>
+              <option value="active">Active (Terms Agreed)</option>
+              <option value="awaiting_acceptance">Awaiting Acceptance</option>
+              <option value="changes_requested">Changes Requested</option>
+              <option value="draft">Draft</option>
               <option value="completed">Completed</option>
               <option value="archived">Archived</option>
             </select>

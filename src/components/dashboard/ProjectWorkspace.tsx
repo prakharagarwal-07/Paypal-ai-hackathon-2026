@@ -20,6 +20,8 @@ import {
   ChevronUp,
   Layers,
   ArrowRight,
+  X,
+  Send,
 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 
@@ -40,9 +42,18 @@ export default function ProjectWorkspace({
   onOpenPayPal,
   onOpenEditProject,
 }: ProjectWorkspaceProps) {
-  const { role, activeProject, approveMilestone } = useDashboard();
+  const {
+    role,
+    activeProject,
+    approveMilestone,
+    acceptProposal,
+    requestProposalChanges,
+    rejectProposal,
+  } = useDashboard();
   const [expandedMilestones, setExpandedMilestones] = useState<Record<string, boolean>>({});
   const [allExpanded, setAllExpanded] = useState(false);
+  const [isRequestingChanges, setIsRequestingChanges] = useState(false);
+  const [proposalChangeFeedback, setProposalChangeFeedback] = useState("");
 
   if (!activeProject) {
     return (
@@ -112,6 +123,173 @@ export default function ProjectWorkspace({
 
           <span className="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs self-start sm:self-auto shadow-xs">
             100% Settled
+          </span>
+        </div>
+      )}
+
+      {/* Shared Proposal Workflow Banners */}
+      {activeProject.status === "awaiting_acceptance" &&
+        (() => {
+          const isRecipient =
+            (role === "client" && activeProject.initiatedBy === "freelancer") ||
+            (role === "freelancer" && activeProject.initiatedBy === "client");
+          const senderName =
+            activeProject.initiatedBy === "client"
+              ? activeProject.client.name
+              : activeProject.freelancer.name;
+          const recipientName =
+            activeProject.initiatedBy === "client"
+              ? activeProject.freelancer.name
+              : activeProject.client.name;
+
+          return isRecipient ? (
+            <div className="p-5 sm:p-6 rounded-2xl border-2 border-amber-300 bg-gradient-to-r from-amber-50 via-white to-blue-50/40 dark:border-amber-700/60 dark:from-amber-950/40 dark:via-[#0D1527] dark:to-blue-950/20 text-xs shadow-md space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="flex items-start gap-3.5">
+                  <div className="p-2.5 rounded-xl bg-amber-500 text-white shrink-0 shadow-xs">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-200 text-amber-900 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+                        Incoming Proposal • Action Required
+                      </span>
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                        Review Project Proposal from {senderName}
+                      </h2>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed max-w-3xl">
+                      <strong>{senderName}</strong> has proposed this project for a total budget of{" "}
+                      <strong className="font-mono text-slate-900 dark:text-white font-bold">
+                        ${activeProject.totalBudget.toLocaleString()} USD
+                      </strong>{" "}
+                      across {activeProject.milestones.length} milestones. Please inspect the agreed deliverables and acceptance criteria below before activating this contract.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2.5 pt-3 border-t border-amber-200/60 dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to decline this project proposal?")) {
+                      rejectProposal(activeProject.id);
+                    }
+                  }}
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors"
+                >
+                  Decline Proposal
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsRequestingChanges(true)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 dark:border-white/20 bg-white dark:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-white/20 cursor-pointer transition-colors shadow-2xs"
+                >
+                  Request Changes
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => acceptProposal(activeProject.id)}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  <span>Accept & Activate Contract</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 sm:p-5 rounded-2xl border border-sky-200 bg-sky-50/60 dark:border-sky-900/40 dark:bg-sky-950/20 text-xs flex items-start gap-3.5 shadow-xs">
+              <div className="p-2.5 rounded-xl bg-sky-500 text-white shrink-0">
+                <Clock className="h-5 w-5" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Proposal Sent to {recipientName}
+                  </h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                    Awaiting Acceptance
+                  </span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 text-xs">
+                  You submitted this proposal to {recipientName}. Work submissions and milestone payments cannot begin until {recipientName} accepts the terms.
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
+      {activeProject.status === "changes_requested" &&
+        (() => {
+          const isSender =
+            (role === "client" && activeProject.initiatedBy === "client") ||
+            (role === "freelancer" && activeProject.initiatedBy === "freelancer");
+          const otherParty =
+            activeProject.initiatedBy === "client"
+              ? activeProject.freelancer.name
+              : activeProject.client.name;
+
+          return (
+            <div className="p-5 rounded-2xl border border-rose-200 bg-rose-50/60 dark:border-rose-900/40 dark:bg-rose-950/20 text-xs space-y-3 shadow-xs">
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 rounded-xl bg-rose-500 text-white shrink-0">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                      {isSender
+                        ? `${otherParty} Requested Adjustments to Proposal`
+                        : `You Requested Changes from ${otherParty}`}
+                    </h2>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+                      Changes Requested
+                    </span>
+                  </div>
+                  {activeProject.proposalFeedback && (
+                    <div className="mt-1.5 p-3 rounded-xl bg-white dark:bg-white/5 border border-rose-200/80 dark:border-white/10 text-slate-800 dark:text-slate-200">
+                      <span className="font-bold block text-slate-900 dark:text-white mb-0.5">Requested Feedback:</span>
+                      <p className="italic">"{activeProject.proposalFeedback}"</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {isSender && (
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={onOpenEditProject}
+                    className="px-4 py-2 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white font-bold text-xs cursor-pointer transition-colors shadow-xs"
+                  >
+                    Revise & Resend Proposal
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+      {activeProject.status === "rejected" && (
+        <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 text-xs flex items-center gap-3 text-slate-600 dark:text-slate-400">
+          <AlertCircle className="h-4 w-4 text-slate-400 shrink-0" />
+          <span>This project proposal was declined and is not active.</span>
+        </div>
+      )}
+
+      {activeProject.status === "active" && (
+        <div className="p-3.5 rounded-2xl border border-emerald-200/80 bg-emerald-50/50 dark:border-emerald-900/30 dark:bg-emerald-950/20 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 text-emerald-800 dark:text-emerald-300 font-semibold">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>
+              Mutually Agreed Contract — Scope, milestones, and acceptance criteria are locked for both parties.
+            </span>
+          </div>
+          <span className="text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-200 shrink-0 self-start sm:self-auto border border-emerald-300 dark:border-emerald-700">
+            Agreed & Active
           </span>
         </div>
       )}
@@ -408,7 +586,11 @@ export default function ProjectWorkspace({
 
                       {/* Primary Role Action Button */}
                       <div>
-                        {role === "client" ? (
+                        {activeProject.status !== "active" && activeProject.status !== "completed" ? (
+                          <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium italic">
+                            Unlocks once contract is active
+                          </span>
+                        ) : role === "client" ? (
                           <>
                             {isSubmitted && (
                               <button
@@ -629,6 +811,60 @@ export default function ProjectWorkspace({
           ))}
         </div>
       </div>
+
+      {/* Request Changes on Proposal Modal */}
+      {isRequestingChanges && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl dark:border-white/10 dark:bg-[#0D1527] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+              <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                Request Changes to Proposal
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsRequestingChanges(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 dark:text-slate-300">
+              Specify what budget, milestone, or criteria adjustments should be made before you can accept this proposal.
+            </p>
+
+            <textarea
+              rows={3}
+              value={proposalChangeFeedback}
+              onChange={(e) => setProposalChangeFeedback(e.target.value)}
+              placeholder="e.g. Please add responsive testing to milestone 2 and adjust the completion deadline to Dec 28."
+              className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs text-slate-900 dark:border-white/10 dark:bg-white/5 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-[#0070BA]"
+            />
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsRequestingChanges(false)}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!proposalChangeFeedback.trim()}
+                onClick={() => {
+                  requestProposalChanges(activeProject.id, proposalChangeFeedback.trim());
+                  setIsRequestingChanges(false);
+                  setProposalChangeFeedback("");
+                }}
+                className="px-4 py-2 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] disabled:opacity-50 cursor-pointer shadow-xs transition-colors"
+              >
+                Send Request
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
