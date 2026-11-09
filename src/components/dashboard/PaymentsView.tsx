@@ -22,9 +22,6 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
       .map((m) => ({ project: p, milestone: m }))
   );
 
-  // 2. Recent Payments (latest 3 completed payments)
-  const recentPayments = transactions.slice(0, 3);
-
   const copyTxId = (id: string) => {
     navigator.clipboard?.writeText(id);
     setCopiedId(id);
@@ -119,65 +116,11 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
         )}
       </div>
 
-      {/* SECTION 2: Recent Payments */}
-      <div className="space-y-3">
-        <div>
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">
-            2. Recent Payments
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Latest completed milestone payments.
-          </p>
-        </div>
-
-        {recentPayments.length === 0 ? (
-          <div className="p-6 text-center text-slate-400 text-xs border border-dashed border-slate-200 dark:border-white/10 rounded-2xl">
-            No payments have been completed yet.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {recentPayments.map((tx) => (
-              <div
-                key={tx.id}
-                onClick={() => setSelectedTx(tx)}
-                className="p-4 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] space-y-2 cursor-pointer hover:border-slate-300 dark:hover:border-white/20 transition-all"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400 font-mono">{tx.paidAt}</span>
-                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                    Payment Completed
-                  </span>
-                </div>
-
-                <div>
-                  <div className="mb-1.5">
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40">
-                      <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
-                      Project: {tx.projectTitle}
-                    </span>
-                  </div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                    {tx.milestoneTitle}
-                  </h4>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
-                  <span className="text-slate-500">To: {tx.payee}</span>
-                  <span className="font-mono font-bold text-slate-900 dark:text-white">
-                    ${tx.amount.toLocaleString()} USD
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* SECTION 3: Transaction History */}
+      {/* SECTION 2: Transaction History */}
       <div id="transaction-history" className="space-y-3 scroll-mt-24">
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white">
-            3. Transaction History
+            2. Transaction History
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             A complete record of all completed milestone transactions. Click any transaction to view details.
