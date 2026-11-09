@@ -2,7 +2,7 @@
 
 import { useDashboard } from "@/lib/dashboard-store";
 import { Milestone, ProjectContract, TransactionRecord } from "@/lib/dashboard-data";
-import { CheckCircle2, Clock, Copy, Check, X } from "lucide-react";
+import { CheckCircle2, Clock, Copy, Check, X, FolderGit2 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 import { useState } from "react";
 
@@ -76,12 +76,15 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
                 className="p-5 rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] flex flex-col sm:flex-row sm:items-center justify-between gap-4"
               >
                 <div>
+                  <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 shadow-2xs">
+                      <FolderGit2 className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
+                      Project: {project.title}
+                    </span>
+                  </div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     {milestone.title}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Project: <strong className="text-slate-700 dark:text-slate-300 font-medium">{project.title}</strong>
-                  </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Freelancer: <strong className="text-slate-700 dark:text-slate-300 font-medium">{project.freelancer.name}</strong>
                   </p>
@@ -147,12 +150,15 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
                 </div>
 
                 <div>
+                  <div className="mb-1.5">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40">
+                      <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
+                      Project: {tx.projectTitle}
+                    </span>
+                  </div>
                   <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
                     {tx.milestoneTitle}
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    {tx.projectTitle}
-                  </p>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs">
@@ -205,7 +211,10 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
                       <span className="font-bold text-slate-900 dark:text-white block">
                         {tx.milestoneTitle}
                       </span>
-                      <span className="text-[11px] text-slate-400 block">{tx.projectTitle}</span>
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 mt-1">
+                        <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
+                        Project: {tx.projectTitle}
+                      </span>
                     </td>
                     <td className="p-3.5 font-mono font-bold text-slate-900 dark:text-white">
                       ${tx.amount.toLocaleString()} USD
@@ -258,7 +267,10 @@ export default function PaymentsView({ onOpenPayPal }: PaymentsViewProps) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Project:</span>
-                <span className="text-slate-700 dark:text-slate-300">{selectedTx.projectTitle}</span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40">
+                  <FolderGit2 className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
+                  {selectedTx.projectTitle}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Recipient:</span>

@@ -12,6 +12,7 @@ import {
   Check,
   FileText,
   AlertTriangle,
+  FolderGit2,
 } from "lucide-react";
 import { Milestone, ProjectContract, getFriendlyCriterionStatus } from "@/lib/dashboard-data";
 import { GitHubIcon, PayPalIcon } from "./icons";
@@ -24,6 +25,7 @@ interface AuditModalProps {
   onClose: () => void;
   onOpenRevisionModal?: () => void;
   onOpenPayPalModal?: () => void;
+  onOpenSubmissionModal?: () => void;
 }
 
 export default function AuditModal({
@@ -33,6 +35,7 @@ export default function AuditModal({
   onClose,
   onOpenRevisionModal,
   onOpenPayPalModal,
+  onOpenSubmissionModal,
 }: AuditModalProps) {
   const { role, approveMilestone } = useDashboard();
   const [copiedLink, setCopiedLink] = useState(false);
@@ -73,9 +76,12 @@ export default function AuditModal({
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">
               {milestone.title}
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Project: {project.title}
-            </p>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-xs font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 shadow-2xs">
+                <FolderGit2 className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
+                Project: {project.title}
+              </span>
+            </div>
           </div>
 
           <button
@@ -260,13 +266,32 @@ export default function AuditModal({
                   )}
               </>
             ) : (
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 font-bold text-slate-800 dark:text-white cursor-pointer"
-              >
-                Close
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 font-bold text-slate-800 dark:text-white cursor-pointer"
+                >
+                  Close
+                </button>
+                {onOpenSubmissionModal &&
+                  (milestone.status === "changes_requested" ||
+                    milestone.status === "revision_requested" ||
+                    milestone.status === "in_progress") && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        onOpenSubmissionModal();
+                      }}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white font-bold cursor-pointer transition-colors shadow-xs"
+                    >
+                      {milestone.status === "in_progress"
+                        ? "Submit Deliverables"
+                        : "Update & Resubmit Work"}
+                    </button>
+                  )}
+              </div>
             )}
           </div>
         </div>

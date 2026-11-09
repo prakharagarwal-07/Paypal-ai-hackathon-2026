@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, AlertCircle, AlertTriangle, Send } from "lucide-react";
+import { X, AlertCircle, AlertTriangle, Send, FolderGit2 } from "lucide-react";
 import { Milestone, ProjectContract } from "@/lib/dashboard-data";
 import { useDashboard } from "@/lib/dashboard-store";
 
@@ -60,9 +60,13 @@ export default function RevisionRequestModal({
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
               Request Changes
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {milestone.title} • {project.title}
-            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
+              <span className="text-xs text-slate-700 dark:text-slate-300 font-semibold">{milestone.title}</span>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40">
+                <FolderGit2 className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
+                Project: {project.title}
+              </span>
+            </div>
           </div>
 
           <button

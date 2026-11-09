@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, CheckCircle2, RefreshCw, Receipt } from "lucide-react";
+import { X, CheckCircle2, RefreshCw, Receipt, FolderGit2 } from "lucide-react";
 import { Milestone, ProjectContract } from "@/lib/dashboard-data";
 import { PayPalIcon } from "./icons";
 import { useDashboard } from "@/lib/dashboard-store";
@@ -86,7 +86,10 @@ export default function PayPalPaymentModal({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Project:</span>
-                <span className="text-slate-700 dark:text-slate-300 truncate max-w-[200px]">{project.title}</span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 truncate max-w-[220px]">
+                  <FolderGit2 className="h-3 w-3 text-[#0070BA] dark:text-sky-400 shrink-0" />
+                  {project.title}
+                </span>
               </div>
             </div>
 
@@ -108,7 +111,10 @@ export default function PayPalPaymentModal({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Project:</span>
-                <span className="text-slate-700 dark:text-slate-300">{project.title}</span>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 truncate max-w-[220px]">
+                  <FolderGit2 className="h-3 w-3 text-[#0070BA] dark:text-sky-400 shrink-0" />
+                  {project.title}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-slate-400">Freelancer:</span>

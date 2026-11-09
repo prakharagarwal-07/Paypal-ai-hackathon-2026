@@ -1,7 +1,7 @@
 "use client";
 
 import { useDashboard } from "@/lib/dashboard-store";
-import { X, CheckCircle2, AlertCircle, Clock, Wallet, Bell, Sparkles, Check } from "lucide-react";
+import { X, CheckCircle2, AlertCircle, Clock, Wallet, Bell, Sparkles, Check, FolderGit2 } from "lucide-react";
 
 interface NotificationDrawerProps {
   isOpen: boolean;
@@ -9,8 +9,14 @@ interface NotificationDrawerProps {
 }
 
 export default function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps) {
-  const { notifications, markNotificationRead, clearAllNotifications, setActiveProjectId, setActiveTab } =
-    useDashboard();
+  const {
+    notifications,
+    markNotificationRead,
+    clearAllNotifications,
+    setActiveProjectId,
+    setActiveTab,
+    projects,
+  } = useDashboard();
 
   if (!isOpen) return null;
 
@@ -92,43 +98,60 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
                 No notifications right now.
               </div>
             ) : (
-              notifications.map((notif) => (
-                <div
-                  key={notif.id}
-                  onClick={() => handleNotificationClick(notif)}
-                  className={`p-4 rounded-xl transition-all cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 flex items-start gap-3 relative ${
-                    notif.unread
-                      ? "bg-blue-50/50 dark:bg-blue-900/10"
-                      : "opacity-80 hover:opacity-100"
-                  }`}
-                >
-                  {notif.unread && (
-                    <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-[#0070BA] dark:bg-sky-400" />
-                  )}
-                  <div className="p-2 rounded-lg bg-white dark:bg-[#131C31] shadow-xs border border-slate-200/60 dark:border-white/10 shrink-0">
-                    {getIcon(notif.type)}
-                  </div>
-                  <div className="flex-1 min-w-0 pr-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                        {notif.title}
-                      </h4>
-                      <span className="text-[10px] text-slate-400 shrink-0 flex items-center gap-1">
-                        <Clock className="h-2.5 w-2.5" />
-                        {notif.timestamp}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                      {notif.message}
-                    </p>
-                    {notif.projectId && (
-                      <span className="mt-2 inline-flex items-center text-[10px] font-semibold text-[#0070BA] dark:text-sky-400 hover:underline">
-                        View Milestone Workspace →
-                      </span>
+              notifications.map((notif) => {
+                const project = notif.projectId
+                  ? projects.find((p) => p.id === notif.projectId)
+                  : null;
+
+                return (
+                  <div
+                    key={notif.id}
+                    onClick={() => handleNotificationClick(notif)}
+                    className={`p-4 rounded-xl transition-all cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 flex items-start gap-3 relative ${
+                      notif.unread
+                        ? "bg-blue-50/50 dark:bg-blue-900/10"
+                        : "opacity-80 hover:opacity-100"
+                    }`}
+                  >
+                    {notif.unread && (
+                      <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-[#0070BA] dark:bg-sky-400" />
                     )}
+                    <div className="p-2 rounded-lg bg-white dark:bg-[#131C31] shadow-xs border border-slate-200/60 dark:border-white/10 shrink-0">
+                      {getIcon(notif.type)}
+                    </div>
+                    <div className="flex-1 min-w-0 pr-4">
+                      {project && (
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 shadow-2xs">
+                            <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
+                            Project: {project.title}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {notif.title}
+                        </h4>
+                        <span className="text-[10px] text-slate-400 shrink-0 flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5" />
+                          {notif.timestamp}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                        {notif.message}
+                      </p>
+                      {notif.projectId && (
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="inline-flex items-center text-[10px] font-semibold text-[#0070BA] dark:text-sky-400 hover:underline">
+                            View Milestone Workspace →
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

@@ -259,6 +259,11 @@ function DashboardInner() {
             setAuditTarget(null);
             setPayPalTarget(t);
           }}
+          onOpenSubmissionModal={() => {
+            const t = auditTarget;
+            setAuditTarget(null);
+            setSubmissionTarget(t);
+          }}
         />
       )}
 
