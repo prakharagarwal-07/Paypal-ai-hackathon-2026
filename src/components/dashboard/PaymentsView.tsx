@@ -198,8 +198,8 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                         }}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline cursor-pointer"
                       >
-                        <Sparkles className="h-3 w-3" />
-                        <span>AI Invoice</span>
+                        <Receipt className="h-3 w-3" />
+                        <span>Invoice</span>
                       </button>
                     </td>
                   </tr>
@@ -274,10 +274,10 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                   setSelectedTx(null);
                   handleOpenInvoice(tx);
                 }}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Sparkles className="h-4 w-4" />
-                <span>Download AI Settlement Invoice & Receipt</span>
+                <Receipt className="h-4 w-4" />
+                <span>Download Invoice</span>
               </button>
 
               <button

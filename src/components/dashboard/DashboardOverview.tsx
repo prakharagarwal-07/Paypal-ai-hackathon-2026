@@ -1144,8 +1144,8 @@ export default function DashboardOverview({
                               }}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:bg-[#0070BA]/10 transition-colors cursor-pointer"
                             >
-                              <Sparkles className="h-3.5 w-3.5" />
-                              <span>View AI Invoice</span>
+                              <Receipt className="h-3.5 w-3.5" />
+                              <span>View Invoice</span>
                             </button>
                           )}
                         </div>

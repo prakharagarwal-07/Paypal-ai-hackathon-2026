@@ -154,10 +154,10 @@ export default function PayPalPaymentModal({
                     onOpenInvoice(project, milestone, receiptTxId || undefined);
                   }
                 }}
-                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-[#0070BA] hover:from-purple-500 hover:to-[#005a96] text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Sparkles className="h-4 w-4" />
-                <span>Download AI Settlement Invoice & Receipt</span>
+                <Receipt className="h-4 w-4" />
+                <span>Download Invoice</span>
               </button>
 
               <button

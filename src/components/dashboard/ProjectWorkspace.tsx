@@ -26,6 +26,7 @@ import {
   Play,
   Pencil,
   Image as ImageIcon,
+  Receipt,
 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 
@@ -686,8 +687,8 @@ export default function ProjectWorkspace({
                                     onClick={() => onOpenInvoice(activeProject, milestone, milestone.paypalTransactionId)}
                                     className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
                                   >
-                                    <Sparkles className="h-3 w-3" />
-                                    <span>AI Invoice</span>
+                                    <Receipt className="h-3 w-3" />
+                                    <span>Invoice</span>
                                   </button>
                                 )}
                               </div>
@@ -819,8 +820,8 @@ export default function ProjectWorkspace({
                                     onClick={() => onOpenInvoice(activeProject, milestone, milestone.paypalTransactionId)}
                                     className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
                                   >
-                                    <Sparkles className="h-3 w-3" />
-                                    <span>AI Invoice</span>
+                                    <Receipt className="h-3 w-3" />
+                                    <span>Invoice</span>
                                   </button>
                                 )}
                               </div>

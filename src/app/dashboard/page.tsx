@@ -387,7 +387,7 @@ function DashboardInner() {
         />
       )}
 
-      {/* AI INVOICE & RECEIPT MODAL */}
+      {/* INVOICE MODAL */}
       {invoiceTarget && (
         <InvoiceModal
           project={invoiceTarget.project}

@@ -243,8 +243,8 @@ export default function CompletedProjectModal({
                                 onClick={() => onOpenInvoice(project, m, m.paypalTransactionId)}
                                 className="text-xs text-[#0070BA] dark:text-sky-400 font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
                               >
-                                <Sparkles className="h-3 w-3" />
-                                <span>AI Invoice</span>
+                                <Receipt className="h-3 w-3" />
+                                <span>Invoice</span>
                               </button>
                             )}
                           </div>
