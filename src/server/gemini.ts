@@ -25,8 +25,45 @@ export function hasGeminiKey(): boolean {
   return Boolean(key && key !== "your_gemini_api_key_here");
 }
 
+const GEMINI_MODELS = [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
+  "gemini-flash-latest",
+];
+
+async function requestGeminiJson(prompt: string, apiKey: string): Promise<any | null> {
+  for (const model of GEMINI_MODELS) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              response_mime_type: "application/json",
+              temperature: 0.2,
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (jsonText) {
+          return JSON.parse(jsonText);
+        }
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
 /**
- * Runs Gemini 2.5 Flash Acceptance Audit on a milestone submission
+ * Runs Gemini Flash Acceptance Audit on a milestone submission
  */
 export async function verifyMilestoneWithAI(
   input: VerifyMilestoneInput
@@ -88,27 +125,10 @@ Return strictly valid JSON conforming to this schema:
   "suggestedRevisions": string[]
 }`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              response_mime_type: "application/json",
-              temperature: 0.2,
-            },
-          }),
-        }
-      );
+      const parsed = await requestGeminiJson(prompt, apiKey);
 
-      if (response.ok) {
-        const result = await response.json();
-        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (jsonText) {
-          const parsed = JSON.parse(jsonText);
-          const checks: Array<{ name: string; passed: boolean; detail: string }> = [];
+      if (parsed) {
+        const checks: Array<{ name: string; passed: boolean; detail: string }> = [];
           if (submission.deliverableLinks && submission.deliverableLinks.length > 0) {
             checks.push({
               name: "Deliverable Assets & Links",
@@ -161,7 +181,6 @@ Return strictly valid JSON conforming to this schema:
             automatedChecks: checks,
           };
         }
-      }
     } catch (err) {
       console.warn("Gemini API call failed, using intelligent heuristic audit:", err);
     }
@@ -476,27 +495,10 @@ INSTRUCTIONS:
   ]
 }`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              response_mime_type: "application/json",
-              temperature: 0.2,
-            },
-          }),
-        }
-      );
+      const parsed = await requestGeminiJson(prompt, apiKey);
 
-      if (response.ok) {
-        const result = await response.json();
-        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (jsonText) {
-          const parsed = JSON.parse(jsonText);
-          const lineItems: InvoiceLineItem[] = Array.isArray(parsed.lineItems) && parsed.lineItems.length > 0
+      if (parsed) {
+        const lineItems: InvoiceLineItem[] = Array.isArray(parsed.lineItems) && parsed.lineItems.length > 0
             ? parsed.lineItems.map((item: any) => ({
                 description: item.description || "Milestone Deliverable",
                 category: item.category || "Development",
@@ -547,7 +549,6 @@ INSTRUCTIONS:
             isLiveGemini: true,
           };
         }
-      }
     } catch (err) {
       console.warn("Gemini invoice synthesis failed, using heuristic AI generator:", err);
     }
