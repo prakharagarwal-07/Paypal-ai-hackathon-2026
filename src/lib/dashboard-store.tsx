@@ -15,11 +15,17 @@ import {
   ActivityItem,
   DeliverableLink,
   DeliverableAttachment,
+  MilestoneOSUser,
+  MILESTONEOS_DIRECTORY,
+  generateMilestoneOSId,
+  generateInvitationToken,
+  lookupMilestoneOSUser,
 } from "./dashboard-data";
 
 export type DashboardTab =
   | "dashboard"
   | "projects"
+  | "project-requests"
   | "milestones"
   | "work-review"
   | "payments"
@@ -29,12 +35,16 @@ export type DashboardTab =
 
 export interface UserProfiles {
   client: {
+    id: string;
+    milestoneOSId: string;
     name: string;
     email: string;
     avatar: string;
     company: string;
   };
   freelancer: {
+    id: string;
+    milestoneOSId: string;
     name: string;
     email: string;
     avatar: string;
@@ -45,12 +55,16 @@ export interface UserProfiles {
 
 export const DEFAULT_USER_PROFILES: UserProfiles = {
   client: {
+    id: "usr_client_sarah",
+    milestoneOSId: "MSO-7K4P92",
     name: "Sarah Chen",
     email: "sarah.chen@apexcommerce.com",
     avatar: "SC",
     company: "Apex Commerce",
   },
   freelancer: {
+    id: "usr_dev_rohan",
+    milestoneOSId: "MSO-2W8L41",
     name: "Rohan Verma",
     email: "rohan.verma@craftdev.io",
     avatar: "RV",
@@ -128,6 +142,19 @@ interface DashboardContextType {
   requestProposalChanges: (projectId: string, feedback: string) => void;
   rejectProposal: (projectId: string, reason?: string) => void;
   resubmitProposal: (projectId: string, updatedData: Partial<ProjectContract>) => void;
+  revokeInvitation: (projectId: string) => void;
+  acceptInvitationByToken: (
+    token: string,
+    claimingUser: {
+      name: string;
+      email: string;
+      avatar: string;
+      milestoneOSId: string;
+      role: "client" | "freelancer";
+      companyOrTitle?: string;
+    }
+  ) => { success: boolean; project?: ProjectContract; error?: string };
+  lookupUserById: (id: string) => MilestoneOSUser | null;
   submitMilestoneDeliverables: (
     projectId: string,
     milestoneId: string,
@@ -318,7 +345,10 @@ export function DashboardProvider({
         setStatusFilterState(savedFilter);
       }
       if (savedProfiles) {
-        setUserProfiles(JSON.parse(savedProfiles));
+        const parsed = JSON.parse(savedProfiles);
+        if (!parsed.client?.milestoneOSId) parsed.client.milestoneOSId = "MSO-7K4P92";
+        if (!parsed.freelancer?.milestoneOSId) parsed.freelancer.milestoneOSId = "MSO-2W8L41";
+        setUserProfiles(parsed);
       }
     } catch (e) {
       console.warn("Could not load from localStorage:", e);
@@ -385,9 +415,18 @@ export function DashboardProvider({
     const now = new Date().toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
 
     const isClientInitiator = newProjectData.initiatedBy === "client";
+    const senderProfile = isClientInitiator ? userProfiles.client : userProfiles.freelancer;
     const senderName = isClientInitiator ? newProjectData.client.name : newProjectData.freelancer.name;
-    const recipientName = isClientInitiator ? newProjectData.freelancer.name : newProjectData.client.name;
+    const recipientName = newProjectData.isPublicInvitation
+      ? "Unassigned (Private Invitation Link)"
+      : isClientInitiator
+      ? newProjectData.freelancer.name
+      : newProjectData.client.name;
     const initialStatus = asDraft ? "draft" : "awaiting_acceptance";
+
+    const invToken = newProjectData.isPublicInvitation
+      ? newProjectData.invitationToken || generateInvitationToken()
+      : undefined;
 
     const newProject: ProjectContract = {
       ...newProjectData,
@@ -399,6 +438,12 @@ export function DashboardProvider({
       status: initialStatus,
       proposalStatus: asDraft ? "draft" : "awaiting_acceptance",
       termsAgreed: false,
+      initiatorMilestoneOSId: senderProfile.milestoneOSId,
+      invitationToken: invToken,
+      invitationStatus: newProjectData.isPublicInvitation ? "active" : undefined,
+      invitationExpiresAt: newProjectData.isPublicInvitation
+        ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        : undefined,
       activityLog: [
         {
           id: `act_${Date.now()}`,
@@ -407,6 +452,8 @@ export function DashboardProvider({
           actorRole: isClientInitiator ? "client" : "freelancer",
           action: asDraft
             ? `Created draft project "${newProjectData.title}" ($${newProjectData.totalBudget.toLocaleString()} USD).`
+            : newProjectData.isPublicInvitation
+            ? `${senderName} created project proposal "${newProjectData.title}" and generated a private shareable invitation link.`
             : `${senderName} submitted project proposal "${newProjectData.title}" to ${recipientName} for acceptance.`,
         },
       ],
@@ -431,6 +478,8 @@ export function DashboardProvider({
     showToast(
       asDraft
         ? `Draft "${newProject.title}" saved.`
+        : newProjectData.isPublicInvitation
+        ? `Shareable invitation created! Copy the link to invite your counterparty.`
         : `Proposal "${newProject.title}" sent to ${recipientName}!`,
       "success"
     );
@@ -447,11 +496,13 @@ export function DashboardProvider({
       minute: "2-digit",
     });
 
+    const activeUser = userProfiles[role];
+
     setProjects((prev) =>
       prev.map((project) => {
         if (project.id !== projectId) return project;
 
-        const accepterName = role === "client" ? project.client.name : project.freelancer.name;
+        const accepterName = activeUser.name;
 
         // Activate milestones: stage 1 becomes in_progress, others not_started
         const updatedMilestones = project.milestones.map((m, idx) => ({
@@ -467,12 +518,39 @@ export function DashboardProvider({
           action: `${accepterName} accepted the project proposal. The agreement is now active and binding.`,
         };
 
+        // If project was an unassigned invitation, bind current user
+        let updatedClient = project.client;
+        let updatedFreelancer = project.freelancer;
+
+        if (role === "client" && (!project.client.email || project.client.name.includes("Unassigned"))) {
+          updatedClient = {
+            name: activeUser.name,
+            email: activeUser.email,
+            avatar: activeUser.avatar,
+            company: (activeUser as any).company || "Client Organization",
+            milestoneOSId: activeUser.milestoneOSId,
+          };
+        } else if (role === "freelancer" && (!project.freelancer.email || project.freelancer.name.includes("Unassigned"))) {
+          updatedFreelancer = {
+            name: activeUser.name,
+            email: activeUser.email,
+            avatar: activeUser.avatar,
+            title: (activeUser as any).title || "Specialist Freelancer",
+            rating: 5.0,
+            milestoneOSId: activeUser.milestoneOSId,
+          };
+        }
+
         return {
           ...project,
+          client: updatedClient,
+          freelancer: updatedFreelancer,
           status: "active" as const,
           proposalStatus: "accepted" as const,
           acceptedAt: nowStr,
+          acceptedByMilestoneOSId: activeUser.milestoneOSId,
           termsAgreed: true,
+          invitationStatus: project.invitationToken ? ("claimed" as const) : project.invitationStatus,
           milestones: updatedMilestones,
           activityLog: [newLog, ...project.activityLog],
         };
@@ -494,6 +572,142 @@ export function DashboardProvider({
     setNotifications((prev) => [notif, ...prev]);
 
     showToast(`Proposal accepted! Contract "${projTitle}" is now active.`, "success");
+  };
+
+  const revokeInvitation = (projectId: string) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const actorName = userProfiles[role].name;
+        const newLog: ActivityItem = {
+          id: `act_${Date.now()}`,
+          timestamp: "Just now",
+          actor: actorName,
+          actorRole: role,
+          action: `${actorName} revoked the private invitation link for proposal "${p.title}".`,
+        };
+        return {
+          ...p,
+          invitationStatus: "revoked" as const,
+          status: "rejected" as const,
+          proposalStatus: "rejected" as const,
+          activityLog: [newLog, ...p.activityLog],
+        };
+      })
+    );
+    showToast("Invitation link revoked. New recipients can no longer accept it.", "info");
+  };
+
+  const acceptInvitationByToken = (
+    token: string,
+    claimingUser: {
+      name: string;
+      email: string;
+      avatar: string;
+      milestoneOSId: string;
+      role: "client" | "freelancer";
+      companyOrTitle?: string;
+    }
+  ): { success: boolean; project?: ProjectContract; error?: string } => {
+    const project = projects.find((p) => p.invitationToken === token);
+    if (!project) {
+      return { success: false, error: "Invitation proposal not found." };
+    }
+    if (project.invitationStatus === "revoked") {
+      return { success: false, error: "This invitation link was revoked by the sender." };
+    }
+    if (project.invitationStatus === "claimed" || project.status === "active") {
+      return { success: false, error: "This proposal has already been accepted and bound to another account." };
+    }
+    if (project.invitationExpiresAt && new Date(project.invitationExpiresAt).getTime() < Date.now()) {
+      return { success: false, error: "This invitation link has expired." };
+    }
+
+    const senderId =
+      project.initiatorMilestoneOSId ||
+      (project.initiatedBy === "client" ? project.client.milestoneOSId : project.freelancer.milestoneOSId);
+
+    if (senderId && claimingUser.milestoneOSId && senderId === claimingUser.milestoneOSId) {
+      return { success: false, error: "You created this proposal. You cannot accept your own invitation link." };
+    }
+
+    const nowStr = new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const isClientSender = project.initiatedBy === "client";
+
+    const updatedMilestones = project.milestones.map((m, idx) => ({
+      ...m,
+      status: idx === 0 ? ("in_progress" as const) : ("not_started" as const),
+    }));
+
+    const newLog: ActivityItem = {
+      id: `act_${Date.now()}`,
+      timestamp: "Just now",
+      actor: claimingUser.name,
+      actorRole: claimingUser.role,
+      action: `${claimingUser.name} accepted the project proposal via private invitation link. Agreement is now active.`,
+    };
+
+    const updatedClient = isClientSender
+      ? project.client
+      : {
+          name: claimingUser.name,
+          email: claimingUser.email,
+          avatar: claimingUser.avatar,
+          company: claimingUser.companyOrTitle || "Client Organization",
+          milestoneOSId: claimingUser.milestoneOSId,
+        };
+
+    const updatedFreelancer = isClientSender
+      ? {
+          name: claimingUser.name,
+          email: claimingUser.email,
+          avatar: claimingUser.avatar,
+          title: claimingUser.companyOrTitle || "Specialist Freelancer",
+          rating: 5.0,
+          milestoneOSId: claimingUser.milestoneOSId,
+        }
+      : project.freelancer;
+
+    const updatedProject: ProjectContract = {
+      ...project,
+      client: updatedClient,
+      freelancer: updatedFreelancer,
+      status: "active",
+      proposalStatus: "accepted",
+      acceptedAt: nowStr,
+      acceptedByMilestoneOSId: claimingUser.milestoneOSId,
+      termsAgreed: true,
+      invitationStatus: "claimed",
+      milestones: updatedMilestones,
+      activityLog: [newLog, ...project.activityLog],
+    };
+
+    setProjects((prev) => prev.map((p) => (p.id === project.id ? updatedProject : p)));
+    setActiveProjectIdState(project.id);
+
+    const notif: NotificationItem = {
+      id: `notif_${Date.now()}`,
+      timestamp: "Just now",
+      title: "Proposal Accepted & Contract Active",
+      message: `${claimingUser.name} accepted your invitation for "${project.title}". Milestone 01 is now in progress!`,
+      type: "approval",
+      unread: true,
+      projectId: project.id,
+    };
+    setNotifications((prev) => [notif, ...prev]);
+
+    return { success: true, project: updatedProject };
+  };
+
+  const lookupUserById = (id: string): MilestoneOSUser | null => {
+    return lookupMilestoneOSUser(id);
   };
 
   // Action: Request Changes on Proposal
@@ -1077,6 +1291,9 @@ export function DashboardProvider({
         requestProposalChanges,
         rejectProposal,
         resubmitProposal,
+        revokeInvitation,
+        acceptInvitationByToken,
+        lookupUserById,
         submitMilestoneDeliverables,
         requestRevision,
         requestChanges,

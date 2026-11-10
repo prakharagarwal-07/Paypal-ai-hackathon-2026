@@ -15,6 +15,9 @@ import {
   X,
   Plus,
   Settings,
+  Send,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -37,16 +40,39 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
 
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState(false);
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
   const currentProfile = userProfiles[role];
 
-  // Exactly the 5 requested beginner-friendly sections
+  // Count incoming proposals awaiting action
+  const incomingPendingCount = projects.filter(
+    (p) =>
+      (p.status === "awaiting_acceptance" || p.status === "changes_requested") &&
+      p.initiatedBy !== role
+  ).length;
+
+  const handleCopyId = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (currentProfile.milestoneOSId) {
+      navigator.clipboard.writeText(currentProfile.milestoneOSId);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
+
+  // Dedicated sections including Project Requests
   const navItems: { id: DashboardTab; label: string; icon: React.ReactNode; badge?: string | number }[] = [
     {
       id: "dashboard",
       label: "Dashboard",
       icon: <LayoutDashboard className="h-4 w-4" />,
+    },
+    {
+      id: "project-requests",
+      label: "Project Requests",
+      icon: <Send className="h-4 w-4" />,
+      badge: incomingPendingCount > 0 ? `${incomingPendingCount}` : undefined,
     },
     {
       id: "projects",
@@ -271,34 +297,60 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
 
         {/* Bottom Profile & Actions */}
         <div className="p-3 border-t border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-black/20">
-          {/* Active User Card (Clickable to Edit) */}
-          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-white dark:bg-[#0D1527] border border-slate-200/80 dark:border-white/10 shadow-2xs mb-2.5">
-            <button
-              type="button"
-              onClick={() => setProfileModalOpen(true)}
-              className="flex items-center gap-2 min-w-0 text-left hover:opacity-85 transition-opacity cursor-pointer flex-1"
-              title="Click to edit profile"
-            >
-              <div
-                className={`h-7 w-7 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0 ${
-                  role === "client" ? "bg-[#0070BA]" : "bg-emerald-600"
-                }`}
+          {/* Active User Card with MilestoneOS ID */}
+          <div className="p-2.5 rounded-xl bg-white dark:bg-[#0D1527] border border-slate-200/80 dark:border-white/10 shadow-2xs mb-2.5 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setProfileModalOpen(true)}
+                className="flex items-center gap-2 min-w-0 text-left hover:opacity-85 transition-opacity cursor-pointer flex-1"
+                title="Click to edit profile"
               >
-                {currentProfile.avatar || (role === "client" ? "SC" : "RV")}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-slate-900 dark:text-white truncate flex items-center gap-1">
-                  <span>{currentProfile.name}</span>
-                  <Settings className="h-2.5 w-2.5 text-slate-400 opacity-60" />
-                </p>
-                <span className="text-[10px] text-slate-400 block truncate">
-                  {role === "client"
-                    ? (currentProfile as any).company || "Client View"
-                    : (currentProfile as any).title || "Freelancer View"}
+                <div
+                  className={`h-7 w-7 rounded-full flex items-center justify-center font-bold text-xs text-white shrink-0 ${
+                    role === "client" ? "bg-[#0070BA]" : "bg-emerald-600"
+                  }`}
+                >
+                  {currentProfile.avatar || (role === "client" ? "SC" : "RV")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate flex items-center gap-1">
+                    <span>{currentProfile.name}</span>
+                    <Settings className="h-2.5 w-2.5 text-slate-400 opacity-60" />
+                  </p>
+                  <span className="text-[10px] text-slate-400 block truncate">
+                    {role === "client"
+                      ? (currentProfile as any).company || "Client View"
+                      : (currentProfile as any).title || "Freelancer View"}
+                  </span>
+                </div>
+              </button>
+              <ThemeToggle />
+            </div>
+
+            {/* Permanent MilestoneOS ID Pill */}
+            <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[11px]">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">
+                  ID:
+                </span>
+                <span className="font-mono font-bold text-slate-800 dark:text-sky-300 truncate">
+                  {currentProfile.milestoneOSId || (role === "client" ? "MSO-7K4P92" : "MSO-2W8L41")}
                 </span>
               </div>
-            </button>
-            <ThemeToggle />
+              <button
+                type="button"
+                onClick={handleCopyId}
+                className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
+                title="Copy MilestoneOS ID"
+              >
+                {copiedId ? (
+                  <Check className="h-3 w-3 text-emerald-500" />
+                ) : (
+                  <Copy className="h-3 w-3" />
+                )}
+              </button>
+            </div>
           </div>
 
           {/* Quick Actions */}

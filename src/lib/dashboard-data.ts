@@ -148,12 +148,16 @@ export interface ProjectContract {
   description: string;
   category: string;
   client: {
+    id?: string;
+    milestoneOSId?: string;
     name: string;
     email: string;
     avatar: string;
     company: string;
   };
   freelancer: {
+    id?: string;
+    milestoneOSId?: string;
     name: string;
     email: string;
     avatar: string;
@@ -173,10 +177,19 @@ export interface ProjectContract {
   activityLog: ActivityItem[];
   // Shared proposal and initiation fields
   initiatedBy: "client" | "freelancer";
+  initiatorMilestoneOSId?: string;
   proposalStatus?: "draft" | "awaiting_acceptance" | "changes_requested" | "accepted" | "rejected";
   proposalFeedback?: string;
   acceptedAt?: string;
+  acceptedByMilestoneOSId?: string;
   termsAgreed?: boolean;
+
+  // Method B: Shareable Invitation Link
+  invitationToken?: string;
+  invitationStatus?: "active" | "revoked" | "claimed" | "expired";
+  invitationExpiresAt?: string;
+  isPublicInvitation?: boolean;
+  invitationCreatedByRole?: "client" | "freelancer";
 }
 
 export function getFriendlyStatus(status: MilestoneStatus): {
@@ -320,20 +333,122 @@ export function getFriendlyProjectStatus(
   }
 }
 
+export function generateMilestoneOSId(): string {
+  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+  let result = "";
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `MSO-${result}`;
+}
+
+export function generateInvitationToken(): string {
+  const chars = "abcdefghjkmnpqrstuvwxyz23456789";
+  let result = "";
+  for (let i = 0; i < 16; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return `inv_${result}`;
+}
+
+export interface MilestoneOSUser {
+  id: string;
+  milestoneOSId: string;
+  name: string;
+  email: string;
+  avatar: string;
+  role: "client" | "freelancer";
+  company?: string;
+  title?: string;
+  rating?: number;
+}
+
+export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
+  {
+    id: "usr_client_sarah",
+    milestoneOSId: "MSO-7K4P92",
+    name: "Sarah Chen",
+    email: "sarah.chen@apexcommerce.com",
+    avatar: "SC",
+    role: "client",
+    company: "Apex Commerce",
+  },
+  {
+    id: "usr_client_david",
+    milestoneOSId: "MSO-3X9M55",
+    name: "David Kim",
+    email: "david.kim@nextgenlabs.io",
+    avatar: "DK",
+    role: "client",
+    company: "NextGen Labs",
+  },
+  {
+    id: "usr_client_amara",
+    milestoneOSId: "MSO-6V1Q88",
+    name: "Amara Patel",
+    email: "amara.patel@luminabrands.com",
+    avatar: "AP",
+    role: "client",
+    company: "Lumina Brands",
+  },
+  {
+    id: "usr_dev_rohan",
+    milestoneOSId: "MSO-2W8L41",
+    name: "Rohan Verma",
+    email: "rohan.verma@craftdev.io",
+    avatar: "RV",
+    role: "freelancer",
+    title: "Senior Full-Stack Engineer",
+    rating: 4.98,
+  },
+  {
+    id: "usr_dev_elena",
+    milestoneOSId: "MSO-9B4T72",
+    name: "Elena Rostova",
+    email: "elena.rostova@devcraft.org",
+    avatar: "ER",
+    role: "freelancer",
+    title: "Software Engineer & AI Architect",
+    rating: 4.95,
+  },
+  {
+    id: "usr_dev_marcus",
+    milestoneOSId: "MSO-5R7J23",
+    name: "Marcus Thorne",
+    email: "marcus.t@designstudio.io",
+    avatar: "MT",
+    role: "freelancer",
+    title: "Lead UI/UX & Visual Artist",
+    rating: 4.92,
+  },
+];
+
+export function lookupMilestoneOSUser(queryId: string): MilestoneOSUser | null {
+  if (!queryId) return null;
+  const clean = queryId.trim().toUpperCase();
+  return MILESTONEOS_DIRECTORY.find((u) => u.milestoneOSId.toUpperCase() === clean) || null;
+}
+
 export const CLIENT_OPTIONS = [
   {
+    id: "usr_client_sarah",
+    milestoneOSId: "MSO-7K4P92",
     name: "Sarah Chen",
     email: "sarah.chen@client.demo",
     avatar: "SC",
     company: "Apex Commerce",
   },
   {
+    id: "usr_client_david",
+    milestoneOSId: "MSO-3X9M55",
     name: "David Kim",
     email: "david.kim@fintech.demo",
     avatar: "DK",
     company: "NextGen Labs",
   },
   {
+    id: "usr_client_amara",
+    milestoneOSId: "MSO-6V1Q88",
     name: "Amara Patel",
     email: "amara.patel@retail.demo",
     avatar: "AP",
@@ -343,6 +458,8 @@ export const CLIENT_OPTIONS = [
 
 export const FREELANCER_OPTIONS = [
   {
+    id: "usr_dev_rohan",
+    milestoneOSId: "MSO-2W8L41",
     name: "Rohan Verma",
     email: "rohan.verma@dev.demo",
     avatar: "RV",
@@ -350,6 +467,8 @@ export const FREELANCER_OPTIONS = [
     rating: 4.98,
   },
   {
+    id: "usr_dev_elena",
+    milestoneOSId: "MSO-9B4T72",
     name: "Elena Rostova",
     email: "elena.rostova@dev.demo",
     avatar: "ER",
@@ -357,6 +476,8 @@ export const FREELANCER_OPTIONS = [
     rating: 4.95,
   },
   {
+    id: "usr_dev_marcus",
+    milestoneOSId: "MSO-5R7J23",
     name: "Marcus Thorne",
     email: "marcus.t@dev.demo",
     avatar: "MT",

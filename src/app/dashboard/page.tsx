@@ -13,6 +13,7 @@ import ProjectWorkspace from "@/components/dashboard/ProjectWorkspace";
 import MilestonesView from "@/components/dashboard/MilestonesView";
 import AIAuditCenter from "@/components/dashboard/AIAuditCenter";
 import PaymentsView from "@/components/dashboard/PaymentsView";
+import ProjectRequestsView from "@/components/dashboard/ProjectRequestsView";
 
 // Modals
 import AuditModal from "@/components/dashboard/AuditModal";
@@ -91,6 +92,7 @@ function DashboardInner() {
   } | null>(null);
 
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [editingRevisionProject, setEditingRevisionProject] = useState<ProjectContract | null>(null);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
 
   return (
@@ -181,7 +183,10 @@ function DashboardInner() {
               onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
               onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
               onOpenInvoice={(p, m, tx) => setInvoiceTarget({ project: p, milestone: m, transactionId: tx })}
-              onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+              onOpenNewProject={() => {
+                setEditingRevisionProject(null);
+                setIsNewProjectModalOpen(true);
+              }}
               onSelectProject={(projectId) => {
                 setActiveProjectId(projectId);
                 setActiveTab("projects");
@@ -190,6 +195,25 @@ function DashboardInner() {
               onNavigateToProjects={() => {
                 setViewingWorkspace(false);
                 setActiveTab("projects");
+              }}
+            />
+          )}
+
+          {/* TAB: Project Requests (Dedicated Section) */}
+          {activeTab === "project-requests" && (
+            <ProjectRequestsView
+              onOpenNewProject={() => {
+                setEditingRevisionProject(null);
+                setIsNewProjectModalOpen(true);
+              }}
+              onOpenRevision={(proj) => {
+                setEditingRevisionProject(proj);
+                setIsNewProjectModalOpen(true);
+              }}
+              onSelectProject={(projectId) => {
+                setActiveProjectId(projectId);
+                setActiveTab("projects");
+                setViewingWorkspace(true);
               }}
             />
           )}
@@ -345,7 +369,11 @@ function DashboardInner() {
       {/* CREATE NEW PROJECT MODAL */}
       <NewProjectModal
         isOpen={isNewProjectModalOpen}
-        onClose={() => setIsNewProjectModalOpen(false)}
+        initialProject={editingRevisionProject}
+        onClose={() => {
+          setIsNewProjectModalOpen(false);
+          setEditingRevisionProject(null);
+        }}
       />
 
       {/* EDIT PROJECT MODAL */}

@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   Check,
 } from "lucide-react";
+import { generateMilestoneOSId } from "@/lib/dashboard-data";
 
 type AuthMode = "login" | "signup";
 type UserRole = "client" | "freelancer";
@@ -78,13 +79,15 @@ function AuthForm() {
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
+    const returnUrl = searchParams.get("returnUrl") || `/dashboard?role=${role}`;
+
     setTimeout(() => {
       setLoading(false);
       setSuccessMsg(
         `Authenticated with PayPal account. Redirecting to workspace...`
       );
       setTimeout(() => {
-        router.push(`/dashboard?role=${role}`);
+        router.push(returnUrl);
       }, 400);
     }, 700);
   };
@@ -117,15 +120,56 @@ function AuthForm() {
 
     setLoading(true);
 
+    try {
+      const existingProfilesStr = localStorage.getItem("milestoneos_profiles_v7");
+      const existingProfiles = existingProfilesStr ? JSON.parse(existingProfilesStr) : null;
+      const newId = existingProfiles?.[role]?.milestoneOSId || generateMilestoneOSId();
+      const initials = (name || (role === "client" ? "Sarah Chen" : "Rohan Verma"))
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+
+      const updatedProfiles = {
+        client: existingProfiles?.client || {
+          name: "Sarah Chen",
+          email: "sarah.chen@apexcommerce.com",
+          avatar: "SC",
+          company: "Apex Commerce",
+          milestoneOSId: "MSO-7K4P92",
+        },
+        freelancer: existingProfiles?.freelancer || {
+          name: "Rohan Verma",
+          email: "rohan.verma@craftdev.io",
+          avatar: "RV",
+          title: "Senior Full-Stack Engineer",
+          rating: 4.98,
+          milestoneOSId: "MSO-2W8L41",
+        },
+        [role]: {
+          name: name || (role === "client" ? "Sarah Chen" : "Rohan Verma"),
+          email: email || (role === "client" ? "sarah.chen@apexcommerce.com" : "rohan.verma@craftdev.io"),
+          avatar: initials || (role === "client" ? "SC" : "RV"),
+          milestoneOSId: newId,
+          ...(role === "client" ? { company: "Client Workspace" } : { title: "Specialist Freelancer", rating: 5.0 }),
+        },
+      };
+      localStorage.setItem("milestoneos_profiles_v7", JSON.stringify(updatedProfiles));
+      localStorage.setItem("milestoneos_role_v7", role);
+    } catch (_) {}
+
+    const returnUrl = searchParams.get("returnUrl") || `/dashboard?role=${role}`;
+
     setTimeout(() => {
       setLoading(false);
       setSuccessMsg(
         mode === "login"
           ? `Welcome back, ${name || (role === "client" ? "Sarah" : "Rohan")}! Redirecting to your workspace...`
-          : `Account created successfully! Welcome to MilestoneOS.`
+          : `Account created successfully with unique MilestoneOS ID! Welcome to MilestoneOS.`
       );
       setTimeout(() => {
-        router.push(`/dashboard?role=${role}`);
+        router.push(returnUrl);
       }, 400);
     }, 900);
   };

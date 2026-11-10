@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { User, Briefcase, Plus, Bell, Search, Menu } from "lucide-react";
+import { User, Briefcase, Plus, Bell, Search, Menu, Copy, Check } from "lucide-react";
 
 interface DashboardHeaderProps {
   onToggleMobileSidebar: () => void;
@@ -23,9 +24,20 @@ export default function DashboardHeader({
     userProfiles,
   } = useDashboard();
 
+  const [copiedId, setCopiedId] = useState(false);
+
   const unreadCount = notifications.filter((n) => n.unread).length;
+  const currentProfile = userProfiles[role];
   const clientFirstName = userProfiles.client.name.split(" ")[0] || "Client";
   const freelancerFirstName = userProfiles.freelancer.name.split(" ")[0] || "Freelancer";
+
+  const handleCopyId = () => {
+    if (currentProfile.milestoneOSId) {
+      navigator.clipboard.writeText(currentProfile.milestoneOSId);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-30 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md px-4 sm:px-8 py-3 dark:border-white/10 dark:bg-[#070B14]/90 transition-colors">
@@ -84,8 +96,26 @@ export default function DashboardHeader({
           </div>
         </div>
 
-        {/* Right: PayPal Sandbox status, Notifications, New Project */}
+        {/* Right: User ID badge, PayPal Sandbox status, Notifications, New Project */}
         <div className="flex items-center gap-2 sm:gap-3">
+          {/* MilestoneOS User ID Pill */}
+          <button
+            type="button"
+            onClick={handleCopyId}
+            title="Click to copy your MilestoneOS ID"
+            className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-[11px] font-mono cursor-pointer transition-colors"
+          >
+            <span className="text-[10px] uppercase font-bold text-slate-400 font-sans">My ID:</span>
+            <span className="font-bold text-slate-800 dark:text-sky-300">
+              {currentProfile.milestoneOSId || (role === "client" ? "MSO-7K4P92" : "MSO-2W8L41")}
+            </span>
+            {copiedId ? (
+              <Check className="h-3 w-3 text-emerald-500" />
+            ) : (
+              <Copy className="h-3 w-3 text-slate-400 hover:text-slate-700 dark:hover:text-white" />
+            )}
+          </button>
+
           {/* PayPal Status Badge */}
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 dark:bg-[#0070BA]/10 dark:border-blue-500/20 text-[11px] font-medium text-[#0070BA] dark:text-sky-300">
             <span className="h-2 w-2 rounded-full bg-emerald-500" />

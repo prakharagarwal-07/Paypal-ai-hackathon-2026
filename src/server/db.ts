@@ -16,6 +16,10 @@ import {
   AIAssessment,
   MilestoneSubmission,
   ActivityItem,
+  MilestoneOSUser,
+  MILESTONEOS_DIRECTORY,
+  generateMilestoneOSId,
+  generateInvitationToken,
 } from "@/lib/dashboard-data";
 import { CaptureOrderResult } from "./paypal";
 
@@ -23,6 +27,7 @@ interface DatabaseState {
   projects: ProjectContract[];
   transactions: TransactionRecord[];
   notifications: NotificationItem[];
+  users: MilestoneOSUser[];
 }
 
 const DB_DIR = path.join(process.cwd(), ".data");
@@ -32,6 +37,7 @@ let memoryState: DatabaseState = {
   projects: [...INITIAL_PROJECTS],
   transactions: [...INITIAL_TRANSACTIONS],
   notifications: [...INITIAL_NOTIFICATIONS],
+  users: [...MILESTONEOS_DIRECTORY],
 };
 
 function loadDatabase(): DatabaseState {
@@ -71,6 +77,88 @@ export const db = {
 
   getProjectById(id: string): ProjectContract | undefined {
     return memoryState.projects.find((p) => p.id === id);
+  },
+
+  findUserByMilestoneOSId(id: string): MilestoneOSUser | null {
+    if (!id) return null;
+    const clean = id.trim().toUpperCase();
+    return memoryState.users.find((u) => u.milestoneOSId.toUpperCase() === clean) || null;
+  },
+
+  getProjectByInvitationToken(token: string): ProjectContract | null {
+    if (!token) return null;
+    return memoryState.projects.find((p) => p.invitationToken === token) || null;
+  },
+
+  claimInvitation(
+    token: string,
+    claimingUser: {
+      name: string;
+      email: string;
+      avatar: string;
+      milestoneOSId: string;
+      role: "client" | "freelancer";
+      companyOrTitle?: string;
+    }
+  ): ProjectContract | null {
+    const project = memoryState.projects.find((p) => p.invitationToken === token);
+    if (!project) return null;
+    if (project.invitationStatus === "revoked") return null;
+
+    const isClientSender = project.initiatedBy === "client";
+    const nowStr = new Date().toISOString();
+
+    if (isClientSender) {
+      project.freelancer = {
+        name: claimingUser.name,
+        email: claimingUser.email,
+        avatar: claimingUser.avatar,
+        title: claimingUser.companyOrTitle || "Specialist Freelancer",
+        rating: 5.0,
+        milestoneOSId: claimingUser.milestoneOSId,
+      };
+    } else {
+      project.client = {
+        name: claimingUser.name,
+        email: claimingUser.email,
+        avatar: claimingUser.avatar,
+        company: claimingUser.companyOrTitle || "Client Organization",
+        milestoneOSId: claimingUser.milestoneOSId,
+      };
+    }
+
+    project.status = "active";
+    project.proposalStatus = "accepted";
+    project.acceptedAt = nowStr;
+    project.acceptedByMilestoneOSId = claimingUser.milestoneOSId;
+    project.termsAgreed = true;
+    project.invitationStatus = "claimed";
+
+    project.milestones.forEach((m, idx) => {
+      m.status = idx === 0 ? "in_progress" : "not_started";
+    });
+
+    const activity: ActivityItem = {
+      id: `act_${Date.now()}`,
+      action: `${claimingUser.name} accepted the project proposal via private invitation link. Agreement is now active.`,
+      actor: claimingUser.name,
+      actorRole: claimingUser.role,
+      timestamp: "Just now",
+    };
+    project.activityLog.unshift(activity);
+
+    persistDatabase();
+    return project;
+  },
+
+  revokeInvitation(token: string): boolean {
+    const project = memoryState.projects.find((p) => p.invitationToken === token);
+    if (!project) return false;
+    project.invitationStatus = "revoked";
+    project.status = "rejected";
+    project.proposalStatus = "rejected";
+    persistDatabase();
+    return true;
   },
 
   createProject(project: ProjectContract): ProjectContract {
