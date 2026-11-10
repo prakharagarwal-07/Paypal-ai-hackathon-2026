@@ -10,8 +10,9 @@ export async function GET(
     const { id } = await params;
     const { searchParams } = new URL(req.url);
     const isDemo = searchParams.get("isDemo") === "true";
-    let userId = searchParams.get("userId") || undefined;
-    let userEmail = searchParams.get("userEmail") || undefined;
+    let userId = searchParams.get("userId") || req.headers.get("x-user-id") || undefined;
+    let userEmail = searchParams.get("userEmail") || req.headers.get("x-user-email") || undefined;
+    let milestoneOSId = searchParams.get("milestoneOSId") || req.headers.get("x-milestoneos-id") || undefined;
 
     // Check Authorization header for Supabase Bearer Token
     const authHeader = req.headers.get("authorization");
@@ -29,7 +30,11 @@ export async function GET(
       }
     }
 
-    const project = db.getProjectById(id, { id: userId, email: userEmail, isDemo });
+    const authUser = (userId || userEmail || milestoneOSId || isDemo)
+      ? { id: userId, email: userEmail, milestoneOSId, isDemo }
+      : undefined;
+
+    const project = db.getProjectById(id, authUser);
 
     if (!project) {
       return NextResponse.json(

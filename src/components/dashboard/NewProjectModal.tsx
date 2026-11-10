@@ -49,7 +49,7 @@ interface DraftMilestone {
 type InitiationMethod = "user_id" | "share_link";
 
 export default function NewProjectModal({ isOpen, onClose, initialProject }: NewProjectModalProps) {
-  const { role, userProfiles, createProject, resubmitProposal, showAlert, projects, isDemoMode } = useDashboard();
+  const { role, userProfiles, createProject, resubmitProposal, showAlert, projects, isDemoMode, authUser } = useDashboard();
 
   const isClient = role === "client";
   const myProfile = userProfiles[role];
@@ -157,8 +157,8 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
   const totalMilestonesSum = milestones.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
   const budgetMatches = proposedBudget === totalMilestonesSum;
 
-  // Handle User ID Lookup
-  const handleLookupUserId = (idToLookup?: string) => {
+  // Handle User ID Lookup (Database Query against Supabase)
+  const handleLookupUserId = async (idToLookup?: string) => {
     const rawId = (idToLookup || milestoneIdInput).trim().toUpperCase();
     setLookupError(null);
 
@@ -168,47 +168,50 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     }
 
     if (!rawId.startsWith("MSO-")) {
-      setLookupError("Invalid format. MilestoneOS IDs start with 'MSO-' followed by 6 characters.");
+      setLookupError("Invalid format. MilestoneOS IDs start with 'MSO-' followed by 6 alphanumeric characters.");
+      return;
+    }
+
+    // Prevent self-selection
+    if (myProfile?.milestoneOSId && rawId === myProfile.milestoneOSId.toUpperCase()) {
+      setLookupError("You cannot initiate a proposal with your own MilestoneOS ID.");
+      setSelectedUser(null);
       return;
     }
 
     setIsSearching(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/users/lookup?id=${encodeURIComponent(rawId)}${isDemoMode ? "&demo=true" : ""}`);
+      const data = await res.json();
       setIsSearching(false);
 
-      // Prevent self-selection
-      if (rawId === myProfile.milestoneOSId.toUpperCase()) {
-        setLookupError("You cannot initiate a proposal with your own MilestoneOS ID.");
+      if (!res.ok || !data.found || !data.user) {
+        setLookupError(data.error || `No registered account found with MilestoneOS ID "${rawId}". Please verify the ID.`);
         setSelectedUser(null);
         return;
       }
 
-      const found = lookupMilestoneOSUser(rawId);
+      const found: MilestoneOSUser = {
+        id: data.user.id,
+        milestoneOSId: data.user.milestoneOSId,
+        name: data.user.name,
+        email: data.user.email || `${data.user.milestoneOSId.toLowerCase()}@milestoneos.link`,
+        avatar: data.user.avatar || data.user.name.slice(0, 2).toUpperCase(),
+        role: data.user.role || (isClient ? "freelancer" : "client"),
+        company: data.user.company || undefined,
+        title: data.user.title || (isClient ? "Specialist Freelancer" : "Client Organization"),
+        rating: data.user.rating || 5.0,
+      };
 
-      if (!found) {
-        setLookupError(`No MilestoneOS account found with ID "${rawId}". Please verify the ID.`);
-        setSelectedUser(null);
-        return;
-      }
-
-      // Enforce role constraints
-      if (isClient && found.role === "client") {
-        setLookupError(`"${found.name}" is registered as a Client. As a Client, you can only initiate projects with Freelancers.`);
-        setSelectedUser(null);
-        return;
-      }
-
-      if (!isClient && found.role === "freelancer") {
-        setLookupError(`"${found.name}" is registered as a Freelancer. As a Freelancer, you can only propose projects to Clients.`);
-        setSelectedUser(null);
-        return;
-      }
-
-      // Valid match found!
+      // Valid genuine account found!
       setSelectedUser(found);
       setMilestoneIdInput(found.milestoneOSId);
       setLookupError(null);
-    }, 250);
+    } catch (err: any) {
+      setIsSearching(false);
+      setLookupError("Network error while verifying MilestoneOS ID. Please try again.");
+      setSelectedUser(null);
+    }
   };
 
   const handleAddMilestone = () => {
@@ -317,8 +320,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     let clientData: ProjectContract["client"];
     let freelancerData: ProjectContract["freelancer"];
 
+    const myUserId = myProfile.id || authUser?.id;
+
     if (isClient) {
       clientData = {
+        id: myUserId,
         name: myProfile.name,
         email: myProfile.email,
         avatar: myProfile.avatar,
@@ -337,6 +343,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         };
       } else {
         freelancerData = {
+          id: selectedUser?.id,
           name: selectedUser?.name || "Invited Specialist",
           email: selectedUser?.email || "freelancer@milestoneos.link",
           avatar: selectedUser?.avatar || "FS",
@@ -347,6 +354,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
       }
     } else {
       freelancerData = {
+        id: myUserId,
         name: myProfile.name,
         email: myProfile.email,
         avatar: myProfile.avatar,
@@ -365,6 +373,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         };
       } else {
         clientData = {
+          id: selectedUser?.id,
           name: selectedUser?.name || "Hiring Client",
           email: selectedUser?.email || "client@milestoneos.link",
           avatar: selectedUser?.avatar || "CL",
@@ -398,6 +407,8 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
           category,
           client: clientData,
           freelancer: freelancerData,
+          clientId: isClient ? myUserId : selectedUser?.id,
+          freelancerId: isClient ? selectedUser?.id : myUserId,
           totalBudget: totalMilestonesSum,
           currency: "USD",
           targetDeadline,

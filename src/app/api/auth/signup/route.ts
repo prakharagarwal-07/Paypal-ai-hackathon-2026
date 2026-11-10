@@ -22,8 +22,9 @@ export async function POST(req: NextRequest) {
     }
 
     const assignedId = generateMilestoneOSId();
-    // Every registered user automatically receives access to both Client and Freelancer workspaces
-    const userRole = role === "freelancer" ? "freelancer" : role === "client" ? "client" : "both";
+    // In PostgreSQL profiles, role has check constraint ('client', 'freelancer')
+    // Users have access to both workspaces via multi-role support
+    const dbRole = role === "freelancer" ? "freelancer" : "client";
     const userRoles = ["client", "freelancer"];
     const cleanEmail = email.trim().toLowerCase();
     const defaultName = cleanEmail.split("@")[0];
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
         email_confirm: true,
         user_metadata: {
           name: userName,
-          role: userRole,
+          role: dbRole,
           roles: userRoles,
           milestoneOSId: assignedId,
         },
@@ -59,8 +60,7 @@ export async function POST(req: NextRequest) {
           milestone_os_id: assignedId,
           full_name: userName,
           email: cleanEmail,
-          role: userRole,
-          roles: userRoles,
+          role: dbRole,
           avatar: avatarInitials,
         });
       } catch (_) {}
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
           id: data.user.id,
           email: data.user.email,
           name: userName,
-          role: userRole,
+          role: "both",
           roles: userRoles,
           milestoneOSId: assignedId,
         },

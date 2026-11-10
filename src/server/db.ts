@@ -28,6 +28,7 @@ import { getServerSupabase } from "./supabase";
 export interface ProjectFilter {
   userId?: string;
   userEmail?: string;
+  milestoneOSId?: string;
   role?: "client" | "freelancer";
   isDemo?: boolean;
   status?: string;
@@ -108,7 +109,8 @@ export const db = {
     }
 
     // 2. Real Registered Users: Filter projects where user is authorized participant
-    if (userId || userEmail) {
+    const userMsoId = filter?.milestoneOSId?.trim().toUpperCase();
+    if (userId || userEmail || userMsoId) {
       return memoryState.projects.filter((p) => {
         // Exclude demo projects from normal user views
         if (p.isDemo) return false;
@@ -118,11 +120,13 @@ export const db = {
 
         const isClient =
           (userId && (p.clientId === userId || p.client.id === userId)) ||
-          (userEmail && p.client.email?.toLowerCase() === userEmail);
+          (userEmail && p.client.email?.toLowerCase() === userEmail) ||
+          (userMsoId && p.client.milestoneOSId?.toUpperCase() === userMsoId);
 
         const isFreelancer =
           (userId && (p.freelancerId === userId || p.freelancer.id === userId)) ||
-          (userEmail && p.freelancer.email?.toLowerCase() === userEmail);
+          (userEmail && p.freelancer.email?.toLowerCase() === userEmail) ||
+          (userMsoId && p.freelancer.milestoneOSId?.toUpperCase() === userMsoId);
 
         if (role === "client") return isClient;
         if (role === "freelancer") return isFreelancer;
@@ -139,7 +143,7 @@ export const db = {
   /**
    * Retrieves a single project by ID, verifying user authorization if authUser is provided.
    */
-  getProjectById(id: string, authUser?: { id?: string; email?: string; isDemo?: boolean }): ProjectContract | undefined {
+  getProjectById(id: string, authUser?: { id?: string; email?: string; milestoneOSId?: string; isDemo?: boolean }): ProjectContract | undefined {
     const project = memoryState.projects.find((p) => p.id === id);
     if (!project) return undefined;
 
@@ -152,17 +156,14 @@ export const db = {
         return undefined;
       }
 
-      // Public active invitation links can be viewed by anyone to accept
-      if (project.invitationToken && project.invitationStatus === "active") {
-        return project;
-      }
-
       const uId = authUser.id;
       const uEmail = authUser.email?.toLowerCase();
+      const uMso = authUser.milestoneOSId?.trim().toUpperCase();
 
       const isAuthorized =
         (uId && (project.clientId === uId || project.freelancerId === uId || project.client.id === uId || project.freelancer.id === uId)) ||
-        (uEmail && (project.client.email?.toLowerCase() === uEmail || project.freelancer.email?.toLowerCase() === uEmail));
+        (uEmail && (project.client.email?.toLowerCase() === uEmail || project.freelancer.email?.toLowerCase() === uEmail)) ||
+        (uMso && (project.client.milestoneOSId?.toUpperCase() === uMso || project.freelancer.milestoneOSId?.toUpperCase() === uMso));
 
       if (isAuthorized) return project;
       return undefined;
@@ -369,6 +370,8 @@ export const db = {
     project.status = status;
     if (status === "active") {
       project.termsAgreed = true;
+      project.proposalStatus = "accepted";
+      project.invitationStatus = "claimed";
       project.acceptedAt = new Date().toISOString();
       project.milestones.forEach((m, idx) => {
         if (m.status === "not_started" && idx === 0) {
@@ -376,10 +379,62 @@ export const db = {
         }
       });
     } else if (status === "changes_requested") {
+      project.proposalStatus = "changes_requested";
       project.proposalFeedback = feedback;
+    } else if (status === "rejected") {
+      project.proposalStatus = "rejected";
+    }
+
+    const actorName = project.initiatedBy === "client" ? project.freelancer.name : project.client.name;
+    const actorRole = project.initiatedBy === "client" ? "freelancer" : "client";
+    const activity: ActivityItem = {
+      id: `act_${Date.now()}`,
+      action: status === "active"
+        ? `${actorName} accepted the project proposal. Contract terms are now mutually agreed and active.`
+        : status === "changes_requested"
+        ? `${actorName} requested revisions: "${feedback}".`
+        : `${actorName} declined the project proposal.`,
+      actor: actorName,
+      actorRole,
+      timestamp: "Just now",
+    };
+    project.activityLog.unshift(activity);
+
+    // Notify the proposer of the decision
+    const proposerId = project.initiatedBy === "client" ? project.clientId : project.freelancerId;
+    if (proposerId) {
+      const notif: NotificationItem = {
+        id: `notif_${Date.now()}`,
+        timestamp: "Just now",
+        title: status === "active" ? "Proposal Accepted!" : status === "changes_requested" ? "Proposal Changes Requested" : "Proposal Declined",
+        message: status === "active"
+          ? `${actorName} accepted your project proposal for "${project.title}". Milestone 01 is now in progress!`
+          : `${actorName} responded to your proposal for "${project.title}".`,
+        type: status === "active" ? "approval" : "proposal",
+        unread: true,
+        projectId: project.id,
+        userId: proposerId,
+        isDemo: false,
+      };
+      db.createNotification(notif);
     }
 
     persistDatabase();
+
+    const supabase = getServerSupabase();
+    if (supabase) {
+      Promise.resolve(
+        supabase
+          .from("projects")
+          .update({
+            status: project.status,
+            proposal_status: project.proposalStatus || "accepted",
+            terms_agreed: project.termsAgreed || false,
+          })
+          .eq("id", project.id)
+      ).catch(() => {});
+    }
+
     return project;
   },
 
@@ -648,5 +703,30 @@ export const db = {
     }
 
     return [];
+  },
+
+  /**
+   * Creates a notification for a user.
+   */
+  createNotification(item: NotificationItem): NotificationItem {
+    memoryState.notifications.unshift(item);
+    persistDatabase();
+
+    const supabase = getServerSupabase();
+    if (supabase && item.userId) {
+      Promise.resolve(
+        supabase.from("notifications").insert({
+          id: item.id,
+          user_id: item.userId,
+          title: item.title,
+          message: item.message,
+          type: item.type,
+          project_id: item.projectId,
+          is_read: !item.unread,
+        })
+      ).catch(() => {});
+    }
+
+    return item;
   },
 };

@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     const isDemo = searchParams.get("isDemo") === "true";
     let userId = searchParams.get("userId") || undefined;
     let userEmail = searchParams.get("userEmail") || undefined;
+    const milestoneOSId = searchParams.get("milestoneOSId") || undefined;
     const role = (searchParams.get("role") as "client" | "freelancer") || undefined;
 
     // Check Authorization header for Supabase Bearer Token
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
     const projects = db.getProjects({
       userId,
       userEmail,
+      milestoneOSId,
       role,
       isDemo,
       status,
@@ -93,6 +95,39 @@ export async function POST(req: NextRequest) {
 
     const effectiveCreatorId = creatorId || body.clientId || (initiatedBy === "client" ? client.id : freelancer.id);
 
+    let resolvedClientId = body.clientId || client?.id;
+    let resolvedFreelancerId = body.freelancerId || freelancer?.id;
+
+    const supabase = getServerSupabase();
+    if (supabase) {
+      if (!resolvedFreelancerId && freelancer?.milestoneOSId) {
+        try {
+          const { data: fProfile } = await supabase
+            .from("profiles")
+            .select("id")
+            .ilike("milestone_os_id", freelancer.milestoneOSId.trim().toUpperCase())
+            .maybeSingle();
+          if (fProfile?.id) resolvedFreelancerId = fProfile.id;
+        } catch (_) {}
+      }
+      if (!resolvedClientId && client?.milestoneOSId) {
+        try {
+          const { data: cProfile } = await supabase
+            .from("profiles")
+            .select("id")
+            .ilike("milestone_os_id", client.milestoneOSId.trim().toUpperCase())
+            .maybeSingle();
+          if (cProfile?.id) resolvedClientId = cProfile.id;
+        } catch (_) {}
+      }
+    }
+
+    if (initiatedBy === "client") {
+      resolvedClientId = resolvedClientId || effectiveCreatorId;
+    } else {
+      resolvedFreelancerId = resolvedFreelancerId || effectiveCreatorId;
+    }
+
     const newProject: ProjectContract = {
       id: projectId,
       title,
@@ -100,14 +135,14 @@ export async function POST(req: NextRequest) {
       category,
       client: {
         ...client,
-        id: client.id || (initiatedBy === "client" ? effectiveCreatorId : body.clientId),
+        id: resolvedClientId || client.id,
       },
       freelancer: {
         ...freelancer,
-        id: freelancer.id || (initiatedBy === "freelancer" ? effectiveCreatorId : body.freelancerId),
+        id: resolvedFreelancerId || freelancer.id,
       },
-      clientId: body.clientId || (initiatedBy === "client" ? effectiveCreatorId : undefined),
-      freelancerId: body.freelancerId || (initiatedBy === "freelancer" ? effectiveCreatorId : undefined),
+      clientId: resolvedClientId,
+      freelancerId: resolvedFreelancerId,
       totalBudget,
       totalPaid: 0,
       escrowFunded: 0,

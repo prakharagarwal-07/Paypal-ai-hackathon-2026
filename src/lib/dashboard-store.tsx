@@ -624,7 +624,7 @@ export function DashboardProvider({
             // Load real projects for this user from server API
             try {
               const pRes = await fetch(
-                `/api/projects?userId=${encodeURIComponent(resolvedUser.id)}&userEmail=${encodeURIComponent(resolvedUser.email)}`
+                `/api/projects?userId=${encodeURIComponent(resolvedUser.id)}&userEmail=${encodeURIComponent(resolvedUser.email)}&milestoneOSId=${encodeURIComponent(resolvedUser.milestoneOSId)}`
               );
               const pData = await pRes.json();
               if (mounted) {
@@ -731,8 +731,8 @@ export function DashboardProvider({
       invitationExpiresAt: newProjectData.isPublicInvitation
         ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         : undefined,
-      clientId: isClientInitiator ? (authUser?.id || newProjectData.client.id) : undefined,
-      freelancerId: !isClientInitiator ? (authUser?.id || newProjectData.freelancer.id) : undefined,
+      clientId: newProjectData.clientId || (isClientInitiator ? (authUser?.id || newProjectData.client.id) : newProjectData.client.id),
+      freelancerId: newProjectData.freelancerId || (!isClientInitiator ? (authUser?.id || newProjectData.freelancer.id) : newProjectData.freelancer.id),
       isDemo: Boolean(isDemoMode),
       activityLog: [
         {
@@ -759,6 +759,8 @@ export function DashboardProvider({
       body: JSON.stringify({
         ...newProject,
         creatorId: authUser?.id,
+        clientId: newProject.clientId,
+        freelancerId: newProject.freelancerId,
       }),
     }).catch((err) => console.warn("Failed to sync project creation to API:", err));
 
@@ -860,6 +862,13 @@ export function DashboardProvider({
     };
     setNotifications((prev) => [notif, ...prev]);
 
+    // Persist acceptance to server database & Supabase
+    fetch(`/api/projects/${projectId}/proposals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "accept" }),
+    }).catch((err) => console.warn("Failed to sync proposal acceptance to API:", err));
+
     showToast(`Proposal accepted! Contract "${projTitle}" is now active.`, "success");
   };
 
@@ -885,6 +894,14 @@ export function DashboardProvider({
         };
       })
     );
+
+    // Persist change request to server database & Supabase
+    fetch(`/api/projects/${projectId}/proposals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "request_changes", feedback }),
+    }).catch((err) => console.warn("Failed to sync change request to API:", err));
+
     showToast("Feedback submitted to proposer.", "info");
   };
 
@@ -909,6 +926,14 @@ export function DashboardProvider({
         };
       })
     );
+
+    // Persist rejection to server database & Supabase
+    fetch(`/api/projects/${projectId}/proposals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reject" }),
+    }).catch((err) => console.warn("Failed to sync rejection to API:", err));
+
     showToast("Project proposal declined.", "warning");
   };
 
@@ -934,6 +959,14 @@ export function DashboardProvider({
         };
       })
     );
+
+    // Persist revised proposal to server database & Supabase
+    fetch(`/api/projects/${projectId}/proposals`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "resubmit", updatedData }),
+    }).catch((err) => console.warn("Failed to sync resubmission to API:", err));
+
     showToast("Revised proposal submitted for acceptance.", "success");
   };
 

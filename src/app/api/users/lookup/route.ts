@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const isDemo = searchParams.get("demo") === "true";
 
     if (!id || typeof id !== "string") {
       return NextResponse.json(
@@ -34,28 +35,30 @@ export async function GET(req: NextRequest) {
       try {
         const { data } = await serverSupabase
           .from("profiles")
-          .select("id, milestone_os_id, full_name, role, avatar, company, title, rating")
-          .eq("milestone_os_id", cleanId)
+          .select("id, milestone_os_id, full_name, email, role, avatar, company, title, rating")
+          .ilike("milestone_os_id", cleanId)
           .maybeSingle();
 
         if (data) {
+          const displayName = data.full_name || (data as any).name || data.email?.split("@")[0] || "User";
           user = {
             id: data.id,
             milestoneOSId: data.milestone_os_id,
-            name: data.full_name,
-            avatar: data.avatar || data.full_name.slice(0, 2).toUpperCase(),
-            role: data.role,
+            name: displayName,
+            avatar: data.avatar || displayName.slice(0, 2).toUpperCase(),
+            role: data.role || "both",
             company: data.company,
             title: data.title,
             rating: data.rating ? Number(data.rating) : 5.0,
           };
         }
       } catch (e) {
-        console.warn("Supabase lookup error, falling back to local database:", e);
+        console.warn("Supabase lookup error:", e);
       }
     }
 
-    if (!user) {
+    // Demo directory fallback is ONLY permitted when explicitly in demo mode
+    if (!user && isDemo) {
       user = db.findUserByMilestoneOSId(cleanId);
     }
 
@@ -71,6 +74,7 @@ export async function GET(req: NextRequest) {
 
     // Return public non-sensitive preview
     return NextResponse.json({
+      success: true,
       found: true,
       user: {
         id: user.id,
