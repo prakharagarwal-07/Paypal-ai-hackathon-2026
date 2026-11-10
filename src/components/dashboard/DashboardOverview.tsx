@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, ActivityItem, getFriendlyStatus } from "@/lib/dashboard-data";
 import {
   FolderGit2,
   Sparkles,
@@ -15,6 +16,12 @@ import {
   Plus,
   Eye,
   Calendar,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Check,
+  ShieldCheck,
+  FileCheck,
 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 
@@ -25,6 +32,118 @@ interface DashboardOverviewProps {
   onOpenNewProject: () => void;
   onSelectProject?: (projectId: string) => void;
   onNavigateToProjects?: () => void;
+}
+
+interface EnrichedActivity extends ActivityItem {
+  projectTitle: string;
+  projectId: string;
+}
+
+function getActivityMeta(act: EnrichedActivity) {
+  const isPayment =
+    act.actorRole === "paypal" ||
+    act.action.toLowerCase().includes("payment") ||
+    act.action.toLowerCase().includes("paid") ||
+    act.action.toLowerCase().includes("receipt");
+
+  const isAI =
+    act.actorRole === "ai_system" ||
+    act.action.toLowerCase().includes("automated") ||
+    act.action.toLowerCase().includes("ai assistant") ||
+    act.action.toLowerCase().includes("audit");
+
+  const isRevision =
+    act.action.toLowerCase().includes("changes requested") ||
+    act.action.toLowerCase().includes("requested changes") ||
+    act.action.toLowerCase().includes("revision");
+
+  const isApproval =
+    !isPayment &&
+    (act.action.toLowerCase().includes("approved") ||
+      act.action.toLowerCase().includes("accepted"));
+
+  const isSubmission =
+    act.action.toLowerCase().includes("submitted") ||
+    act.action.toLowerCase().includes("resubmitted");
+
+  if (isPayment) {
+    return {
+      category: "Payment & Settlement",
+      badgeColor:
+        "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800",
+      iconBg: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300",
+      icon: Wallet,
+      type: "payment" as const,
+    };
+  }
+
+  if (isAI) {
+    return {
+      category: "AI Work Review",
+      badgeColor:
+        "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800",
+      iconBg: "bg-purple-100 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300",
+      icon: Sparkles,
+      type: "ai" as const,
+    };
+  }
+
+  if (isRevision) {
+    return {
+      category: "Changes Requested",
+      badgeColor:
+        "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800",
+      iconBg: "bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300",
+      icon: AlertCircle,
+      type: "revision" as const,
+    };
+  }
+
+  if (isApproval) {
+    return {
+      category: "Milestone Approved",
+      badgeColor:
+        "bg-sky-50 text-[#0070BA] border-sky-200 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800",
+      iconBg: "bg-sky-100 text-[#0070BA] dark:bg-sky-950/70 dark:text-sky-400",
+      icon: CheckCircle2,
+      type: "approval" as const,
+    };
+  }
+
+  if (isSubmission) {
+    return {
+      category: "Work Submitted",
+      badgeColor:
+        "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800",
+      iconBg: "bg-blue-100 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300",
+      icon: ArrowUpRight,
+      type: "submission" as const,
+    };
+  }
+
+  return {
+    category: "Project Update",
+    badgeColor:
+      "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-white/10",
+    iconBg: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300",
+    icon: FolderGit2,
+    type: "general" as const,
+  };
+}
+
+function extractReceiptCode(text?: string): string | null {
+  if (!text) return null;
+  const match = text.match(/PAYID-[A-Za-z0-9\-]+/i) || text.match(/Receipt:\s*([A-Za-z0-9\-_]+)/i);
+  return match ? match[1] || match[0] : null;
+}
+
+function extractMilestoneTitle(act: EnrichedActivity): string | null {
+  if (act.milestoneTitle) return act.milestoneTitle;
+  const match = act.action.match(/"([^"]+)"/);
+  if (match) return match[1];
+  const msMatch = act.action.match(/Milestone\s+\d+:\s*([^,\(]+)/i);
+  if (msMatch) return msMatch[1].trim();
+  return null;
 }
 
 export default function DashboardOverview({
@@ -166,10 +285,60 @@ export default function DashboardOverview({
     });
   }
 
-  // Combined recent activity feed (latest 4 items across projects)
-  const recentActivities = projects
-    .flatMap((p) => p.activityLog.map((act) => ({ ...act, projectTitle: p.title })))
-    .slice(0, 4);
+  const [expandedActivityIds, setExpandedActivityIds] = useState<Record<string, boolean>>({});
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showAllActivities, setShowAllActivities] = useState(false);
+
+  const handleCopy = (text: string, key: string) => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(null), 2000);
+    }
+  };
+
+  const handleProjectClick = (projectId: string) => {
+    if (onSelectProject) {
+      onSelectProject(projectId);
+    } else {
+      setActiveProjectId(projectId);
+      setActiveTab("projects");
+    }
+  };
+
+  const toggleExpand = (id: string) => {
+    setExpandedActivityIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // Combined recent activity feed across all projects
+  const allActivities: EnrichedActivity[] = projects.flatMap((p) =>
+    p.activityLog.map((act) => ({
+      ...act,
+      projectTitle: p.title,
+      projectId: p.id,
+    }))
+  );
+
+  const displayActivities = showAllActivities ? allActivities : allActivities.slice(0, 5);
+
+  const areAllExpanded =
+    displayActivities.length > 0 &&
+    displayActivities.every((act) => !!expandedActivityIds[act.id]);
+
+  const toggleAllExpanded = () => {
+    if (areAllExpanded) {
+      setExpandedActivityIds({});
+    } else {
+      const all: Record<string, boolean> = {};
+      displayActivities.forEach((act) => {
+        all[act.id] = true;
+      });
+      setExpandedActivityIds(all);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -524,44 +693,307 @@ export default function DashboardOverview({
       )}
 
       {/* 4. Recent Activity */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-            Recent Activity
-          </h2>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            Latest updates across all projects
-          </span>
+      <div className="space-y-4">
+        {/* Header with Title, Count, Expand All & View All controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                Recent Activity
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40">
+                {allActivities.length} updates logged
+              </span>
+            </div>
+            <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+              Live audit ledger of milestone submissions, AI reviews, client approvals, and PayPal settlements.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+            <button
+              type="button"
+              onClick={toggleAllExpanded}
+              className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#0070BA] dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer shadow-2xs"
+            >
+              {areAllExpanded ? "Collapse All Details" : "Expand All Details"}
+            </button>
+
+            {allActivities.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowAllActivities(!showAllActivities)}
+                className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:text-[#005a96] dark:hover:text-sky-300 px-2.5 py-1.5 rounded-lg border border-blue-200 dark:border-sky-800/50 bg-blue-50/50 dark:bg-sky-950/40 hover:bg-blue-100/60 dark:hover:bg-sky-900/50 transition-colors cursor-pointer shadow-2xs"
+              >
+                {showAllActivities ? "Show Top 5" : `View All (${allActivities.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
+        {/* Activity Cards List */}
         <div className="rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] divide-y divide-slate-100 dark:divide-white/5 shadow-xs overflow-hidden">
-          {recentActivities.map((act) => (
-            <div key={act.id} className="p-4 sm:p-5 flex items-start gap-3.5 text-xs hover:bg-slate-50/50 dark:hover:bg-white/[0.02] transition-colors">
-              <div className="h-2.5 w-2.5 rounded-full bg-[#0070BA] dark:bg-sky-400 mt-1 shrink-0 ring-4 ring-blue-50 dark:ring-sky-950/40" />
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40">
-                    <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
-                    Project: {act.projectTitle}
-                  </span>
-                  <span className="text-[10px] text-slate-400">
-                    {act.timestamp}
-                  </span>
-                </div>
-
-                <p className="text-slate-800 dark:text-slate-200 leading-relaxed">
-                  <strong className="text-slate-900 dark:text-white font-bold">{act.actor}:</strong>{" "}
-                  {act.action}
-                </p>
-
-                {act.details && (
-                  <p className="mt-1 text-slate-600 dark:text-slate-400 text-[11px] italic bg-slate-50 dark:bg-white/5 p-2 rounded-lg border border-slate-100 dark:border-white/5">
-                    "{act.details}"
-                  </p>
-                )}
-              </div>
+          {displayActivities.length === 0 ? (
+            <div className="p-10 text-center text-xs text-slate-400">
+              No activity logged yet.
             </div>
-          ))}
+          ) : (
+            displayActivities.map((act) => {
+              const meta = getActivityMeta(act);
+              const isExpanded = !!expandedActivityIds[act.id];
+              const receiptCode = extractReceiptCode(act.action) || extractReceiptCode(act.details);
+              const milestoneName = extractMilestoneTitle(act);
+              const MetaIcon = meta.icon;
+
+              return (
+                <div
+                  key={act.id}
+                  className={`p-4 sm:p-5 transition-colors duration-150 ${
+                    isExpanded
+                      ? "bg-slate-50/70 dark:bg-white/[0.02]"
+                      : "hover:bg-slate-50/50 dark:hover:bg-white/[0.015]"
+                  }`}
+                >
+                  {/* Top Header Row */}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
+                    {/* Left: Category Icon + Content */}
+                    <div className="flex items-start gap-3 sm:gap-3.5 flex-1 min-w-0">
+                      {/* Stylized Category Icon */}
+                      <div
+                        className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs ${meta.iconBg}`}
+                      >
+                        <MetaIcon className="h-4 w-4" />
+                      </div>
+
+                      {/* Main Summary Content */}
+                      <div className="flex-1 min-w-0">
+                        {/* Tags line: Project, Category, Milestone (if any), Timestamp */}
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5">
+                          {/* Clickable Project Tag */}
+                          <button
+                            type="button"
+                            onClick={() => handleProjectClick(act.projectId)}
+                            title={`Open ${act.projectTitle} workspace`}
+                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 hover:bg-[#0070BA]/20 transition-colors cursor-pointer"
+                          >
+                            <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
+                            <span className="truncate max-w-[220px]">Project: {act.projectTitle}</span>
+                          </button>
+
+                          {/* Category Tag */}
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${meta.badgeColor}`}
+                          >
+                            {meta.category}
+                          </span>
+
+                          {/* Target Milestone Pill if available */}
+                          {milestoneName && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-slate-300 border border-slate-200/60 dark:border-white/5 truncate max-w-[240px]">
+                              Milestone: {milestoneName}
+                            </span>
+                          )}
+
+                          {/* Timestamp */}
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 ml-auto sm:ml-0">
+                            <Clock className="h-2.5 w-2.5" />
+                            {act.timestamp}
+                          </span>
+                        </div>
+
+                        {/* Event Message */}
+                        <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
+                          <strong className="text-slate-900 dark:text-white font-bold">{act.actor}:</strong>{" "}
+                          <span>{act.action}</span>
+                        </p>
+
+                        {/* Collapsed Details Snippet (if unexpanded and has details) */}
+                        {!isExpanded && act.details && (
+                          <p className="mt-1 text-slate-500 dark:text-slate-400 text-[11px] italic truncate">
+                            "{act.details}"
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Expand Details Button */}
+                    <div className="shrink-0 flex items-center gap-2 self-start sm:self-center pl-12 sm:pl-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(act.id)}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                          isExpanded
+                            ? "bg-[#0070BA] text-white hover:bg-[#005a96]"
+                            : "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/5 dark:hover:bg-white/10 dark:text-slate-300 border border-slate-200/80 dark:border-white/10"
+                        }`}
+                        aria-expanded={isExpanded}
+                      >
+                        <span>{isExpanded ? "Hide Details" : "Expand Details"}</span>
+                        {isExpanded ? (
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Expanded Details Sub-Panel */}
+                  {isExpanded && (
+                    <div className="mt-3.5 pt-3.5 border-t border-slate-200/70 dark:border-white/10 sm:ml-12.5 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                      {/* Context Banner: Verified Receipt */}
+                      {receiptCode && (
+                        <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="h-8.5 w-8.5 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 flex items-center justify-center shrink-0 shadow-2xs">
+                              <Receipt className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
+                                  PayPal Sandbox Transaction Receipt
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-emerald-200/60 text-emerald-900 dark:bg-emerald-900/80 dark:text-emerald-200 px-1.5 py-0.2 rounded-full">
+                                  <ShieldCheck className="h-2.5 w-2.5" />
+                                  100% Settled
+                                </span>
+                              </div>
+                              <p className="font-mono font-bold text-xs text-slate-900 dark:text-white truncate mt-0.5">
+                                {receiptCode}
+                              </p>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(receiptCode, `receipt_${act.id}`)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#0D1527] border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors shadow-2xs self-start sm:self-auto cursor-pointer"
+                          >
+                            {copiedKey === `receipt_${act.id}` ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                <span>Copied to Clipboard</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3.5 w-3.5" />
+                                <span>Copy Receipt ID</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Context Banner: AI Work Review */}
+                      {meta.type === "ai" && (
+                        <div className="p-3.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/60 flex items-start gap-3 shadow-2xs">
+                          <div className="h-8.5 w-8.5 rounded-lg bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            <Sparkles className="h-4 w-4" />
+                          </div>
+                          <div className="text-xs">
+                            <span className="text-[10px] font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wider block">
+                              Automated Acceptance Review
+                            </span>
+                            <p className="text-slate-700 dark:text-slate-300 font-medium mt-0.5 leading-relaxed">
+                              Milestone deliverables were inspected against contract requirements by the AI assistant. Both parties can review the checklist before final approval.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Context Banner: Changes Requested */}
+                      {meta.type === "revision" && (
+                        <div className="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3 shadow-2xs">
+                          <div className="h-8.5 w-8.5 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            <AlertCircle className="h-4 w-4" />
+                          </div>
+                          <div className="text-xs flex-1">
+                            <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider block">
+                              Client Revision Feedback
+                            </span>
+                            <p className="text-slate-800 dark:text-slate-200 italic mt-1 font-medium leading-relaxed bg-white/70 dark:bg-black/20 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/40">
+                              "{act.details || "Modifications requested before milestone funds can be released."}"
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Generic Details (when not revision and exists) */}
+                      {act.details && meta.type !== "revision" && (
+                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 text-xs">
+                          <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider mb-1">
+                            Activity Notes & Record
+                          </span>
+                          <p className="text-slate-700 dark:text-slate-300 leading-relaxed italic">
+                            "{act.details}"
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Structured 4-Column Metadata Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
+                          <span className="text-[10px] text-slate-400 block font-medium">Logged Actor</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block mt-0.5">
+                            {act.actor}
+                          </span>
+                          <span className="text-[10px] text-slate-500 capitalize">
+                            Role: {act.actorRole === "ai_system" ? "AI Agent" : act.actorRole}
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
+                          <span className="text-[10px] text-slate-400 block font-medium">Associated Project</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block mt-0.5">
+                            {act.projectTitle}
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            Milestone Contract
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
+                          <span className="text-[10px] text-slate-400 block font-medium">Target Milestone</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block mt-0.5">
+                            {milestoneName || "General Stage"}
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            Deliverable Scope
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
+                          <span className="text-[10px] text-slate-400 block font-medium">Recorded Date & Time</span>
+                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block mt-0.5">
+                            {act.timestamp}
+                          </span>
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                            <ShieldCheck className="h-3 w-3" /> Verified Ledger
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Footer Actions */}
+                      <div className="pt-1 flex items-center justify-between flex-wrap gap-2 text-xs">
+                        <span className="text-[11px] text-slate-400">
+                          Log Identifier: <code className="font-mono text-[10px] text-slate-500">{act.id}</code>
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleProjectClick(act.projectId)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-[#0070BA] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                        >
+                          <span>Open in Project Workspace</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>
