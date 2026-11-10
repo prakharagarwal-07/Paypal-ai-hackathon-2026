@@ -116,7 +116,7 @@ function AuthForm() {
   };
 
   // Instant Demo Login for Hackathon Judges
-  const handleDemoLogin = (demoRole: UserRole) => {
+  const handleDemoLogin = async (demoRole: UserRole) => {
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -124,6 +124,16 @@ function AuthForm() {
       demoRole === "client"
         ? { name: "Sarah Chen", email: "sarah.chen@apexcommerce.com", id: "MSO-7K4P92" }
         : { name: "Rohan Verma", email: "rohan.verma@craftdev.io", id: "MSO-2W8L41" };
+
+    const supabaseClient = getSupabaseClient();
+    if (supabaseClient) {
+      try {
+        await supabaseClient.auth.signInWithPassword({
+          email: demoUser.email,
+          password: "Password123!",
+        });
+      } catch (_) {}
+    }
 
     syncLocalProfile(demoUser.name, demoUser.email, demoRole, demoUser.id);
     setSuccessMsg(`Signing in as ${demoUser.name} (${demoRole.toUpperCase()})...`);
@@ -184,26 +194,35 @@ function AuthForm() {
     if (supabaseClient) {
       try {
         if (mode === "signup") {
-          const newMsoId = generateMilestoneOSId();
-          const { data, error } = await supabaseClient.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                name: name.trim() || (role === "client" ? "Sarah Chen" : "Rohan Verma"),
-                role,
-                milestoneOSId: newMsoId,
-              },
-            },
+          // Route through /api/auth/signup to automatically auto-confirm user without email bottleneck
+          const res = await fetch("/api/auth/signup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              password,
+              name: name.trim() || (role === "client" ? "Sarah Chen" : "Rohan Verma"),
+              role,
+            }),
           });
+          const resData = await res.json();
 
-          if (error) {
+          if (!res.ok || !resData.success) {
             setLoading(false);
-            setErrorMsg(error.message);
+            setErrorMsg(resData.error || "Sign up failed.");
             return;
           }
 
-          syncLocalProfile(name || "New Member", email, role, newMsoId);
+          const newMsoId = resData.user?.milestoneOSId || generateMilestoneOSId();
+          const newName = resData.user?.name || name || "New Member";
+
+          // Log in with password to establish the browser session
+          await supabaseClient.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          syncLocalProfile(newName, email, role, newMsoId);
           setSuccessMsg(`Account created on Supabase! ID: ${newMsoId}. Redirecting...`);
           setTimeout(() => router.push(returnUrl), 500);
           return;
