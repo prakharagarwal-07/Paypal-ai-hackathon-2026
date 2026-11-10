@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
+import { getServerSupabase } from "@/server/supabase";
 
 export async function GET(req: NextRequest) {
   try {
@@ -26,7 +27,37 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const user = db.findUserByMilestoneOSId(cleanId);
+    let user: any = null;
+    const serverSupabase = getServerSupabase();
+
+    if (serverSupabase) {
+      try {
+        const { data } = await serverSupabase
+          .from("profiles")
+          .select("id, milestone_os_id, full_name, role, avatar, company, title, rating")
+          .eq("milestone_os_id", cleanId)
+          .maybeSingle();
+
+        if (data) {
+          user = {
+            id: data.id,
+            milestoneOSId: data.milestone_os_id,
+            name: data.full_name,
+            avatar: data.avatar || data.full_name.slice(0, 2).toUpperCase(),
+            role: data.role,
+            company: data.company,
+            title: data.title,
+            rating: data.rating ? Number(data.rating) : 5.0,
+          };
+        }
+      } catch (e) {
+        console.warn("Supabase lookup error, falling back to local database:", e);
+      }
+    }
+
+    if (!user) {
+      user = db.findUserByMilestoneOSId(cleanId);
+    }
 
     if (!user) {
       return NextResponse.json(

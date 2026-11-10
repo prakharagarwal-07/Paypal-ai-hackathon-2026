@@ -18,9 +18,11 @@ import {
   Send,
   Copy,
   Check,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
 import { isProjectCompleted } from "@/lib/dashboard-data";
+import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 interface SidebarProps {
   mobileOpen: boolean;
@@ -386,14 +388,31 @@ export default function Sidebar({
           </div>
 
           {/* Quick Actions */}
-          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 px-1 pt-1 border-t border-slate-100 dark:border-white/5">
             <Link
               href="/"
               className="hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 transition-colors"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Back to Home</span>
+              <span>Home</span>
             </Link>
+
+            <button
+              type="button"
+              onClick={async () => {
+                if (isSupabaseConfigured() && supabase) {
+                  try {
+                    await supabase.auth.signOut();
+                  } catch (_) {}
+                }
+                window.location.href = "/auth";
+              }}
+              className="hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1 text-[11px] font-semibold transition-colors cursor-pointer"
+              title="Sign out or switch account"
+            >
+              <LogOut className="h-3 w-3" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
       </aside>
