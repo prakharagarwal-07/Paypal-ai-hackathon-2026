@@ -22,7 +22,12 @@ import {
   ArrowLeft,
   Check,
 } from "lucide-react";
-import { generateMilestoneOSId } from "@/lib/dashboard-data";
+import {
+  generateMilestoneOSId,
+  extractBaseCode,
+  formatClientId,
+  formatFreelancerId,
+} from "@/lib/dashboard-data";
 import { isSupabaseConfigured, getSupabaseClient } from "@/lib/supabase";
 
 type AuthMode = "login" | "signup";
@@ -89,11 +94,18 @@ function AuthForm() {
         .toUpperCase()
         .slice(0, 2);
 
+      const baseCode = extractBaseCode(userMsoId) || "USER01";
+      const clientId = formatClientId(baseCode);
+      const freelancerId = formatFreelancerId(baseCode);
+
       const activeUser = {
         name: actualName,
         email: cleanEmail,
         avatar: initials,
-        milestoneOSId: userMsoId,
+        baseCode,
+        clientId,
+        freelancerId,
+        milestoneOSId: clientId,
         role: "both",
         roles: ["client", "freelancer"],
       };

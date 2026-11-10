@@ -1,28 +1,58 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { getServerSupabase } from "@/server/supabase";
+import {
+  extractBaseCode,
+  formatClientId,
+  formatFreelancerId,
+} from "@/lib/dashboard-data";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const expectedRole = searchParams.get("expectedRole") as "client" | "freelancer" | null;
     const isDemo = searchParams.get("demo") === "true";
 
     if (!id || typeof id !== "string") {
       return NextResponse.json(
-        { found: false, error: "Please provide a valid MilestoneOS ID parameter (e.g. ?id=MSO-8K4P92)." },
+        { found: false, error: "Please provide a valid account ID parameter (e.g. ?id=FL-Q7EWTG or ?id=CL-Q7EWTG)." },
         { status: 400 }
       );
     }
 
     const cleanId = id.trim().toUpperCase();
+    const baseCode = extractBaseCode(cleanId);
 
-    // Basic format check
-    if (!cleanId.startsWith("MSO-")) {
+    // Validate 6-character alphanumeric base code format
+    if (!baseCode || baseCode.length !== 6 || !/^[A-Z0-9]{6}$/.test(baseCode)) {
       return NextResponse.json(
         {
           found: false,
-          error: "Invalid MilestoneOS ID format. Valid IDs begin with 'MSO-' followed by 6 alphanumeric characters.",
+          error: "Invalid ID format. Valid MilestoneOS IDs consist of a role prefix ('CL-' or 'FL-') followed by a 6-character code (e.g. FL-Q7EWTG, CL-Q7EWTG).",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Role prefix validation:
+    // When a Client looks up a Freelancer, reject 'CL-' IDs
+    if (expectedRole === "freelancer" && cleanId.startsWith("CL-")) {
+      return NextResponse.json(
+        {
+          found: false,
+          error: `You entered a Client ID (${cleanId}). When initiating a project as a Client, you must enter the Freelancer's ID starting with 'FL-' (e.g. FL-${baseCode}).`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // When a Freelancer looks up a Client, reject 'FL-' IDs
+    if (expectedRole === "client" && cleanId.startsWith("FL-")) {
+      return NextResponse.json(
+        {
+          found: false,
+          error: `You entered a Freelancer ID (${cleanId}). When proposing a project as a Freelancer, you must enter the Client's ID starting with 'CL-' (e.g. CL-${baseCode}).`,
         },
         { status: 400 }
       );
@@ -32,52 +62,105 @@ export async function GET(req: NextRequest) {
     const serverSupabase = getServerSupabase();
 
     if (serverSupabase) {
+      // 1. First attempt lookup using the base_code column if migration has been executed
       try {
-        const { data } = await serverSupabase
+        const { data: bData } = await serverSupabase
           .from("profiles")
-          .select("id, milestone_os_id, full_name, email, role, avatar, company, title, rating")
-          .ilike("milestone_os_id", cleanId)
+          .select("id, milestone_os_id, base_code, full_name, role, avatar, company, title, rating")
+          .eq("base_code", baseCode)
           .maybeSingle();
 
-        if (data) {
-          const displayName = data.full_name || (data as any).name || data.email?.split("@")[0] || "User";
+        if (bData) {
+          const resolvedBase = bData.base_code || baseCode;
+          const displayName = bData.full_name || (bData as any).name || "User";
           user = {
-            id: data.id,
-            milestoneOSId: data.milestone_os_id,
+            id: bData.id,
+            baseCode: resolvedBase,
+            clientId: formatClientId(resolvedBase),
+            freelancerId: formatFreelancerId(resolvedBase),
+            milestoneOSId: expectedRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
             name: displayName,
-            avatar: data.avatar || displayName.slice(0, 2).toUpperCase(),
-            role: data.role || "both",
-            company: data.company,
-            title: data.title,
-            rating: data.rating ? Number(data.rating) : 5.0,
+            avatar: bData.avatar || displayName.slice(0, 2).toUpperCase(),
+            role: bData.role || "both",
+            company: bData.company,
+            title: bData.title,
+            rating: bData.rating ? Number(bData.rating) : 5.0,
           };
         }
-      } catch (e) {
-        console.warn("Supabase lookup error:", e);
+      } catch (_) {}
+
+      // 2. Fallback lookup querying milestone_os_id for baseCode
+      if (!user) {
+        try {
+          const { data: mData } = await serverSupabase
+            .from("profiles")
+            .select("id, milestone_os_id, full_name, role, avatar, company, title, rating")
+            .ilike("milestone_os_id", `%${baseCode}%`)
+            .maybeSingle();
+
+          if (mData) {
+            const resolvedBase = extractBaseCode(mData.milestone_os_id) || baseCode;
+            const displayName = mData.full_name || (mData as any).name || "User";
+            user = {
+              id: mData.id,
+              baseCode: resolvedBase,
+              clientId: formatClientId(resolvedBase),
+              freelancerId: formatFreelancerId(resolvedBase),
+              milestoneOSId: expectedRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
+              name: displayName,
+              avatar: mData.avatar || displayName.slice(0, 2).toUpperCase(),
+              role: mData.role || "both",
+              company: mData.company,
+              title: mData.title,
+              rating: mData.rating ? Number(mData.rating) : 5.0,
+            };
+          }
+        } catch (e) {
+          console.warn("Supabase lookup error:", e);
+        }
       }
     }
 
     // Demo directory fallback is ONLY permitted when explicitly in demo mode
     if (!user && isDemo) {
-      user = db.findUserByMilestoneOSId(cleanId);
+      const demoUser = db.findUserByBaseCode(baseCode) || db.findUserByMilestoneOSId(cleanId);
+      if (demoUser) {
+        const demoBase = extractBaseCode(demoUser.milestoneOSId) || baseCode;
+        user = {
+          id: demoUser.id,
+          baseCode: demoBase,
+          clientId: formatClientId(demoBase),
+          freelancerId: formatFreelancerId(demoBase),
+          milestoneOSId: expectedRole === "freelancer" ? formatFreelancerId(demoBase) : formatClientId(demoBase),
+          name: demoUser.name,
+          avatar: demoUser.avatar,
+          role: demoUser.role,
+          company: demoUser.company,
+          title: demoUser.title,
+          rating: demoUser.rating || 5.0,
+        };
+      }
     }
 
     if (!user) {
       return NextResponse.json(
         {
           found: false,
-          error: `No registered account found with MilestoneOS ID "${cleanId}". Please verify the ID with the user.`,
+          error: `No registered account found with code "${baseCode}" (${cleanId}). Please verify the ID with the user.`,
         },
         { status: 404 }
       );
     }
 
-    // Return public non-sensitive preview
+    // Return public non-sensitive preview (NEVER expose passwords, private emails or tokens)
     return NextResponse.json({
       success: true,
       found: true,
       user: {
         id: user.id,
+        baseCode: user.baseCode,
+        clientId: user.clientId,
+        freelancerId: user.freelancerId,
         milestoneOSId: user.milestoneOSId,
         name: user.name,
         avatar: user.avatar,

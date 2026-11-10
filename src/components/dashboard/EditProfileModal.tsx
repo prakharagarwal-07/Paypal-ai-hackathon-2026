@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { X, Save, User, Mail, Building2, Briefcase, Copy, Check, ShieldCheck, IdCard } from "lucide-react";
 import { useDashboard } from "@/lib/dashboard-store";
+import { extractBaseCode, formatClientId, formatFreelancerId } from "@/lib/dashboard-data";
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -10,8 +11,17 @@ interface EditProfileModalProps {
 }
 
 export default function EditProfileModal({ isOpen, onClose }: EditProfileModalProps) {
-  const { role, userProfiles, updateUserProfile } = useDashboard();
+  const { role, userProfiles, updateUserProfile, authUser } = useDashboard();
   const currentProfile = userProfiles[role];
+
+  const baseCode =
+    currentProfile.baseCode ||
+    authUser?.baseCode ||
+    extractBaseCode(currentProfile.milestoneOSId) ||
+    "USER01";
+
+  const clientId = currentProfile.clientId || formatClientId(baseCode);
+  const freelancerId = currentProfile.freelancerId || formatFreelancerId(baseCode);
 
   const [name, setName] = useState(currentProfile.name);
   const [email, setEmail] = useState(currentProfile.email);
@@ -20,16 +30,14 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
       ? (currentProfile as any).company || ""
       : (currentProfile as any).title || ""
   );
-  const [copiedId, setCopiedId] = useState(false);
+  const [copiedRole, setCopiedRole] = useState<"client" | "freelancer" | null>(null);
 
   if (!isOpen) return null;
 
-  const handleCopyId = () => {
-    if (currentProfile.milestoneOSId) {
-      navigator.clipboard.writeText(currentProfile.milestoneOSId);
-      setCopiedId(true);
-      setTimeout(() => setCopiedId(false), 2000);
-    }
+  const handleCopy = (idText: string, type: "client" | "freelancer") => {
+    navigator.clipboard.writeText(idText);
+    setCopiedRole(type);
+    setTimeout(() => setCopiedRole(null), 2000);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -66,9 +74,9 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
           </button>
         </div>
 
-        {/* MilestoneOS ID Card */}
+        {/* Shared Base Code & Dual Role IDs */}
         <div className="p-5 pb-0">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-50/80 to-sky-50/60 dark:from-blue-950/30 dark:to-sky-950/20 border border-blue-200/80 dark:border-blue-900/40 space-y-2">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-blue-50/80 to-sky-50/60 dark:from-blue-950/30 dark:to-sky-950/20 border border-blue-200/80 dark:border-blue-900/40 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-6 w-6 rounded-lg bg-[#0070BA] text-white flex items-center justify-center font-bold text-xs">
@@ -76,34 +84,70 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
                 </span>
                 <div>
                   <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400 block">
-                    Permanent MilestoneOS ID
+                    Shared Base Code: <span className="font-mono text-slate-900 dark:text-white font-bold">{baseCode}</span>
                   </span>
-                  <span className="font-mono font-black text-sm text-[#0070BA] dark:text-sky-300">
-                    {currentProfile.milestoneOSId || (role === "client" ? "MSO-7K4P92" : "MSO-2W8L41")}
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    One single Supabase account powering both roles.
                   </span>
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={handleCopyId}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/10 hover:bg-slate-100 dark:hover:bg-white/20 text-xs font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 cursor-pointer transition-colors"
-              >
-                {copiedId ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="text-emerald-600 font-bold">Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>Copy ID</span>
-                  </>
-                )}
-              </button>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-              Share this ID with counterparties so they can find you directly and initiate project proposals. This ID is permanent and never changes.
+
+            {/* Role-Specific ID Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-blue-100 dark:border-white/5">
+              {/* Client ID */}
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/80 dark:border-white/10">
+                <div className="min-w-0 pr-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Client ID</span>
+                  <span className="font-mono font-bold text-xs text-[#0070BA] dark:text-sky-300 block truncate">{clientId}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(clientId, "client")}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/10 hover:bg-slate-100 text-[11px] font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 shrink-0 cursor-pointer transition-colors"
+                >
+                  {copiedRole === "client" ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-600" />
+                      <span className="text-emerald-600 font-bold text-[10px]">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3" />
+                      <span className="text-[10px]">Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Freelancer ID */}
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200/80 dark:border-white/10">
+                <div className="min-w-0 pr-2">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Freelancer ID</span>
+                  <span className="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400 block truncate">{freelancerId}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(freelancerId, "freelancer")}
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/10 hover:bg-slate-100 text-[11px] font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 shrink-0 cursor-pointer transition-colors"
+                >
+                  {copiedRole === "freelancer" ? (
+                    <>
+                      <Check className="h-3 w-3 text-emerald-600" />
+                      <span className="text-emerald-600 font-bold text-[10px]">Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3 w-3" />
+                      <span className="text-[10px]">Copy</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-normal">
+              Give your <strong>Client ID ({clientId})</strong> to freelancers you hire, or your <strong>Freelancer ID ({freelancerId})</strong> to clients who hire you.
             </p>
           </div>
         </div>

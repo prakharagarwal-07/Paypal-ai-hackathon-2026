@@ -18,6 +18,10 @@ import {
   MilestoneOSUser,
   MILESTONEOS_DIRECTORY,
   generateMilestoneOSId,
+  generateBaseCode,
+  extractBaseCode,
+  formatClientId,
+  formatFreelancerId,
   generateInvitationToken,
   lookupMilestoneOSUser,
   isProjectCompleted,
@@ -38,6 +42,9 @@ export type DashboardTab =
 export interface UserProfiles {
   client: {
     id: string;
+    baseCode?: string;
+    clientId?: string;
+    freelancerId?: string;
     milestoneOSId: string;
     name: string;
     email: string;
@@ -46,6 +53,9 @@ export interface UserProfiles {
   };
   freelancer: {
     id: string;
+    baseCode?: string;
+    clientId?: string;
+    freelancerId?: string;
     milestoneOSId: string;
     name: string;
     email: string;
@@ -60,6 +70,9 @@ export interface AuthenticatedUser {
   name: string;
   email: string;
   avatar: string;
+  baseCode: string;
+  clientId: string;
+  freelancerId: string;
   milestoneOSId: string;
   company?: string;
   title?: string;
@@ -70,7 +83,10 @@ export interface AuthenticatedUser {
 export const DEFAULT_USER_PROFILES: UserProfiles = {
   client: {
     id: "usr_client_sarah",
-    milestoneOSId: "MSO-7K4P92",
+    baseCode: "7K4P92",
+    clientId: "CL-7K4P92",
+    freelancerId: "FL-7K4P92",
+    milestoneOSId: "CL-7K4P92",
     name: "Sarah Chen",
     email: "sarah.chen@apexcommerce.com",
     avatar: "SC",
@@ -78,7 +94,10 @@ export const DEFAULT_USER_PROFILES: UserProfiles = {
   },
   freelancer: {
     id: "usr_dev_rohan",
-    milestoneOSId: "MSO-2W8L41",
+    baseCode: "2W8L41",
+    clientId: "CL-2W8L41",
+    freelancerId: "FL-2W8L41",
+    milestoneOSId: "FL-2W8L41",
     name: "Rohan Verma",
     email: "rohan.verma@craftdev.io",
     avatar: "RV",
@@ -267,12 +286,17 @@ export function DashboardProvider({
     const currentName = authUser?.name || "Member";
     const currentEmail = authUser?.email || "";
     const currentAvatar = authUser?.avatar || "ME";
-    const currentMsoId = authUser?.milestoneOSId || "MSO-USER";
+    const baseCode = authUser?.baseCode || extractBaseCode(authUser?.milestoneOSId) || "USER01";
+    const clientId = authUser?.clientId || formatClientId(baseCode);
+    const freelancerId = authUser?.freelancerId || formatFreelancerId(baseCode);
 
     return {
       client: {
         id: authUser?.id || "usr_client",
-        milestoneOSId: currentMsoId,
+        baseCode,
+        clientId,
+        freelancerId,
+        milestoneOSId: clientId,
         name: currentName,
         email: currentEmail,
         avatar: currentAvatar,
@@ -280,7 +304,10 @@ export function DashboardProvider({
       },
       freelancer: {
         id: authUser?.id || "usr_freelancer",
-        milestoneOSId: currentMsoId,
+        baseCode,
+        clientId,
+        freelancerId,
+        milestoneOSId: freelancerId,
         name: currentName,
         email: currentEmail,
         avatar: currentAvatar,
@@ -596,10 +623,16 @@ export function DashboardProvider({
             const cleanEmail = user.email || "";
             const defaultName = cleanEmail.split("@")[0] || "Member";
             const actualName = profileRecord?.full_name || userMeta.name || defaultName;
-            const msoId =
-              profileRecord?.milestone_os_id ||
-              userMeta.milestoneOSId ||
-              `MSO-${user.id.slice(0, 6).toUpperCase()}`;
+            const baseCode =
+              profileRecord?.base_code ||
+              extractBaseCode(profileRecord?.milestone_os_id) ||
+              extractBaseCode(userMeta.baseCode) ||
+              extractBaseCode(userMeta.milestoneOSId) ||
+              user.id.slice(0, 6).toUpperCase();
+
+            const clientId = formatClientId(baseCode);
+            const freelancerId = formatFreelancerId(baseCode);
+
             const roleVal = profileRecord?.role || userMeta.role || "both";
             const rolesList =
               profileRecord?.roles || (roleVal === "both" ? ["client", "freelancer"] : [roleVal]);
@@ -609,7 +642,10 @@ export function DashboardProvider({
               name: actualName,
               email: cleanEmail,
               avatar: profileRecord?.avatar || actualName.slice(0, 2).toUpperCase() || "ME",
-              milestoneOSId: msoId,
+              baseCode,
+              clientId,
+              freelancerId,
+              milestoneOSId: clientId,
               company: profileRecord?.company || userMeta.company || "",
               title: profileRecord?.title || userMeta.title || "",
               role: roleVal,

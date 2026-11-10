@@ -21,7 +21,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { ProjectContract, MilestoneOSUser } from "@/lib/dashboard-data";
+import { ProjectContract, MilestoneOSUser, extractBaseCode } from "@/lib/dashboard-data";
 import ThemeToggle from "@/components/ThemeToggle";
 
 interface InvitePageProps {
@@ -116,7 +116,7 @@ function InvitePageContent({ params }: InvitePageProps) {
   const isRevoked = project.invitationStatus === "revoked";
   const isClaimed = project.invitationStatus === "claimed" || project.status === "active";
   const isSender =
-    project.initiatorMilestoneOSId === currentProfile.milestoneOSId ||
+    (project.initiatorMilestoneOSId && currentProfile.milestoneOSId && extractBaseCode(project.initiatorMilestoneOSId) === extractBaseCode(currentProfile.milestoneOSId)) ||
     (project.initiatedBy === role && project.client.email === currentProfile.email);
 
   const senderRole = project.initiatedBy === "client" ? "Client" : "Freelancer";

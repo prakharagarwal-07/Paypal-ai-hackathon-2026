@@ -350,13 +350,36 @@ export function getFriendlyProjectStatus(
   }
 }
 
-export function generateMilestoneOSId(): string {
+export function generateBaseCode(): string {
   const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
   let result = "";
   for (let i = 0; i < 6; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return `MSO-${result}`;
+  return result;
+}
+
+export function extractBaseCode(idOrCode?: string | null): string {
+  if (!idOrCode) return "";
+  const clean = idOrCode.trim().toUpperCase();
+  const match = clean.match(/^(?:CL|FL|MSO)-([A-Z0-9]{6})$/i);
+  if (match) return match[1];
+  if (/^[A-Z0-9]{6}$/.test(clean)) return clean;
+  return clean.replace(/^(?:CL|FL|MSO)-/i, "").slice(0, 6);
+}
+
+export function formatClientId(baseCode?: string | null): string {
+  const code = extractBaseCode(baseCode) || "USER01";
+  return `CL-${code}`;
+}
+
+export function formatFreelancerId(baseCode?: string | null): string {
+  const code = extractBaseCode(baseCode) || "USER01";
+  return `FL-${code}`;
+}
+
+export function generateMilestoneOSId(): string {
+  return formatClientId(generateBaseCode());
 }
 
 export function generateInvitationToken(): string {
@@ -370,11 +393,14 @@ export function generateInvitationToken(): string {
 
 export interface MilestoneOSUser {
   id: string;
+  baseCode?: string;
+  clientId?: string;
+  freelancerId?: string;
   milestoneOSId: string;
   name: string;
   email: string;
   avatar: string;
-  role: "client" | "freelancer";
+  role: "client" | "freelancer" | "both";
   company?: string;
   title?: string;
   rating?: number;
@@ -383,7 +409,10 @@ export interface MilestoneOSUser {
 export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
   {
     id: "usr_client_sarah",
-    milestoneOSId: "MSO-7K4P92",
+    baseCode: "7K4P92",
+    clientId: "CL-7K4P92",
+    freelancerId: "FL-7K4P92",
+    milestoneOSId: "CL-7K4P92",
     name: "Sarah Chen",
     email: "sarah.chen@apexcommerce.com",
     avatar: "SC",
@@ -392,7 +421,10 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
   },
   {
     id: "usr_client_david",
-    milestoneOSId: "MSO-3X9M55",
+    baseCode: "3X9M55",
+    clientId: "CL-3X9M55",
+    freelancerId: "FL-3X9M55",
+    milestoneOSId: "CL-3X9M55",
     name: "David Kim",
     email: "david.kim@nextgenlabs.io",
     avatar: "DK",
@@ -401,7 +433,10 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
   },
   {
     id: "usr_client_amara",
-    milestoneOSId: "MSO-6V1Q88",
+    baseCode: "6V1Q88",
+    clientId: "CL-6V1Q88",
+    freelancerId: "FL-6V1Q88",
+    milestoneOSId: "CL-6V1Q88",
     name: "Amara Patel",
     email: "amara.patel@luminabrands.com",
     avatar: "AP",
@@ -410,7 +445,10 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
   },
   {
     id: "usr_dev_rohan",
-    milestoneOSId: "MSO-2W8L41",
+    baseCode: "2W8L41",
+    clientId: "CL-2W8L41",
+    freelancerId: "FL-2W8L41",
+    milestoneOSId: "FL-2W8L41",
     name: "Rohan Verma",
     email: "rohan.verma@craftdev.io",
     avatar: "RV",
@@ -420,7 +458,10 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
   },
   {
     id: "usr_dev_elena",
-    milestoneOSId: "MSO-9B4T72",
+    baseCode: "9B4T72",
+    clientId: "CL-9B4T72",
+    freelancerId: "FL-9B4T72",
+    milestoneOSId: "FL-9B4T72",
     name: "Elena Rostova",
     email: "elena.rostova@devcraft.org",
     avatar: "ER",
@@ -430,7 +471,10 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
   },
   {
     id: "usr_dev_marcus",
-    milestoneOSId: "MSO-5R7J23",
+    baseCode: "5R7J23",
+    clientId: "CL-5R7J23",
+    freelancerId: "FL-5R7J23",
+    milestoneOSId: "FL-5R7J23",
     name: "Marcus Thorne",
     email: "marcus.t@designstudio.io",
     avatar: "MT",

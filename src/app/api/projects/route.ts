@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
-import { ProjectContract, ActivityItem } from "@/lib/dashboard-data";
+import { ProjectContract, ActivityItem, extractBaseCode } from "@/lib/dashboard-data";
 import { getServerSupabase } from "@/server/supabase";
 
 export async function GET(req: NextRequest) {
@@ -101,21 +101,24 @@ export async function POST(req: NextRequest) {
     const supabase = getServerSupabase();
     if (supabase) {
       if (!resolvedFreelancerId && freelancer?.milestoneOSId) {
+        const fBase = extractBaseCode(freelancer.milestoneOSId);
         try {
+          // Try base_code first, then ilike on milestone_os_id
           const { data: fProfile } = await supabase
             .from("profiles")
             .select("id")
-            .ilike("milestone_os_id", freelancer.milestoneOSId.trim().toUpperCase())
+            .ilike("milestone_os_id", `%${fBase}%`)
             .maybeSingle();
           if (fProfile?.id) resolvedFreelancerId = fProfile.id;
         } catch (_) {}
       }
       if (!resolvedClientId && client?.milestoneOSId) {
+        const cBase = extractBaseCode(client.milestoneOSId);
         try {
           const { data: cProfile } = await supabase
             .from("profiles")
             .select("id")
-            .ilike("milestone_os_id", client.milestoneOSId.trim().toUpperCase())
+            .ilike("milestone_os_id", `%${cBase}%`)
             .maybeSingle();
           if (cProfile?.id) resolvedClientId = cProfile.id;
         } catch (_) {}

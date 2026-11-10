@@ -20,6 +20,10 @@ import {
   MilestoneOSUser,
   MILESTONEOS_DIRECTORY,
   generateMilestoneOSId,
+  generateBaseCode,
+  extractBaseCode,
+  formatClientId,
+  formatFreelancerId,
   generateInvitationToken,
 } from "@/lib/dashboard-data";
 import { CaptureOrderResult } from "./paypal";
@@ -110,6 +114,8 @@ export const db = {
 
     // 2. Real Registered Users: Filter projects where user is authorized participant
     const userMsoId = filter?.milestoneOSId?.trim().toUpperCase();
+    const userBaseCode = extractBaseCode(userMsoId);
+
     if (userId || userEmail || userMsoId) {
       return memoryState.projects.filter((p) => {
         // Exclude demo projects from normal user views
@@ -118,15 +124,20 @@ export const db = {
         // Apply status filter if provided
         if (status && p.status !== status) return false;
 
+        const clientBase = extractBaseCode(p.client.milestoneOSId);
+        const freelancerBase = extractBaseCode(p.freelancer.milestoneOSId);
+
         const isClient =
           (userId && (p.clientId === userId || p.client.id === userId)) ||
           (userEmail && p.client.email?.toLowerCase() === userEmail) ||
-          (userMsoId && p.client.milestoneOSId?.toUpperCase() === userMsoId);
+          (userMsoId && p.client.milestoneOSId?.toUpperCase() === userMsoId) ||
+          (userBaseCode && clientBase === userBaseCode);
 
         const isFreelancer =
           (userId && (p.freelancerId === userId || p.freelancer.id === userId)) ||
           (userEmail && p.freelancer.email?.toLowerCase() === userEmail) ||
-          (userMsoId && p.freelancer.milestoneOSId?.toUpperCase() === userMsoId);
+          (userMsoId && p.freelancer.milestoneOSId?.toUpperCase() === userMsoId) ||
+          (userBaseCode && freelancerBase === userBaseCode);
 
         if (role === "client") return isClient;
         if (role === "freelancer") return isFreelancer;
@@ -159,11 +170,16 @@ export const db = {
       const uId = authUser.id;
       const uEmail = authUser.email?.toLowerCase();
       const uMso = authUser.milestoneOSId?.trim().toUpperCase();
+      const uBase = extractBaseCode(uMso);
+
+      const clientBase = extractBaseCode(project.client.milestoneOSId);
+      const freelancerBase = extractBaseCode(project.freelancer.milestoneOSId);
 
       const isAuthorized =
         (uId && (project.clientId === uId || project.freelancerId === uId || project.client.id === uId || project.freelancer.id === uId)) ||
         (uEmail && (project.client.email?.toLowerCase() === uEmail || project.freelancer.email?.toLowerCase() === uEmail)) ||
-        (uMso && (project.client.milestoneOSId?.toUpperCase() === uMso || project.freelancer.milestoneOSId?.toUpperCase() === uMso));
+        (uMso && (project.client.milestoneOSId?.toUpperCase() === uMso || project.freelancer.milestoneOSId?.toUpperCase() === uMso)) ||
+        (uBase && (clientBase === uBase || freelancerBase === uBase));
 
       if (isAuthorized) return project;
       return undefined;
@@ -173,10 +189,17 @@ export const db = {
     return project;
   },
 
+  findUserByBaseCode(codeOrId: string): MilestoneOSUser | null {
+    if (!codeOrId) return null;
+    const base = extractBaseCode(codeOrId);
+    return memoryState.users.find((u) => {
+      const uBase = extractBaseCode(u.milestoneOSId) || extractBaseCode(u.baseCode);
+      return uBase === base;
+    }) || null;
+  },
+
   findUserByMilestoneOSId(id: string): MilestoneOSUser | null {
-    if (!id) return null;
-    const clean = id.trim().toUpperCase();
-    return memoryState.users.find((u) => u.milestoneOSId.toUpperCase() === clean) || null;
+    return this.findUserByBaseCode(id);
   },
 
   getProjectByInvitationToken(token: string): ProjectContract | null {

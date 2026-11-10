@@ -28,6 +28,9 @@ import {
   MilestoneOSUser,
   lookupMilestoneOSUser,
   generateInvitationToken,
+  extractBaseCode,
+  formatClientId,
+  formatFreelancerId,
 } from "@/lib/dashboard-data";
 import { useDashboard } from "@/lib/dashboard-store";
 import ShareInvitationModal from "./ShareInvitationModal";
@@ -157,45 +160,80 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
   const totalMilestonesSum = milestones.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
   const budgetMatches = proposedBudget === totalMilestonesSum;
 
-  // Handle User ID Lookup (Database Query against Supabase)
+  // Handle User ID Lookup (Database Query against Supabase with shared base-code verification)
   const handleLookupUserId = async (idToLookup?: string) => {
     const rawId = (idToLookup || milestoneIdInput).trim().toUpperCase();
     setLookupError(null);
 
     if (!rawId) {
-      setLookupError("Please enter a MilestoneOS ID (e.g. MSO-8K4P92).");
+      setLookupError(isClient ? "Please enter a Freelancer ID (e.g. FL-Q7EWTG)." : "Please enter a Client ID (e.g. CL-Q7EWTG).");
       return;
     }
 
-    if (!rawId.startsWith("MSO-")) {
-      setLookupError("Invalid format. MilestoneOS IDs start with 'MSO-' followed by 6 alphanumeric characters.");
+    const baseCode = extractBaseCode(rawId);
+
+    // Validation Requirements:
+    // 1. When Client wants to hire a Freelancer: require FL- prefix; reject CL- prefix
+    if (isClient) {
+      if (rawId.startsWith("CL-")) {
+        setLookupError(`You entered a Client ID ('${rawId}'). When initiating a project as a Client, you must enter the Freelancer's ID starting with 'FL-' (e.g. FL-${baseCode || "Q7EWTG"}).`);
+        setSelectedUser(null);
+        return;
+      }
+      if (!rawId.startsWith("FL-") && !rawId.startsWith("MSO-")) {
+        setLookupError("Invalid format. Freelancer IDs start with 'FL-' followed by a 6-character code (e.g. FL-Q7EWTG).");
+        setSelectedUser(null);
+        return;
+      }
+    } else {
+      // 2. When Freelancer wants to connect with a Client: require CL- prefix; reject FL- prefix
+      if (rawId.startsWith("FL-")) {
+        setLookupError(`You entered a Freelancer ID ('${rawId}'). When proposing a project as a Freelancer, you must enter the Client's ID starting with 'CL-' (e.g. CL-${baseCode || "Q7EWTG"}).`);
+        setSelectedUser(null);
+        return;
+      }
+      if (!rawId.startsWith("CL-") && !rawId.startsWith("MSO-")) {
+        setLookupError("Invalid format. Client IDs start with 'CL-' followed by a 6-character code (e.g. CL-Q7EWTG).");
+        setSelectedUser(null);
+        return;
+      }
+    }
+
+    if (!baseCode || baseCode.length !== 6 || !/^[A-Z0-9]{6}$/.test(baseCode)) {
+      setLookupError("Invalid ID format. Valid MilestoneOS IDs consist of a role prefix ('CL-' or 'FL-') followed by a 6-character alphanumeric code.");
+      setSelectedUser(null);
       return;
     }
 
     // Prevent self-selection
-    if (myProfile?.milestoneOSId && rawId === myProfile.milestoneOSId.toUpperCase()) {
-      setLookupError("You cannot initiate a proposal with your own MilestoneOS ID.");
+    const myBase = extractBaseCode(myProfile?.milestoneOSId) || extractBaseCode(authUser?.baseCode);
+    if (myBase && baseCode === myBase) {
+      setLookupError("You cannot initiate a proposal with your own account ID.");
       setSelectedUser(null);
       return;
     }
 
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/users/lookup?id=${encodeURIComponent(rawId)}${isDemoMode ? "&demo=true" : ""}`);
+      const expectedRole = isClient ? "freelancer" : "client";
+      const res = await fetch(`/api/users/lookup?id=${encodeURIComponent(rawId)}&expectedRole=${expectedRole}${isDemoMode ? "&demo=true" : ""}`);
       const data = await res.json();
       setIsSearching(false);
 
       if (!res.ok || !data.found || !data.user) {
-        setLookupError(data.error || `No registered account found with MilestoneOS ID "${rawId}". Please verify the ID.`);
+        setLookupError(data.error || `No registered account found with code "${baseCode}". Please verify the ID.`);
         setSelectedUser(null);
         return;
       }
 
       const found: MilestoneOSUser = {
         id: data.user.id,
-        milestoneOSId: data.user.milestoneOSId,
+        baseCode: data.user.baseCode || baseCode,
+        clientId: data.user.clientId || formatClientId(baseCode),
+        freelancerId: data.user.freelancerId || formatFreelancerId(baseCode),
+        milestoneOSId: isClient ? (data.user.freelancerId || formatFreelancerId(baseCode)) : (data.user.clientId || formatClientId(baseCode)),
         name: data.user.name,
-        email: data.user.email || `${data.user.milestoneOSId.toLowerCase()}@milestoneos.link`,
+        email: data.user.email || `${baseCode.toLowerCase()}@milestoneos.link`,
         avatar: data.user.avatar || data.user.name.slice(0, 2).toUpperCase(),
         role: data.user.role || (isClient ? "freelancer" : "client"),
         company: data.user.company || undefined,
@@ -209,7 +247,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
       setLookupError(null);
     } catch (err: any) {
       setIsSearching(false);
-      setLookupError("Network error while verifying MilestoneOS ID. Please try again.");
+      setLookupError("Network error while verifying account ID. Please try again.");
       setSelectedUser(null);
     }
   };
@@ -591,9 +629,9 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                 <div className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-slate-900 dark:text-white">
-                      {isClient ? "Find Freelancer by MilestoneOS ID *" : "Find Client by MilestoneOS ID *"}
+                      {isClient ? "Find Freelancer by Freelancer ID *" : "Find Client by Client ID *"}
                     </label>
-                    <span className="text-[11px] text-slate-400 font-mono">Format: MSO-XXXXXX</span>
+                    <span className="text-[11px] text-slate-400 font-mono">Format: {isClient ? "FL-XXXXXX" : "CL-XXXXXX"}</span>
                   </div>
 
                   {!selectedUser ? (
@@ -614,7 +652,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                                 handleLookupUserId();
                               }
                             }}
-                            placeholder={isClient ? "e.g. MSO-2W8L41" : "e.g. MSO-7K4P92"}
+                            placeholder={isClient ? "e.g. FL-Q7EWTG" : "e.g. CL-Q7EWTG"}
                             className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-300 bg-white dark:border-white/15 dark:bg-[#131C31] text-xs text-slate-900 dark:text-white placeholder-slate-400 font-mono focus:border-[#0070BA] focus:outline-none"
                           />
                         </div>
@@ -701,8 +739,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            {selectedUser.role === "client" ? selectedUser.company : selectedUser.title} • MilestoneOS ID:{" "}
+                            {selectedUser.role === "client" ? selectedUser.company : selectedUser.title} • {isClient ? "Freelancer ID: " : "Client ID: "}
                             <strong className="font-mono text-slate-900 dark:text-white font-bold">{selectedUser.milestoneOSId}</strong>
+                            {selectedUser.baseCode && (
+                              <span className="text-slate-400 font-mono text-[10px] ml-1.5">(Base: {selectedUser.baseCode})</span>
+                            )}
                           </p>
                         </div>
                       </div>

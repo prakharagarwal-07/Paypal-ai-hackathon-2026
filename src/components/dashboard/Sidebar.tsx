@@ -21,7 +21,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useState } from "react";
-import { isProjectCompleted } from "@/lib/dashboard-data";
+import { isProjectCompleted, extractBaseCode, formatClientId, formatFreelancerId } from "@/lib/dashboard-data";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 interface SidebarProps {
@@ -45,6 +45,7 @@ export default function Sidebar({
     projects,
     activeProjectId,
     setActiveProjectId,
+    authUser,
   } = useDashboard();
 
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
@@ -72,13 +73,22 @@ export default function Sidebar({
       p.initiatedBy !== role
   ).length;
 
-  const handleCopyId = (e: React.MouseEvent) => {
+  const [copiedType, setCopiedType] = useState<"client" | "freelancer" | null>(null);
+
+  const baseCode =
+    currentProfile.baseCode ||
+    authUser?.baseCode ||
+    extractBaseCode(currentProfile.milestoneOSId) ||
+    "USER01";
+
+  const clientFormattedId = currentProfile.clientId || formatClientId(baseCode);
+  const freelancerFormattedId = currentProfile.freelancerId || formatFreelancerId(baseCode);
+
+  const handleCopyId = (e: React.MouseEvent, textToCopy: string, type: "client" | "freelancer") => {
     e.stopPropagation();
-    if (currentProfile.milestoneOSId) {
-      navigator.clipboard.writeText(currentProfile.milestoneOSId);
-      setCopiedId(true);
-      setTimeout(() => setCopiedId(false), 2000);
-    }
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedType(type);
+    setTimeout(() => setCopiedType(null), 2000);
   };
 
   // Dedicated sections including Project Requests
@@ -362,28 +372,47 @@ export default function Sidebar({
               <ThemeToggle />
             </div>
 
-            {/* Permanent MilestoneOS ID Pill */}
-            <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[11px]">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">
-                  ID:
-                </span>
-                <span className="font-mono font-bold text-slate-800 dark:text-sky-300 truncate">
-                  {currentProfile.milestoneOSId || (role === "client" ? "MSO-7K4P92" : "MSO-2W8L41")}
-                </span>
+            {/* Permanent Role IDs (Shared Base Code) */}
+            <div className="space-y-1.5 pt-0.5">
+              {/* Client ID */}
+              <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[11px]">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Client:</span>
+                  <span className="font-mono font-bold text-slate-800 dark:text-sky-300 truncate">{clientFormattedId}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => handleCopyId(e, clientFormattedId, "client")}
+                  className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
+                  title="Copy Client ID"
+                >
+                  {copiedType === "client" ? (
+                    <Check className="h-3 w-3 text-emerald-500" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={handleCopyId}
-                className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
-                title="Copy MilestoneOS ID"
-              >
-                {copiedId ? (
-                  <Check className="h-3 w-3 text-emerald-500" />
-                ) : (
-                  <Copy className="h-3 w-3" />
-                )}
-              </button>
+
+              {/* Freelancer ID */}
+              <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[11px]">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Freelancer:</span>
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 truncate">{freelancerFormattedId}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => handleCopyId(e, freelancerFormattedId, "freelancer")}
+                  className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
+                  title="Copy Freelancer ID"
+                >
+                  {copiedType === "freelancer" ? (
+                    <Check className="h-3 w-3 text-emerald-500" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 

@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "@/server/supabase";
-import { generateMilestoneOSId } from "@/lib/dashboard-data";
+import {
+  generateBaseCode,
+  formatClientId,
+  formatFreelancerId,
+} from "@/lib/dashboard-data";
 
 export async function POST(req: NextRequest) {
   try {
@@ -21,7 +25,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const assignedId = generateMilestoneOSId();
+    // Generate shared unique 6-character base code for the user
+    const baseCode = generateBaseCode();
+    const clientId = formatClientId(baseCode);
+    const freelancerId = formatFreelancerId(baseCode);
+
     // In PostgreSQL profiles, role has check constraint ('client', 'freelancer')
     // Users have access to both workspaces via multi-role support
     const dbRole = role === "freelancer" ? "freelancer" : "client";
@@ -42,7 +50,10 @@ export async function POST(req: NextRequest) {
           name: userName,
           role: dbRole,
           roles: userRoles,
-          milestoneOSId: assignedId,
+          baseCode,
+          clientId,
+          freelancerId,
+          milestoneOSId: clientId,
         },
       });
 
@@ -53,16 +64,23 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Upsert into profiles table
+      // Upsert into profiles table with shared base_code
       try {
-        await adminSupabase.from("profiles").upsert({
+        const payload: any = {
           id: data.user.id,
-          milestone_os_id: assignedId,
+          base_code: baseCode,
+          milestone_os_id: clientId,
           full_name: userName,
           email: cleanEmail,
           role: dbRole,
           avatar: avatarInitials,
-        });
+        };
+        const upsertRes = await adminSupabase.from("profiles").upsert(payload);
+        if (upsertRes.error) {
+          // If base_code column doesn't exist yet in PostgreSQL schema, retry without it
+          delete payload.base_code;
+          await adminSupabase.from("profiles").upsert(payload);
+        }
       } catch (_) {}
 
       return NextResponse.json({
@@ -73,7 +91,10 @@ export async function POST(req: NextRequest) {
           name: userName,
           role: "both",
           roles: userRoles,
-          milestoneOSId: assignedId,
+          baseCode,
+          clientId,
+          freelancerId,
+          milestoneOSId: clientId,
         },
       });
     }
@@ -85,9 +106,12 @@ export async function POST(req: NextRequest) {
         id: `usr_${Date.now()}`,
         email: cleanEmail,
         name: userName,
-        role: userRole,
+        role: "both",
         roles: userRoles,
-        milestoneOSId: assignedId,
+        baseCode,
+        clientId,
+        freelancerId,
+        milestoneOSId: clientId,
       },
     });
   } catch (err: any) {
