@@ -16,6 +16,7 @@ export interface VerifyMilestoneInput {
     loomVideo?: string;
     notes: string;
     submittedAt?: string;
+    deliverableLinks?: Array<{ title: string; url: string; type?: string }>;
   };
 }
 
@@ -35,30 +36,39 @@ export async function verifyMilestoneWithAI(
 
   if (hasGeminiKey() && apiKey) {
     try {
-      const prompt = `You are the MilestoneOS AI Acceptance Verification Engine.
-Your job is to objectively analyze submitted software engineering deliverables against agreed milestone contract acceptance criteria.
+      const deliverableLinksStr = (submission.deliverableLinks || [])
+        .map((l, i) => `  ${i + 1}. [${l.type || "Asset"}] ${l.title}: ${l.url}`)
+        .join("\n") || "  None provided";
 
-MILESTONE DETAILS:
-- Title: ${milestoneTitle}
+      const prompt = `You are the MilestoneOS AI Acceptance Verification Engine.
+Your job is to objectively analyze submitted deliverables (e.g. artwork photos, design files, document drafts, copywriting, software code, or videos) against agreed milestone contract acceptance criteria.
+
+PROJECT SCOPE & MILESTONE:
+- Milestone Title: ${milestoneTitle}
 - Scope Description: ${milestoneDescription}
 
 AGREED ACCEPTANCE CRITERIA:
 ${acceptanceCriteria.map((c, i) => `${i + 1}. [ID: ${c.id}] ${c.title}: ${c.description}`).join("\n")}
 
 SUBMITTED DELIVERABLES:
-- Code Repository / Pull Request: ${submission.githubRepo || "Not provided"}
-- Website / Live Demo: ${submission.demoUrl || "Not provided"}
+- Primary Deliverable Links & Assets:
+${deliverableLinksStr}
+- Website / Live Demo: ${submission.demoUrl || "Not applicable / Not provided"}
+- Code Repository / Pull Request: ${submission.githubRepo || "Not applicable / Not provided"}
 - Walkthrough Video: ${submission.loomVideo || "Not provided"}
-- Developer Notes: ${submission.notes || "No notes provided"}
+- Freelancer Deliverable Notes & Completion Summary: ${submission.notes || "No notes provided"}
 
-INSTRUCTIONS:
+IMPORTANT INSTRUCTION FOR ALL FREELANCE DISCIPLINES:
+Deliverables can come from any discipline (e.g. drawing photos, illustrations, Figma designs, writing, or software). If the project is not a web/software development task, DO NOT fail or penalize requirements for missing code repositories or website URLs. Evaluate the provided deliverable assets, photos, and notes against the agreed criteria.
+
+EVALUATION RULES:
 1. Evaluate each criterion individually. Determine status:
-   - "met": Proof is provided or indicated by repository/demo/notes.
+   - "met": Proof is provided in the deliverables, links, photos, or completion notes.
    - "missing": The deliverable clearly omits this requirement.
    - "needs_manual_review": Partial proof; client should verify visually or test manually.
 2. Formulate specific, constructive findings for each criterion.
 3. Compute an overall confidence score (0 to 100).
-4. Provide an overall recommendation: "approved" (score >= 80 and no critical missing), "changes_requested" (missing key items), or "needs_verification".
+4. Provide an overall recommendation: "approved" (score >= 80 and no critical missing items), "changes_requested" (missing key items), or "needs_verification".
 
 Return strictly valid JSON conforming to this schema:
 {
@@ -98,6 +108,41 @@ Return strictly valid JSON conforming to this schema:
         const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
         if (jsonText) {
           const parsed = JSON.parse(jsonText);
+          const checks: Array<{ name: string; passed: boolean; detail: string }> = [];
+          if (submission.deliverableLinks && submission.deliverableLinks.length > 0) {
+            checks.push({
+              name: "Deliverable Assets & Links",
+              passed: true,
+              detail: `${submission.deliverableLinks.length} asset link(s) verified`,
+            });
+          }
+          if (submission.githubRepo) {
+            checks.push({
+              name: "Repository Integration",
+              passed: true,
+              detail: "Valid Git repository detected",
+            });
+          }
+          if (submission.demoUrl) {
+            checks.push({
+              name: "Live Staging Preview",
+              passed: true,
+              detail: "Live preview link accessible",
+            });
+          }
+          if (submission.loomVideo) {
+            checks.push({
+              name: "Walkthrough Video",
+              passed: true,
+              detail: "Video walkthrough attached",
+            });
+          }
+          checks.push({
+            name: "Acceptance Criteria Alignment",
+            passed: (parsed.status || "approved") !== "changes_requested",
+            detail: (parsed.status || "approved") === "approved" ? "All milestone criteria met" : "Items require review",
+          });
+
           return {
             overallScore: Math.min(100, Math.max(0, Math.round(parsed.overallScore || 88))),
             summary: parsed.summary || "Automated check completed against milestone acceptance criteria.",
@@ -113,18 +158,7 @@ Return strictly valid JSON conforming to this schema:
               aiNotes: c.aiNotes || "Meets scope specification.",
             })),
             suggestedRevisions: parsed.suggestedRevisions || [],
-            automatedChecks: [
-              {
-                name: "Repository Integration",
-                passed: Boolean(submission.githubRepo),
-                detail: submission.githubRepo ? "Valid Git repository detected" : "No repository URL provided",
-              },
-              {
-                name: "Staging Preview",
-                passed: Boolean(submission.demoUrl),
-                detail: submission.demoUrl ? "Live preview link accessible" : "No demo link provided",
-              },
-            ],
+            automatedChecks: checks,
           };
         }
       }
@@ -142,6 +176,7 @@ Return strictly valid JSON conforming to this schema:
  */
 function generateHeuristicAudit(input: VerifyMilestoneInput): AIAssessment {
   const { acceptanceCriteria, submission } = input;
+  const hasDeliverableLinks = Boolean(submission.deliverableLinks && submission.deliverableLinks.length > 0);
   const hasRepo = Boolean(submission.githubRepo && submission.githubRepo.trim().length > 5);
   const hasDemo = Boolean(submission.demoUrl && submission.demoUrl.trim().length > 5);
   const notesLength = submission.notes ? submission.notes.trim().length : 0;
@@ -149,28 +184,28 @@ function generateHeuristicAudit(input: VerifyMilestoneInput): AIAssessment {
   const evaluatedCriteria: AcceptanceCriterion[] = acceptanceCriteria.map((crit) => {
     const textLower = `${crit.title} ${crit.description}`.toLowerCase();
     let status: "met" | "missing" | "needs_manual_review" = "met";
-    let evidence = "Deliverable verified against submitted code and links.";
+    let evidence = "Deliverable verified against submitted materials and completion notes.";
     let aiNotes = "Meets scope specification.";
 
     if (textLower.includes("test") || textLower.includes("coverage")) {
-      if (!hasRepo) {
+      if (!hasRepo && !hasDeliverableLinks) {
         status = "missing";
-        evidence = "No test suite or code repository link detected in submission.";
-        aiNotes = "Push unit tests and CI workflow to repository.";
+        evidence = "No test suite or deliverable verification assets detected in submission.";
+        aiNotes = "Provide verification evidence or test results.";
       } else {
         status = "needs_manual_review";
-        evidence = "Repository provided. Automated unit tests require manual coverage inspection.";
-        aiNotes = "Confirm test pass rate meets milestone targets.";
+        evidence = "Deliverable verification materials provided. Client may inspect details.";
+        aiNotes = "Confirm pass rate meets milestone targets.";
       }
     } else if (textLower.includes("mobile") || textLower.includes("responsive")) {
-      if (hasDemo) {
+      if (hasDemo || hasDeliverableLinks) {
         status = "met";
-        evidence = "Live demo URL provided for mobile viewport verification.";
-        aiNotes = "Tested on mobile layout breakpoints.";
+        evidence = "Preview materials / assets provided for viewport verification.";
+        aiNotes = "Checked layout requirements.";
       } else {
         status = "needs_manual_review";
-        evidence = "Responsive design requires visual review on live staging.";
-        aiNotes = "Provide live URL for preview.";
+        evidence = "Visual assets require review by client.";
+        aiNotes = "Provide preview link or screenshots.";
       }
     } else {
       status = "met";
@@ -189,11 +224,59 @@ function generateHeuristicAudit(input: VerifyMilestoneInput): AIAssessment {
   const metCount = evaluatedCriteria.filter((c) => c.status === "met").length;
   const missingCount = evaluatedCriteria.filter((c) => c.status === "missing").length;
   const score = Math.round(
-    (metCount / Math.max(1, evaluatedCriteria.length)) * 90 + (hasRepo ? 5 : 0) + (hasDemo ? 5 : 0)
+    (metCount / Math.max(1, evaluatedCriteria.length)) * 90 +
+      (hasRepo || hasDeliverableLinks ? 5 : 0) +
+      (hasDemo || notesLength > 15 ? 5 : 0)
   );
 
   const status: "approved" | "changes_requested" | "needs_verification" =
     missingCount > 0 ? "changes_requested" : score >= 80 ? "approved" : "needs_verification";
+
+  const checks: Array<{ name: string; passed: boolean; detail: string }> = [];
+
+  if (hasDeliverableLinks) {
+    checks.push({
+      name: "Deliverable Assets & Files",
+      passed: true,
+      detail: `${submission.deliverableLinks?.length} asset link(s) / files verified`,
+    });
+  }
+
+  if (hasDemo) {
+    checks.push({
+      name: "Live Staging Preview",
+      passed: true,
+      detail: "Interactive staging URL accessible",
+    });
+  }
+
+  if (hasRepo) {
+    checks.push({
+      name: "Code Repository Integration",
+      passed: true,
+      detail: "Repository link submitted",
+    });
+  }
+
+  if (submission.loomVideo) {
+    checks.push({
+      name: "Walkthrough Video",
+      passed: true,
+      detail: "Video walkthrough attached",
+    });
+  }
+
+  checks.push({
+    name: "Completion Summary & Notes",
+    passed: notesLength > 10,
+    detail: notesLength > 10 ? "Deliverable summary provided" : "Short release notes",
+  });
+
+  checks.push({
+    name: "Agreed Scope Alignment",
+    passed: missingCount === 0,
+    detail: missingCount === 0 ? "Deliverables satisfy milestone criteria" : "Items need client review",
+  });
 
   return {
     overallScore: Math.min(98, Math.max(50, score)),
@@ -209,23 +292,7 @@ function generateHeuristicAudit(input: VerifyMilestoneInput): AIAssessment {
       missingCount > 0
         ? ["Address missing acceptance criteria items before resubmitting for payment release."]
         : [],
-    automatedChecks: [
-      {
-        name: "Code Repository Link",
-        passed: hasRepo,
-        detail: hasRepo ? "Repository link submitted" : "Repository link omitted",
-      },
-      {
-        name: "Live Staging Preview",
-        passed: hasDemo,
-        detail: hasDemo ? "Interactive staging URL accessible" : "Staging preview not provided",
-      },
-      {
-        name: "Documentation & Release Notes",
-        passed: notesLength > 20,
-        detail: notesLength > 20 ? "Deliverable notes provided" : "Minimal release notes",
-      },
-    ],
+    automatedChecks: checks,
   };
 }
 

@@ -274,16 +274,28 @@ export default function CompletedProjectModal({
                     <span className="font-bold text-slate-900 dark:text-white">
                       Stage 0{m.stageNumber}: {m.title}
                     </span>
-                    {m.submissions && m.submissions.length > 0 && m.submissions[0].demoUrl && (
-                      <a
-                        href={m.submissions[0].demoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0070BA] dark:text-sky-400 hover:underline"
-                      >
-                        <span>Verified Deliverable Demo</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                    {m.submissions && m.submissions.length > 0 && (
+                      m.submissions[0].deliverableLinks && m.submissions[0].deliverableLinks.length > 0 ? (
+                        <a
+                          href={m.submissions[0].deliverableLinks[0].url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0070BA] dark:text-sky-400 hover:underline"
+                        >
+                          <span>{m.submissions[0].deliverableLinks[0].title || "Verified Deliverable"}</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : m.submissions[0].demoUrl ? (
+                        <a
+                          href={m.submissions[0].demoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#0070BA] dark:text-sky-400 hover:underline"
+                        >
+                          <span>Verified Deliverable Demo</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : null
                     )}
                   </div>
 

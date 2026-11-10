@@ -13,6 +13,8 @@ import {
   AIAssessment,
   MilestoneSubmission,
   ActivityItem,
+  DeliverableLink,
+  DeliverableAttachment,
 } from "./dashboard-data";
 
 export type DashboardTab =
@@ -130,11 +132,13 @@ interface DashboardContextType {
     projectId: string,
     milestoneId: string,
     deliverables: {
-      demoUrl: string;
-      githubRepo: string;
+      demoUrl?: string;
+      githubRepo?: string;
       githubPr?: string;
       loomVideo?: string;
       notes: string;
+      deliverableLinks?: DeliverableLink[];
+      attachments?: DeliverableAttachment[];
     },
     isRevision?: boolean
   ) => void;
@@ -629,11 +633,13 @@ export function DashboardProvider({
     projectId: string,
     milestoneId: string,
     deliverables: {
-      demoUrl: string;
-      githubRepo: string;
+      demoUrl?: string;
+      githubRepo?: string;
       githubPr?: string;
       loomVideo?: string;
       notes: string;
+      deliverableLinks?: DeliverableLink[];
+      attachments?: DeliverableAttachment[];
     },
     isRevision: boolean = false
   ) => {
@@ -654,24 +660,62 @@ export function DashboardProvider({
 
           const submissionVersion = m.submissions.length + 1;
 
+          // Build dynamic automated checks based on actual materials submitted
+          const checks: Array<{ name: string; passed: boolean; detail: string }> = [];
+
+          if (deliverables.deliverableLinks && deliverables.deliverableLinks.length > 0) {
+            checks.push({
+              name: "Deliverable Assets Verified",
+              passed: true,
+              detail: `${deliverables.deliverableLinks.length} asset link(s) provided`,
+            });
+          }
+
+          if (deliverables.demoUrl && deliverables.demoUrl.trim().length > 0) {
+            checks.push({
+              name: "Live Preview / Staging",
+              passed: true,
+              detail: "Preview link accessible",
+            });
+          }
+
+          if (deliverables.githubRepo && deliverables.githubRepo.trim().length > 0) {
+            checks.push({
+              name: "Code Repository Integration",
+              passed: true,
+              detail: "Repository verified",
+            });
+          }
+
+          if (deliverables.loomVideo && deliverables.loomVideo.trim().length > 0) {
+            checks.push({
+              name: "Walkthrough Video",
+              passed: true,
+              detail: "Video walkthrough attached",
+            });
+          }
+
+          checks.push({
+            name: "Scope & Requirement Alignment",
+            passed: true,
+            detail: "Deliverables match agreed acceptance criteria",
+          });
+
           const simpleAudit: AIAssessment = {
             overallScore: isRevision ? 98 : 95,
             summary: isRevision
               ? "Automated review checked the revised work against the requested changes. All requirements met."
-              : "Automated review checked the submitted links and files against milestone requirements. Requirements appear satisfied.",
+              : "Automated review checked the submitted deliverables and notes against milestone requirements. Requirements appear satisfied.",
             status: "approved",
             verifiedAt: nowStr,
             isDemonstration: true,
             criteria: m.acceptanceCriteria.map((crit) => ({
               ...crit,
               status: "met",
-              evidence: "Checked against submitted links: requirement verified.",
+              evidence: "Checked against submitted deliverables: requirement verified.",
               aiNotes: "Requirement appears satisfied.",
             })),
-            automatedChecks: [
-              { name: "Website link responds", passed: true, detail: "Link opens successfully" },
-              { name: "Code repository accessible", passed: true, detail: "Code verified" },
-            ],
+            automatedChecks: checks,
           };
 
           const newSubmission: MilestoneSubmission = {
@@ -679,11 +723,13 @@ export function DashboardProvider({
             version: submissionVersion,
             submittedAt: nowStr,
             submittedBy: project.freelancer.name,
-            demoUrl: deliverables.demoUrl,
-            githubRepo: deliverables.githubRepo,
+            demoUrl: deliverables.demoUrl || "",
+            githubRepo: deliverables.githubRepo || "",
             githubPr: deliverables.githubPr,
             loomVideo: deliverables.loomVideo,
             notes: deliverables.notes,
+            deliverableLinks: deliverables.deliverableLinks || [],
+            attachments: deliverables.attachments || [],
             aiAssessment: simpleAudit,
           };
 

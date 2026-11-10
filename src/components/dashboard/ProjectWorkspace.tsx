@@ -746,7 +746,20 @@ export default function ProjectWorkspace({
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            {milestone.submissions[0].demoUrl && (
+                            {milestone.submissions[0].deliverableLinks &&
+                            milestone.submissions[0].deliverableLinks.length > 0 ? (
+                              <a
+                                href={milestone.submissions[0].deliverableLinks[0].url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/10 text-xs font-semibold text-[#0070BA] dark:text-sky-300 hover:underline border border-slate-200 dark:border-white/10"
+                              >
+                                <span>
+                                  {milestone.submissions[0].deliverableLinks[0].title || "View Deliverable"}
+                                </span>
+                                <ExternalLink className="h-3 w-3" />
+                              </a>
+                            ) : milestone.submissions[0].demoUrl ? (
                               <a
                                 href={milestone.submissions[0].demoUrl}
                                 target="_blank"
@@ -756,7 +769,7 @@ export default function ProjectWorkspace({
                                 <span>Live Demo</span>
                                 <ExternalLink className="h-3 w-3" />
                               </a>
-                            )}
+                            ) : null}
                             <button
                               type="button"
                               onClick={() => onOpenAudit(activeProject, milestone)}

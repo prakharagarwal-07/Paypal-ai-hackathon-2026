@@ -50,6 +50,13 @@ export interface DeliverableAttachment {
   name: string;
   size: string;
   type: string;
+  url?: string;
+}
+
+export interface DeliverableLink {
+  title: string;
+  url: string;
+  type?: "photo" | "design" | "document" | "cloud" | "demo" | "repo" | "other";
 }
 
 export interface MilestoneSubmission {
@@ -57,11 +64,12 @@ export interface MilestoneSubmission {
   version: number;
   submittedAt: string;
   submittedBy: string;
-  demoUrl: string;
-  githubRepo: string;
+  demoUrl?: string;
+  githubRepo?: string;
   githubPr?: string;
   loomVideo?: string;
   notes: string;
+  deliverableLinks?: DeliverableLink[];
   attachments?: DeliverableAttachment[];
   aiAssessment?: AIAssessment;
   revisionRequest?: {

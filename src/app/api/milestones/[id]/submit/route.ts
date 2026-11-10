@@ -10,7 +10,7 @@ export async function POST(
   try {
     const { id: milestoneId } = await params;
     const body = await req.json();
-    const { projectId, repoUrl, githubRepo, demoUrl, loomVideo, notes } = body;
+    const { projectId, repoUrl, githubRepo, demoUrl, loomVideo, notes, deliverableLinks, attachments } = body;
 
     if (!projectId) {
       return NextResponse.json({ error: "projectId is required" }, { status: 400 });
@@ -49,6 +49,8 @@ export async function POST(
       demoUrl: demoUrl || "",
       loomVideo: loomVideo || "",
       notes: notes || "Submitted deliverable package for milestone review.",
+      deliverableLinks: deliverableLinks || [],
+      attachments: attachments || [],
     };
 
     // Run AI Acceptance Verification in real-time
@@ -61,6 +63,7 @@ export async function POST(
         demoUrl,
         loomVideo,
         notes: submission.notes,
+        deliverableLinks: submission.deliverableLinks,
       },
     });
 

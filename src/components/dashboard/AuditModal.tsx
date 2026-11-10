@@ -13,6 +13,11 @@ import {
   FileText,
   AlertTriangle,
   FolderGit2,
+  Image as ImageIcon,
+  Palette,
+  Cloud,
+  Globe,
+  Link as LinkIcon,
 } from "lucide-react";
 import { Milestone, ProjectContract, getFriendlyCriterionStatus } from "@/lib/dashboard-data";
 import { GitHubIcon, PayPalIcon } from "./icons";
@@ -118,6 +123,42 @@ export default function AuditModal({
                 Submitted Work:
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {latestSubmission.deliverableLinks &&
+                  latestSubmission.deliverableLinks.map((link, idx) => {
+                    const isPhoto = link.type === "photo";
+                    const isDesign = link.type === "design";
+                    const isDoc = link.type === "document";
+                    const isCloud = link.type === "cloud";
+
+                    return (
+                      <a
+                        key={idx}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-[#0070BA] dark:hover:border-sky-500 transition-colors bg-white dark:bg-white/[0.02]"
+                      >
+                        <div className="flex items-center gap-2 min-w-0 pr-2">
+                          {isPhoto ? (
+                            <ImageIcon className="h-4 w-4 text-emerald-500 shrink-0" />
+                          ) : isDesign ? (
+                            <Palette className="h-4 w-4 text-purple-500 shrink-0" />
+                          ) : isDoc ? (
+                            <FileText className="h-4 w-4 text-amber-500 shrink-0" />
+                          ) : isCloud ? (
+                            <Cloud className="h-4 w-4 text-sky-500 shrink-0" />
+                          ) : (
+                            <LinkIcon className="h-4 w-4 text-[#0070BA] shrink-0" />
+                          )}
+                          <span className="font-semibold text-xs truncate">
+                            {link.title || link.url}
+                          </span>
+                        </div>
+                        <ExternalLink className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                      </a>
+                    );
+                  })}
+
                 {latestSubmission.demoUrl && (
                   <a
                     href={latestSubmission.demoUrl}
