@@ -22,8 +22,9 @@ export async function POST(req: NextRequest) {
     }
 
     const assignedId = generateMilestoneOSId();
-    const userRole = role === "freelancer" ? "freelancer" : role === "both" ? "both" : "client";
-    const userRoles = userRole === "both" ? ["client", "freelancer"] : [userRole];
+    // Every registered user automatically receives access to both Client and Freelancer workspaces
+    const userRole = role === "freelancer" ? "freelancer" : role === "client" ? "client" : "both";
+    const userRoles = ["client", "freelancer"];
     const cleanEmail = email.trim().toLowerCase();
     const defaultName = cleanEmail.split("@")[0];
     const userName = (name || "").trim() || defaultName;

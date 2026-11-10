@@ -54,7 +54,9 @@ function AuthForm() {
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [role, setRole] = useState<UserRole>("client");
+
+  // Perspective selection for Hackathon Demo flow
+  const [demoPerspective, setDemoPerspective] = useState<"client" | "freelancer">("client");
 
   // Form Fields
   const [name, setName] = useState("");
@@ -75,7 +77,7 @@ function AuthForm() {
     }
   }, [searchParams]);
 
-  const syncLocalProfile = (userName: string, userEmail: string, userRole: UserRole, userMsoId: string) => {
+  const syncLocalProfile = (userName: string, userEmail: string, userMsoId: string) => {
     try {
       const cleanEmail = userEmail.trim().toLowerCase();
       const defaultName = cleanEmail.split("@")[0] || "User";
@@ -92,18 +94,18 @@ function AuthForm() {
         email: cleanEmail,
         avatar: initials,
         milestoneOSId: userMsoId,
-        role: userRole,
-        roles: userRole === "both" ? ["client", "freelancer"] : [userRole],
+        role: "both",
+        roles: ["client", "freelancer"],
       };
 
       localStorage.setItem("milestoneos_active_user_v8", JSON.stringify(activeUser));
-      localStorage.setItem("milestoneos_role_v8", userRole === "freelancer" ? "freelancer" : "client");
+      localStorage.setItem("milestoneos_role_v8", "client");
       localStorage.removeItem("milestoneos_demo_mode");
     } catch (_) {}
   };
 
   // Instant Demo Login for Hackathon Judges
-  const handleDemoLogin = async (demoRole: "client" | "freelancer") => {
+  const handleDemoLogin = (demoRole: "client" | "freelancer" = demoPerspective) => {
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -111,16 +113,6 @@ function AuthForm() {
       demoRole === "client"
         ? { name: "Sarah Chen", email: "sarah.chen@apexcommerce.com", id: "MSO-7K4P92" }
         : { name: "Rohan Verma", email: "rohan.verma@craftdev.io", id: "MSO-2W8L41" };
-
-    const supabaseClient = getSupabaseClient();
-    if (supabaseClient) {
-      try {
-        await supabaseClient.auth.signInWithPassword({
-          email: demoUser.email,
-          password: "Password123!",
-        });
-      } catch (_) {}
-    }
 
     try {
       localStorage.setItem("milestoneos_demo_mode", "true");
@@ -139,10 +131,10 @@ function AuthForm() {
       localStorage.setItem("milestoneos_role_v8", demoRole);
     } catch (_) {}
 
-    setSuccessMsg(`Signing in as ${demoUser.name} (${demoRole.toUpperCase()}) in Demo Sandbox...`);
+    setSuccessMsg(`Launching Demo Sandbox as ${demoUser.name} (${demoRole === "client" ? "Client View" : "Freelancer View"})...`);
     setTimeout(() => {
       router.push(`/dashboard?role=${demoRole}&demo=true`);
-    }, 400);
+    }, 350);
   };
 
   // Instant PayPal Authentication
@@ -150,7 +142,7 @@ function AuthForm() {
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
-    const returnUrl = searchParams.get("returnUrl") || `/dashboard?role=${role}`;
+    const returnUrl = searchParams.get("returnUrl") || "/dashboard?role=client";
 
     setTimeout(() => {
       setLoading(false);
@@ -190,7 +182,7 @@ function AuthForm() {
     }
 
     setLoading(true);
-    const returnUrl = searchParams.get("returnUrl") || `/dashboard?role=${role}`;
+    const returnUrl = searchParams.get("returnUrl") || "/dashboard?role=client";
     const supabaseClient = getSupabaseClient();
 
     // 1. If Supabase is configured in .env.local, use Supabase Auth
@@ -209,7 +201,7 @@ function AuthForm() {
               email: cleanEmail,
               password,
               name: finalName,
-              role,
+              role: "both",
             }),
           });
           const resData = await res.json();
@@ -229,7 +221,7 @@ function AuthForm() {
             password,
           });
 
-          syncLocalProfile(newName, cleanEmail, role, newMsoId);
+          syncLocalProfile(newName, cleanEmail, newMsoId);
           setSuccessMsg(`Account created on Supabase! ID: ${newMsoId}. Redirecting...`);
           setTimeout(() => router.push(returnUrl), 500);
           return;
@@ -248,13 +240,12 @@ function AuthForm() {
           }
 
           const userMeta = data.user?.user_metadata || {};
-          const userRole = (userMeta.role as UserRole) || role;
           const userName = userMeta.name || cleanEmail.split("@")[0];
           const userMsoId = userMeta.milestoneOSId || generateMilestoneOSId();
 
-          syncLocalProfile(userName, cleanEmail, userRole, userMsoId);
+          syncLocalProfile(userName, cleanEmail, userMsoId);
           setSuccessMsg(`Welcome back, ${userName}! Authenticated via Supabase.`);
-          setTimeout(() => router.push(`/dashboard?role=${userRole === "both" ? "client" : userRole}`), 500);
+          setTimeout(() => router.push("/dashboard?role=client"), 500);
           return;
         }
       } catch (err: any) {
@@ -266,13 +257,13 @@ function AuthForm() {
 
     // 2. Fallback: Built-in local authentication
     const newId = generateMilestoneOSId();
-    syncLocalProfile(name, email, role, newId);
+    syncLocalProfile(name, email, newId);
 
     setTimeout(() => {
       setLoading(false);
       setSuccessMsg(
         mode === "login"
-          ? `Welcome back, ${name || (role === "client" ? "Sarah" : "Rohan")}! Redirecting to your workspace...`
+          ? `Welcome back, ${name || "User"}! Redirecting to your workspace...`
           : `Account created successfully with unique MilestoneOS ID (${newId})! Welcome to MilestoneOS.`
       );
       setTimeout(() => {
@@ -330,148 +321,129 @@ function AuthForm() {
           <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
             {mode === "login"
               ? "Access your project milestones and secure PayPal escrow payouts."
-              : "Create your free account in seconds with zero upfront risk."}
+              : "Create your free account with universal access to Client and Freelancer tools."}
           </p>
         </div>
 
-        {/* ONE-CLICK PAYPAL LOGIN (Featured for PayPal Hackathon) */}
-        <div className="mt-5 space-y-2.5">
-          <button
-            type="button"
-            onClick={handlePayPalInstantAuth}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2.5 rounded-xl border border-slate-300/60 bg-white/60 hover:bg-white/90 px-4 py-3 text-xs sm:text-sm font-bold text-slate-900 shadow-sm hover:shadow transition-all hover:scale-[1.01] active:scale-[0.99] dark:border-white/10 dark:bg-[#131c31]/50 dark:text-white dark:hover:bg-[#1a2642]/75 backdrop-blur-md cursor-pointer"
-          >
-            <PayPalIcon className="h-4 w-4" />
-            <span>Continue with PayPal</span>
-          </button>
-
-          {/* Quick Demo Access for Hackathon Judges */}
-          <div className="p-2.5 rounded-2xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/10">
-            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5 px-1">
-              <span className="flex items-center gap-1">
-                <Sparkles className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
-                <span>Instant Hackathon Demo Access</span>
+        {/* INSTANT HACKATHON DEMO ACCESS (Visually Distinct Dedicated Section) */}
+        <div className="mt-5 rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-500/[0.08] via-sky-500/[0.03] to-blue-500/[0.05] p-4 dark:border-amber-400/25 dark:from-amber-400/[0.05] dark:via-sky-400/[0.02] dark:to-indigo-400/[0.03] backdrop-blur-md space-y-3 shadow-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                <Sparkles className="h-3 w-3" />
               </span>
-              <span className="text-[10px] text-slate-400 font-normal">1-Click</span>
+              <span className="text-xs font-bold text-slate-900 dark:text-white tracking-tight">
+                Instant Hackathon Demo Access
+              </span>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+              Judges Sandbox
+            </span>
+          </div>
+
+          <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+            Evaluate MilestoneOS with preloaded demo contracts, PayPal escrow funded milestones, and Gemini AI audit reviews:
+          </p>
+
+          {/* Perspective selector for Demo Flow */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 dark:text-slate-400">
+              Select Starting Perspective:
+            </span>
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => handleDemoLogin("client")}
-                disabled={loading}
-                className="py-1.5 px-2 rounded-xl bg-white dark:bg-white/10 border border-slate-200/80 dark:border-white/10 hover:border-[#0070BA] hover:text-[#0070BA] dark:hover:border-sky-400 dark:hover:text-sky-300 text-[11px] font-bold text-slate-700 dark:text-slate-200 transition-colors shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+                onClick={() => setDemoPerspective("client")}
+                className={`flex flex-col p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  demoPerspective === "client"
+                    ? "border-[#0070BA] bg-white dark:bg-[#0070BA]/25 shadow-xs ring-1 ring-[#0070BA]"
+                    : "border-slate-200/80 bg-white/60 dark:border-white/10 dark:bg-white/[0.03] hover:bg-white dark:hover:bg-white/[0.06]"
+                }`}
               >
-                <User className="h-3 w-3 text-[#0070BA]" />
-                <span>Sarah (Client)</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                    <User className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
+                    <span>Sarah Chen</span>
+                  </span>
+                  {demoPerspective === "client" && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#0070BA] dark:bg-sky-400" />
+                  )}
+                </div>
+                <span className="text-[10px] font-semibold text-[#0070BA] dark:text-sky-300 mt-0.5">
+                  Client Perspective
+                </span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400">
+                  Apex Commerce • $12.5k funded
+                </span>
               </button>
+
               <button
                 type="button"
-                onClick={() => handleDemoLogin("freelancer")}
-                disabled={loading}
-                className="py-1.5 px-2 rounded-xl bg-white dark:bg-white/10 border border-slate-200/80 dark:border-white/10 hover:border-[#0070BA] hover:text-[#0070BA] dark:hover:border-sky-400 dark:hover:text-sky-300 text-[11px] font-bold text-slate-700 dark:text-slate-200 transition-colors shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+                onClick={() => setDemoPerspective("freelancer")}
+                className={`flex flex-col p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  demoPerspective === "freelancer"
+                    ? "border-[#0070BA] bg-white dark:bg-[#0070BA]/25 shadow-xs ring-1 ring-[#0070BA]"
+                    : "border-slate-200/80 bg-white/60 dark:border-white/10 dark:bg-white/[0.03] hover:bg-white dark:hover:bg-white/[0.06]"
+                }`}
               >
-                <Briefcase className="h-3 w-3 text-[#0070BA]" />
-                <span>Rohan (Freelancer)</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
+                    <Briefcase className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
+                    <span>Rohan Verma</span>
+                  </span>
+                  {demoPerspective === "freelancer" && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#0070BA] dark:bg-sky-400" />
+                  )}
+                </div>
+                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  Freelancer Perspective
+                </span>
+                <span className="text-[9px] text-slate-500 dark:text-slate-400">
+                  CraftDev • AI verified audits
+                </span>
               </button>
             </div>
           </div>
 
-          {isSupabaseConfigured() && (
-            <div className="flex items-center justify-center gap-1.5 py-1 px-2.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Supabase Cloud Auth Active</span>
-            </div>
-          )}
+          {/* ONE SINGLE BUTTON: Explore Demo Workspace */}
+          <button
+            type="button"
+            onClick={() => handleDemoLogin(demoPerspective)}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-900 shadow-xs hover:shadow transition-all hover:scale-[1.005] active:scale-[0.99] dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15 cursor-pointer"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+            <span>Explore Demo Workspace</span>
+            <ArrowRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
+          </button>
         </div>
 
         {/* Divider */}
         <div className="my-5 flex items-center gap-3">
           <div className="h-px flex-1 bg-slate-200/80 dark:bg-white/10" />
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            or continue with email
+            {mode === "signup" ? "or register personal account" : "or sign in with email"}
           </span>
           <div className="h-px flex-1 bg-slate-200/80 dark:bg-white/10" />
         </div>
 
-        {/* Role Toggle for Signup */}
-        {mode === "signup" && (
-          <div className="mt-4">
-            <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              I want to:
-            </label>
-            <div className="grid grid-cols-3 gap-1.5">
-              <div
-                onClick={() => setRole("client")}
-                className={`cursor-pointer rounded-xl border p-2 text-xs transition-all backdrop-blur-sm ${
-                  role === "client"
-                    ? "border-[#0070BA] bg-blue-50/50 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
-                    : "border-slate-200/70 bg-slate-50/50 text-slate-600 dark:border-slate-800/80 dark:bg-slate-950/40 dark:text-slate-400"
-                }`}
-              >
-                <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white text-[11px]">
-                  <User className="h-3 w-3 text-[#0070BA] dark:text-sky-400 shrink-0" />
-                  <span>Client</span>
-                </div>
-                <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Hire & fund escrow
-                </p>
-              </div>
-
-              <div
-                onClick={() => setRole("freelancer")}
-                className={`cursor-pointer rounded-xl border p-2 text-xs transition-all backdrop-blur-sm ${
-                  role === "freelancer"
-                    ? "border-[#0070BA] bg-blue-50/50 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
-                    : "border-slate-200/70 bg-slate-50/50 text-slate-600 dark:border-slate-800/80 dark:bg-slate-950/40 dark:text-slate-400"
-                }`}
-              >
-                <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white text-[11px]">
-                  <Briefcase className="h-3 w-3 text-emerald-500 dark:text-emerald-400 shrink-0" />
-                  <span>Freelancer</span>
-                </div>
-                <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Deliver work & earn
-                </p>
-              </div>
-
-              <div
-                onClick={() => setRole("both")}
-                className={`cursor-pointer rounded-xl border p-2 text-xs transition-all backdrop-blur-sm ${
-                  role === "both"
-                    ? "border-[#0070BA] bg-blue-50/50 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
-                    : "border-slate-200/70 bg-slate-50/50 text-slate-600 dark:border-slate-800/80 dark:bg-slate-950/40 dark:text-slate-400"
-                }`}
-              >
-                <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white text-[11px]">
-                  <Sparkles className="h-3 w-3 text-purple-500 dark:text-purple-400 shrink-0" />
-                  <span>Both</span>
-                </div>
-                <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Universal account
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Feedback Alerts */}
         {errorMsg && (
-          <div className="mt-4 rounded-xl border border-rose-200/80 bg-rose-50/80 p-3 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 flex items-start gap-2 backdrop-blur-sm animate-in fade-in">
+          <div className="mb-4 rounded-xl border border-rose-200/80 bg-rose-50/80 p-3 text-xs text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 flex items-start gap-2 backdrop-blur-sm animate-in fade-in">
             <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="mt-4 rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-3 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300 flex items-start gap-2 backdrop-blur-sm animate-in fade-in">
+          <div className="mb-4 rounded-xl border border-emerald-200/80 bg-emerald-50/80 p-3 text-xs text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300 flex items-start gap-2 backdrop-blur-sm animate-in fade-in">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
             <span>{successMsg}</span>
           </div>
         )}
 
         {/* Input Form */}
-        <form onSubmit={handleSubmit} className="mt-4 space-y-3.5">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           {mode === "signup" && (
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -563,6 +535,13 @@ function AuthForm() {
             </div>
           )}
 
+          {mode === "signup" && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 text-[11px] text-blue-800 dark:text-sky-300">
+              <Check className="h-3.5 w-3.5 text-[#0070BA] dark:text-sky-400 shrink-0" />
+              <span>Universal Account: Access both Client &amp; Freelancer perspectives.</span>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -581,6 +560,19 @@ function AuthForm() {
             )}
           </button>
         </form>
+
+        {/* ONE-CLICK PAYPAL (Fast Sandbox Access) */}
+        <div className="mt-3.5">
+          <button
+            type="button"
+            onClick={handlePayPalInstantAuth}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-300/60 bg-white/60 hover:bg-white/90 px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-2xs hover:shadow-xs transition-all hover:scale-[1.005] active:scale-[0.99] dark:border-white/10 dark:bg-[#131c31]/50 dark:text-slate-200 dark:hover:bg-[#1a2642]/75 backdrop-blur-md cursor-pointer"
+          >
+            <PayPalIcon className="h-3.5 w-3.5" />
+            <span>Continue with PayPal Sandbox</span>
+          </button>
+        </div>
 
         {/* Footer switch prompt */}
         <div className="mt-5 text-center text-xs text-slate-600 dark:text-slate-400">
