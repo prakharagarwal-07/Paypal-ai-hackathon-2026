@@ -26,7 +26,7 @@ import { generateMilestoneOSId } from "@/lib/dashboard-data";
 import { isSupabaseConfigured, getSupabaseClient } from "@/lib/supabase";
 
 type AuthMode = "login" | "signup";
-type UserRole = "client" | "freelancer";
+type UserRole = "client" | "freelancer" | "both";
 
 function PayPalIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -77,46 +77,33 @@ function AuthForm() {
 
   const syncLocalProfile = (userName: string, userEmail: string, userRole: UserRole, userMsoId: string) => {
     try {
-      const existingProfilesStr = localStorage.getItem("milestoneos_profiles_v7");
-      const existingProfiles = existingProfilesStr ? JSON.parse(existingProfilesStr) : null;
-      const initials = (userName || (userRole === "client" ? "Sarah Chen" : "Rohan Verma"))
+      const cleanEmail = userEmail.trim().toLowerCase();
+      const defaultName = cleanEmail.split("@")[0] || "User";
+      const actualName = userName.trim() || defaultName;
+      const initials = actualName
         .split(" ")
         .map((n: string) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2);
 
-      const updatedProfiles = {
-        client: existingProfiles?.client || {
-          name: "Sarah Chen",
-          email: "sarah.chen@apexcommerce.com",
-          avatar: "SC",
-          company: "Apex Commerce",
-          milestoneOSId: "MSO-7K4P92",
-        },
-        freelancer: existingProfiles?.freelancer || {
-          name: "Rohan Verma",
-          email: "rohan.verma@craftdev.io",
-          avatar: "RV",
-          title: "Senior Full-Stack Engineer",
-          rating: 4.98,
-          milestoneOSId: "MSO-2W8L41",
-        },
-        [userRole]: {
-          name: userName || (userRole === "client" ? "Sarah Chen" : "Rohan Verma"),
-          email: userEmail || (userRole === "client" ? "sarah.chen@apexcommerce.com" : "rohan.verma@craftdev.io"),
-          avatar: initials || (userRole === "client" ? "SC" : "RV"),
-          milestoneOSId: userMsoId,
-          ...(userRole === "client" ? { company: "Apex Commerce" } : { title: "Senior Full-Stack Engineer", rating: 5.0 }),
-        },
+      const activeUser = {
+        name: actualName,
+        email: cleanEmail,
+        avatar: initials,
+        milestoneOSId: userMsoId,
+        role: userRole,
+        roles: userRole === "both" ? ["client", "freelancer"] : [userRole],
       };
-      localStorage.setItem("milestoneos_profiles_v7", JSON.stringify(updatedProfiles));
-      localStorage.setItem("milestoneos_role_v7", userRole);
+
+      localStorage.setItem("milestoneos_active_user_v8", JSON.stringify(activeUser));
+      localStorage.setItem("milestoneos_role_v8", userRole === "freelancer" ? "freelancer" : "client");
+      localStorage.removeItem("milestoneos_demo_mode");
     } catch (_) {}
   };
 
   // Instant Demo Login for Hackathon Judges
-  const handleDemoLogin = async (demoRole: UserRole) => {
+  const handleDemoLogin = async (demoRole: "client" | "freelancer") => {
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -135,10 +122,26 @@ function AuthForm() {
       } catch (_) {}
     }
 
-    syncLocalProfile(demoUser.name, demoUser.email, demoRole, demoUser.id);
-    setSuccessMsg(`Signing in as ${demoUser.name} (${demoRole.toUpperCase()})...`);
+    try {
+      localStorage.setItem("milestoneos_demo_mode", "true");
+      localStorage.setItem(
+        "milestoneos_active_user_v8",
+        JSON.stringify({
+          name: demoUser.name,
+          email: demoUser.email,
+          avatar: demoRole === "client" ? "SC" : "RV",
+          milestoneOSId: demoUser.id,
+          role: demoRole,
+          roles: ["client", "freelancer"],
+          isDemo: true,
+        })
+      );
+      localStorage.setItem("milestoneos_role_v8", demoRole);
+    } catch (_) {}
+
+    setSuccessMsg(`Signing in as ${demoUser.name} (${demoRole.toUpperCase()}) in Demo Sandbox...`);
     setTimeout(() => {
-      router.push(`/dashboard?role=${demoRole}`);
+      router.push(`/dashboard?role=${demoRole}&demo=true`);
     }, 400);
   };
 
@@ -194,14 +197,18 @@ function AuthForm() {
     if (supabaseClient) {
       try {
         if (mode === "signup") {
+          const cleanEmail = email.trim().toLowerCase();
+          const defaultName = cleanEmail.split("@")[0] || "User";
+          const finalName = name.trim() || defaultName;
+
           // Route through /api/auth/signup to automatically auto-confirm user without email bottleneck
           const res = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              email,
+              email: cleanEmail,
               password,
-              name: name.trim() || (role === "client" ? "Sarah Chen" : "Rohan Verma"),
+              name: finalName,
               role,
             }),
           });
@@ -214,22 +221,23 @@ function AuthForm() {
           }
 
           const newMsoId = resData.user?.milestoneOSId || generateMilestoneOSId();
-          const newName = resData.user?.name || name || "New Member";
+          const newName = resData.user?.name || finalName;
 
           // Log in with password to establish the browser session
           await supabaseClient.auth.signInWithPassword({
-            email,
+            email: cleanEmail,
             password,
           });
 
-          syncLocalProfile(newName, email, role, newMsoId);
+          syncLocalProfile(newName, cleanEmail, role, newMsoId);
           setSuccessMsg(`Account created on Supabase! ID: ${newMsoId}. Redirecting...`);
           setTimeout(() => router.push(returnUrl), 500);
           return;
         } else {
           // Login with Supabase
+          const cleanEmail = email.trim().toLowerCase();
           const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email,
+            email: cleanEmail,
             password,
           });
 
@@ -241,12 +249,12 @@ function AuthForm() {
 
           const userMeta = data.user?.user_metadata || {};
           const userRole = (userMeta.role as UserRole) || role;
-          const userName = userMeta.name || email.split("@")[0];
+          const userName = userMeta.name || cleanEmail.split("@")[0];
           const userMsoId = userMeta.milestoneOSId || generateMilestoneOSId();
 
-          syncLocalProfile(userName, email, userRole, userMsoId);
+          syncLocalProfile(userName, cleanEmail, userRole, userMsoId);
           setSuccessMsg(`Welcome back, ${userName}! Authenticated via Supabase.`);
-          setTimeout(() => router.push(`/dashboard?role=${userRole}`), 500);
+          setTimeout(() => router.push(`/dashboard?role=${userRole === "both" ? "client" : userRole}`), 500);
           return;
         }
       } catch (err: any) {
@@ -392,38 +400,55 @@ function AuthForm() {
             <label className="block text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               I want to:
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               <div
                 onClick={() => setRole("client")}
-                className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all backdrop-blur-sm ${
+                className={`cursor-pointer rounded-xl border p-2 text-xs transition-all backdrop-blur-sm ${
                   role === "client"
                     ? "border-[#0070BA] bg-blue-50/50 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
                     : "border-slate-200/70 bg-slate-50/50 text-slate-600 dark:border-slate-800/80 dark:bg-slate-950/40 dark:text-slate-400"
                 }`}
               >
-                <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white">
-                  <User className="h-3.5 w-3.5 text-[#0070BA] dark:text-sky-400" />
-                  Hire a Freelancer
+                <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white text-[11px]">
+                  <User className="h-3 w-3 text-[#0070BA] dark:text-sky-400 shrink-0" />
+                  <span>Client</span>
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Set milestones & pay with PayPal
+                <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Hire & fund escrow
                 </p>
               </div>
 
               <div
                 onClick={() => setRole("freelancer")}
-                className={`cursor-pointer rounded-xl border p-2.5 text-xs transition-all backdrop-blur-sm ${
+                className={`cursor-pointer rounded-xl border p-2 text-xs transition-all backdrop-blur-sm ${
                   role === "freelancer"
                     ? "border-[#0070BA] bg-blue-50/50 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
                     : "border-slate-200/70 bg-slate-50/50 text-slate-600 dark:border-slate-800/80 dark:bg-slate-950/40 dark:text-slate-400"
                 }`}
               >
-                <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white">
-                  <Briefcase className="h-3.5 w-3.5 text-emerald-500 dark:text-emerald-400" />
-                  Work as a Freelancer
+                <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white text-[11px]">
+                  <Briefcase className="h-3 w-3 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                  <span>Freelancer</span>
                 </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                  Submit work & receive payouts
+                <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Deliver work & earn
+                </p>
+              </div>
+
+              <div
+                onClick={() => setRole("both")}
+                className={`cursor-pointer rounded-xl border p-2 text-xs transition-all backdrop-blur-sm ${
+                  role === "both"
+                    ? "border-[#0070BA] bg-blue-50/50 text-slate-950 dark:bg-[#0070BA]/20 dark:text-white ring-1 ring-[#0070BA]"
+                    : "border-slate-200/70 bg-slate-50/50 text-slate-600 dark:border-slate-800/80 dark:bg-slate-950/40 dark:text-slate-400"
+                }`}
+              >
+                <div className="font-bold flex items-center gap-1 text-slate-900 dark:text-white text-[11px]">
+                  <Sparkles className="h-3 w-3 text-purple-500 dark:text-purple-400 shrink-0" />
+                  <span>Both</span>
+                </div>
+                <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  Universal account
                 </p>
               </div>
             </div>

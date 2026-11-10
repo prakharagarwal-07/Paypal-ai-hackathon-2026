@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSupabase } from "@/server/supabase";
 import { generateMilestoneOSId } from "@/lib/dashboard-data";
-import { db } from "@/server/db";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,19 +22,24 @@ export async function POST(req: NextRequest) {
     }
 
     const assignedId = generateMilestoneOSId();
-    const userRole = role === "freelancer" ? "freelancer" : "client";
-    const userName = (name || "").trim() || (userRole === "client" ? "Sarah Chen" : "Rohan Verma");
+    const userRole = role === "freelancer" ? "freelancer" : role === "both" ? "both" : "client";
+    const userRoles = userRole === "both" ? ["client", "freelancer"] : [userRole];
+    const cleanEmail = email.trim().toLowerCase();
+    const defaultName = cleanEmail.split("@")[0];
+    const userName = (name || "").trim() || defaultName;
+    const avatarInitials = userName.slice(0, 2).toUpperCase();
 
     const adminSupabase = getServerSupabase();
 
     if (adminSupabase) {
       const { data, error } = await adminSupabase.auth.admin.createUser({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         password,
         email_confirm: true,
         user_metadata: {
           name: userName,
           role: userRole,
+          roles: userRoles,
           milestoneOSId: assignedId,
         },
       });
@@ -47,15 +51,16 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Also try to insert into profiles table if it exists
+      // Upsert into profiles table
       try {
         await adminSupabase.from("profiles").upsert({
           id: data.user.id,
           milestone_os_id: assignedId,
           full_name: userName,
-          email: email.trim().toLowerCase(),
+          email: cleanEmail,
           role: userRole,
-          avatar: userName.slice(0, 2).toUpperCase(),
+          roles: userRoles,
+          avatar: avatarInitials,
         });
       } catch (_) {}
 
@@ -66,6 +71,7 @@ export async function POST(req: NextRequest) {
           email: data.user.email,
           name: userName,
           role: userRole,
+          roles: userRoles,
           milestoneOSId: assignedId,
         },
       });
@@ -76,9 +82,10 @@ export async function POST(req: NextRequest) {
       success: true,
       user: {
         id: `usr_${Date.now()}`,
-        email,
+        email: cleanEmail,
         name: userName,
         role: userRole,
+        roles: userRoles,
         milestoneOSId: assignedId,
       },
     });

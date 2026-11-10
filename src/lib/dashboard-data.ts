@@ -121,6 +121,9 @@ export interface TransactionRecord {
   isSimulated: boolean;
   payer: string;
   payee: string;
+  isDemo?: boolean;
+  payerId?: string;
+  payeeId?: string;
 }
 
 export interface NotificationItem {
@@ -132,6 +135,8 @@ export interface NotificationItem {
   unread: boolean;
   projectId?: string;
   milestoneId?: string;
+  isDemo?: boolean;
+  userId?: string;
 }
 
 export type ProjectStatus =
@@ -149,6 +154,9 @@ export interface ProjectContract {
   title: string;
   description: string;
   category: string;
+  clientId?: string;
+  freelancerId?: string;
+  isDemo?: boolean;
   client: {
     id?: string;
     milestoneOSId?: string;
@@ -498,16 +506,23 @@ export const FREELANCER_OPTIONS = [
 export const INITIAL_PROJECTS: ProjectContract[] = [
   {
     id: "proj_online_store_2026",
+    isDemo: true,
+    clientId: "usr_client_sarah",
+    freelancerId: "usr_dev_rohan",
     title: "Online Storefront & PayPal Checkout",
     description: "A custom online store with shopping cart and secure PayPal checkout.",
     category: "Web Development",
     client: {
+      id: "usr_client_sarah",
+      milestoneOSId: "MSO-7K4P92",
       name: "Sarah Chen",
       email: "sarah.chen@client.demo",
       avatar: "SC",
       company: "Apex Commerce",
     },
     freelancer: {
+      id: "usr_dev_rohan",
+      milestoneOSId: "MSO-2W8L41",
       name: "Rohan Verma",
       email: "rohan.verma@dev.demo",
       avatar: "RV",
@@ -784,16 +799,23 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
   },
   {
     id: "proj_customer_reviews_2026",
+    isDemo: true,
+    clientId: "usr_client_sarah",
+    freelancerId: "usr_dev_elena",
     title: "Customer Review & Rating System",
     description: "A review section allowing customers to rate products and leave verified feedback.",
     category: "Features & Add-ons",
     client: {
+      id: "usr_client_sarah",
+      milestoneOSId: "MSO-7K4P92",
       name: "Sarah Chen",
       email: "sarah.chen@client.demo",
       avatar: "SC",
       company: "Apex Commerce",
     },
     freelancer: {
+      id: "usr_dev_elena",
+      milestoneOSId: "MSO-5T1N88",
       name: "Elena Rostova",
       email: "elena.rostova@dev.demo",
       avatar: "ER",
@@ -949,16 +971,23 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
   },
   {
     id: "proj_ai_recommendation_2026",
+    isDemo: true,
+    clientId: "usr_client_sarah",
+    freelancerId: "usr_dev_rohan",
     title: "AI Search & Smart Recommendation Engine",
     description: "Semantic search engine with vector search indexing and personalized product recommendations for the online storefront.",
     category: "AI & Full-Stack",
     client: {
+      id: "usr_client_sarah",
+      milestoneOSId: "MSO-7K4P92",
       name: "Sarah Chen",
       email: "sarah.chen@client.demo",
       avatar: "SC",
       company: "Apex Commerce",
     },
     freelancer: {
+      id: "usr_dev_rohan",
+      milestoneOSId: "MSO-2W8L41",
       name: "Rohan Verma",
       email: "rohan.verma@dev.demo",
       avatar: "RV",
@@ -1040,16 +1069,23 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
   },
   {
     id: "proj_sub_billing_completed",
+    isDemo: true,
+    clientId: "usr_client_sarah",
+    freelancerId: "usr_dev_rohan",
     title: "Mobile App & PayPal Subscription Billing",
     description: "Recurring monthly billing integration, automated PDF invoices, and account dashboard for iOS and Android.",
     category: "FinTech & Mobile Development",
     client: {
+      id: "usr_client_sarah",
+      milestoneOSId: "MSO-7K4P92",
       name: "Sarah Chen",
       email: "sarah.chen@client.demo",
       avatar: "SC",
       company: "Apex Commerce",
     },
     freelancer: {
+      id: "usr_dev_rohan",
+      milestoneOSId: "MSO-2W8L41",
       name: "Rohan Verma",
       email: "rohan.verma@dev.demo",
       avatar: "RV",
@@ -1225,6 +1261,7 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
 export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif_proposal_ai",
+    isDemo: true,
     timestamp: "Just now",
     title: "New Project Proposal Received",
     message: "Rohan Verma proposed 'AI Search & Smart Recommendation Engine' ($3,600 USD across 2 milestones). Review deliverables and criteria to accept.",
@@ -1234,6 +1271,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
   {
     id: "notif_1",
+    isDemo: true,
     timestamp: "10 mins ago",
     title: "Work Submitted for Review",
     message: "Rohan Verma submitted Milestone 2 for 'Online Storefront & PayPal Checkout'.",
@@ -1244,6 +1282,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
   {
     id: "notif_2",
+    isDemo: true,
     timestamp: "2 hours ago",
     title: "Changes Requested",
     message: "Sarah Chen requested updates for Milestone 3 (Order Confirmation & Email Receipts).",
@@ -1254,6 +1293,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
   {
     id: "notif_3",
+    isDemo: true,
     timestamp: "Yesterday",
     title: "Milestone Approved",
     message: "Milestone 2 for 'Customer Review & Rating System' was approved and is ready for payment.",
@@ -1264,6 +1304,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   },
   {
     id: "notif_4",
+    isDemo: true,
     timestamp: "3 days ago",
     title: "Payment Completed",
     message: "$1,200 USD paid to Rohan Verma via PayPal Sandbox.",
@@ -1277,6 +1318,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
 export const INITIAL_TRANSACTIONS: TransactionRecord[] = [
   {
     id: "tx_101",
+    isDemo: true,
     milestoneId: "ms_01",
     milestoneTitle: "Design & Page Layouts",
     projectId: "proj_online_store_2026",
@@ -1292,6 +1334,7 @@ export const INITIAL_TRANSACTIONS: TransactionRecord[] = [
   },
   {
     id: "tx_102",
+    isDemo: true,
     milestoneId: "ms_rev_01",
     milestoneTitle: "Review Form & Star Ratings",
     projectId: "proj_customer_reviews_2026",
@@ -1307,6 +1350,7 @@ export const INITIAL_TRANSACTIONS: TransactionRecord[] = [
   },
   {
     id: "tx_103",
+    isDemo: true,
     milestoneId: "ms_sub_01",
     milestoneTitle: "Subscription Tier Architecture & Database Schema",
     projectId: "proj_sub_billing_completed",
@@ -1322,6 +1366,7 @@ export const INITIAL_TRANSACTIONS: TransactionRecord[] = [
   },
   {
     id: "tx_104",
+    isDemo: true,
     milestoneId: "ms_sub_02",
     milestoneTitle: "PayPal Subscriptions API Integration & Webhooks",
     projectId: "proj_sub_billing_completed",
@@ -1337,6 +1382,7 @@ export const INITIAL_TRANSACTIONS: TransactionRecord[] = [
   },
   {
     id: "tx_105",
+    isDemo: true,
     milestoneId: "ms_sub_03",
     milestoneTitle: "Automated Invoicing & Customer Self-Serve Portal",
     projectId: "proj_sub_billing_completed",

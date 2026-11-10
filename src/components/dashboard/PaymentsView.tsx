@@ -155,9 +155,16 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-slate-700 dark:text-slate-300">
-                {transactions.map((tx) => (
-                  <tr
-                    key={tx.id}
+                {transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-slate-400 text-xs">
+                      No payment transactions recorded yet.
+                    </td>
+                  </tr>
+                ) : (
+                  transactions.map((tx) => (
+                    <tr
+                      key={tx.id}
                     onClick={() => setSelectedTx(tx)}
                     className="hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors cursor-pointer"
                   >
@@ -196,7 +203,8 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                       </button>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
               </tbody>
             </table>
           </div>

@@ -1,6 +1,7 @@
 /**
- * MilestoneOS — Server-Side Database & Ledger Store
- * Provides persistent project, milestone, submission, and transaction storage.
+ * MilestoneOS — Server-Side Multi-User Database & Ledger Store
+ * Provides persistent project, milestone, submission, transaction, and multi-user storage
+ * with full demo-data isolation and Supabase synchronization.
  */
 
 import fs from "fs";
@@ -22,6 +23,15 @@ import {
   generateInvitationToken,
 } from "@/lib/dashboard-data";
 import { CaptureOrderResult } from "./paypal";
+import { getServerSupabase } from "./supabase";
+
+export interface ProjectFilter {
+  userId?: string;
+  userEmail?: string;
+  role?: "client" | "freelancer";
+  isDemo?: boolean;
+  status?: string;
+}
 
 interface DatabaseState {
   projects: ProjectContract[];
@@ -46,7 +56,13 @@ function loadDatabase(): DatabaseState {
       const raw = fs.readFileSync(DB_FILE, "utf-8");
       const parsed = JSON.parse(raw);
       if (parsed.projects && parsed.transactions) {
-        memoryState = parsed;
+        // Ensure demo projects are always present for demo mode
+        const existingDemoIds = new Set(parsed.projects.filter((p: ProjectContract) => p.isDemo).map((p: ProjectContract) => p.id));
+        const missingDemos = INITIAL_PROJECTS.filter((p) => !existingDemoIds.has(p.id));
+        memoryState = {
+          ...parsed,
+          projects: [...parsed.projects, ...missingDemos],
+        };
         return memoryState;
       }
     }
@@ -71,12 +87,89 @@ function persistDatabase(): void {
 loadDatabase();
 
 export const db = {
-  getProjects(): ProjectContract[] {
-    return memoryState.projects;
+  /**
+   * Retrieves projects scoped strictly to the authenticated user and perspective role.
+   * Demo projects are ONLY returned when filter.isDemo === true.
+   */
+  getProjects(filter?: ProjectFilter): ProjectContract[] {
+    const isDemo = Boolean(filter?.isDemo);
+    const userId = filter?.userId?.trim();
+    const userEmail = filter?.userEmail?.trim().toLowerCase();
+    const role = filter?.role;
+    const status = filter?.status;
+
+    // 1. Explicit Demo Mode: Only return designated demo projects (Sarah & Rohan)
+    if (isDemo) {
+      let demos = memoryState.projects.filter((p) => Boolean(p.isDemo));
+      if (status) {
+        demos = demos.filter((p) => p.status === status);
+      }
+      return demos;
+    }
+
+    // 2. Real Registered Users: Filter projects where user is authorized participant
+    if (userId || userEmail) {
+      return memoryState.projects.filter((p) => {
+        // Exclude demo projects from normal user views
+        if (p.isDemo) return false;
+
+        // Apply status filter if provided
+        if (status && p.status !== status) return false;
+
+        const isClient =
+          (userId && (p.clientId === userId || p.client.id === userId)) ||
+          (userEmail && p.client.email?.toLowerCase() === userEmail);
+
+        const isFreelancer =
+          (userId && (p.freelancerId === userId || p.freelancer.id === userId)) ||
+          (userEmail && p.freelancer.email?.toLowerCase() === userEmail);
+
+        if (role === "client") return isClient;
+        if (role === "freelancer") return isFreelancer;
+
+        // If no role filter, user is allowed if they are either party
+        return isClient || isFreelancer;
+      });
+    }
+
+    // 3. Fallback for unauthenticated requests: Never leak demo or user data
+    return [];
   },
 
-  getProjectById(id: string): ProjectContract | undefined {
-    return memoryState.projects.find((p) => p.id === id);
+  /**
+   * Retrieves a single project by ID, verifying user authorization if authUser is provided.
+   */
+  getProjectById(id: string, authUser?: { id?: string; email?: string; isDemo?: boolean }): ProjectContract | undefined {
+    const project = memoryState.projects.find((p) => p.id === id);
+    if (!project) return undefined;
+
+    // When authUser is provided, enforce strict security authorization checks
+    if (authUser) {
+      if (project.isDemo && authUser.isDemo) {
+        return project;
+      }
+      if (project.isDemo && !authUser.isDemo) {
+        return undefined;
+      }
+
+      // Public active invitation links can be viewed by anyone to accept
+      if (project.invitationToken && project.invitationStatus === "active") {
+        return project;
+      }
+
+      const uId = authUser.id;
+      const uEmail = authUser.email?.toLowerCase();
+
+      const isAuthorized =
+        (uId && (project.clientId === uId || project.freelancerId === uId || project.client.id === uId || project.freelancer.id === uId)) ||
+        (uEmail && (project.client.email?.toLowerCase() === uEmail || project.freelancer.email?.toLowerCase() === uEmail));
+
+      if (isAuthorized) return project;
+      return undefined;
+    }
+
+    // Direct internal server calls (PayPal order creation, AI invoice generation)
+    return project;
   },
 
   findUserByMilestoneOSId(id: string): MilestoneOSUser | null {
@@ -93,6 +186,7 @@ export const db = {
   claimInvitation(
     token: string,
     claimingUser: {
+      id?: string;
       name: string;
       email: string;
       avatar: string;
@@ -110,6 +204,7 @@ export const db = {
 
     if (isClientSender) {
       project.freelancer = {
+        id: claimingUser.id,
         name: claimingUser.name,
         email: claimingUser.email,
         avatar: claimingUser.avatar,
@@ -117,14 +212,17 @@ export const db = {
         rating: 5.0,
         milestoneOSId: claimingUser.milestoneOSId,
       };
+      project.freelancerId = claimingUser.id;
     } else {
       project.client = {
+        id: claimingUser.id,
         name: claimingUser.name,
         email: claimingUser.email,
         avatar: claimingUser.avatar,
         company: claimingUser.companyOrTitle || "Client Organization",
         milestoneOSId: claimingUser.milestoneOSId,
       };
+      project.clientId = claimingUser.id;
     }
 
     project.status = "active";
@@ -134,9 +232,9 @@ export const db = {
     project.termsAgreed = true;
     project.invitationStatus = "claimed";
 
-    project.milestones.forEach((m) => {
-      if (!m.status) {
-        m.status = "not_started";
+    project.milestones.forEach((m, idx) => {
+      if (!m.status || m.status === "not_started") {
+        m.status = idx === 0 ? "in_progress" : "not_started";
       }
     });
 
@@ -150,6 +248,22 @@ export const db = {
     project.activityLog.unshift(activity);
 
     persistDatabase();
+
+    // Async sync with Supabase project_members
+    const supabase = getServerSupabase();
+    if (supabase && claimingUser.id) {
+      Promise.resolve(
+        supabase
+          .from("project_members")
+          .insert({
+            project_id: project.id,
+            user_id: claimingUser.id,
+            project_role: isClientSender ? "freelancer" : "client",
+            membership_status: "accepted",
+          })
+      ).catch(() => {});
+    }
+
     return project;
   },
 
@@ -163,9 +277,76 @@ export const db = {
     return true;
   },
 
-  createProject(project: ProjectContract): ProjectContract {
+  createProject(project: ProjectContract, creatorId?: string): ProjectContract {
+    // Explicitly flag as non-demo real project
+    project.isDemo = false;
+    const cid = creatorId || project.clientId || (project.initiatedBy === "client" ? project.client?.id : undefined);
+    const fid = project.freelancerId || (project.initiatedBy === "freelancer" ? project.freelancer?.id : undefined);
+
+    if (cid) {
+      project.clientId = cid;
+      if (project.client) project.client.id = cid;
+    }
+    if (fid) {
+      project.freelancerId = fid;
+      if (project.freelancer) project.freelancer.id = fid;
+    }
+
+    if (!project.invitationToken) {
+      project.invitationToken = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      project.invitationStatus = "active";
+    }
+
     memoryState.projects.unshift(project);
     persistDatabase();
+
+    // Async sync to Supabase if connected
+    const supabase = getServerSupabase();
+    if (supabase && creatorId) {
+      Promise.resolve(
+        supabase
+          .from("projects")
+          .insert({
+            id: project.id,
+            title: project.title,
+            description: project.description,
+            category: project.category,
+            currency: project.currency || "USD",
+            total_budget: project.totalBudget,
+            target_deadline: project.targetDeadline,
+            status: project.status,
+            proposal_status: project.proposalStatus || "draft",
+            terms_agreed: project.termsAgreed || false,
+            client_id: project.clientId || null,
+            freelancer_id: project.freelancerId || null,
+            client_name: project.client.name,
+            client_email: project.client.email,
+            client_company: project.client.company,
+            client_mso_id: project.client.milestoneOSId,
+            freelancer_name: project.freelancer.name,
+            freelancer_email: project.freelancer.email,
+            freelancer_title: project.freelancer.title,
+            freelancer_mso_id: project.freelancer.milestoneOSId,
+            initiated_by: project.initiatedBy,
+            initiator_mso_id: project.initiatorMilestoneOSId,
+            invitation_token: project.invitationToken || null,
+            invitation_status: project.invitationStatus || "active",
+            is_demo: false,
+          })
+      )
+        .then(() => {
+          return Promise.resolve(
+            supabase.from("project_members").insert({
+              project_id: project.id,
+              user_id: creatorId,
+              project_role: project.initiatedBy,
+              membership_status: "owner",
+            })
+          );
+        })
+        .catch(() => {});
+    }
+
     return project;
   },
 
@@ -293,8 +474,8 @@ export const db = {
 
     // Update project total paid
     project.totalPaid = (project.totalPaid || 0) + milestone.amount;
+    project.escrowReleased = (project.escrowReleased || 0) + milestone.amount;
 
-    // In flexible milestone management, each milestone maintains its own independent status.
     const allPaid = project.milestones.every((m) => m.status === "paid");
     if (allPaid) {
       project.status = "completed";
@@ -312,6 +493,8 @@ export const db = {
       status: "completed",
       payer: project.client.name,
       payee: project.freelancer.name,
+      payerId: project.clientId,
+      payeeId: project.freelancerId,
       paidAt: new Date().toLocaleString("en-US", {
         month: "short",
         day: "2-digit",
@@ -321,6 +504,7 @@ export const db = {
       }),
       paypalTransactionId: capture.captureId,
       isSimulated: capture.isSimulated ?? false,
+      isDemo: Boolean(project.isDemo),
     };
 
     memoryState.transactions.unshift(newTx);
@@ -423,11 +607,46 @@ export const db = {
     return { project, milestone };
   },
 
-  getTransactions(): TransactionRecord[] {
-    return memoryState.transactions;
+  /**
+   * Retrieves transactions scoped to authorized user projects or demo mode.
+   */
+  getTransactions(filter?: { userId?: string; userEmail?: string; isDemo?: boolean; projectId?: string }): TransactionRecord[] {
+    const isDemo = Boolean(filter?.isDemo);
+    const userId = filter?.userId?.trim();
+    const userEmail = filter?.userEmail?.trim().toLowerCase();
+    const projectId = filter?.projectId;
+
+    if (isDemo) {
+      let txs = memoryState.transactions.filter((t) => t.isDemo);
+      if (projectId) txs = txs.filter((t) => t.projectId === projectId);
+      return txs;
+    }
+
+    if (userId || userEmail) {
+      // Find project IDs where user is client or freelancer
+      const userProjects = db.getProjects({ userId, userEmail });
+      const userProjectIds = new Set(userProjects.map((p) => p.id));
+
+      let txs = memoryState.transactions.filter((t) => !t.isDemo && (userProjectIds.has(t.projectId) || (userId && (t.payerId === userId || t.payeeId === userId))));
+      if (projectId) txs = txs.filter((t) => t.projectId === projectId);
+      return txs;
+    }
+
+    return [];
   },
 
-  getNotifications(): NotificationItem[] {
-    return memoryState.notifications;
+  /**
+   * Retrieves notifications scoped to user or demo mode.
+   */
+  getNotifications(filter?: { userId?: string; isDemo?: boolean }): NotificationItem[] {
+    if (filter?.isDemo) {
+      return memoryState.notifications.filter((n) => n.isDemo);
+    }
+
+    if (filter?.userId) {
+      return memoryState.notifications.filter((n) => !n.isDemo && n.userId === filter.userId);
+    }
+
+    return [];
   },
 };

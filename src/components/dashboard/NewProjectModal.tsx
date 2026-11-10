@@ -49,7 +49,7 @@ interface DraftMilestone {
 type InitiationMethod = "user_id" | "share_link";
 
 export default function NewProjectModal({ isOpen, onClose, initialProject }: NewProjectModalProps) {
-  const { role, userProfiles, createProject, resubmitProposal, showAlert, projects } = useDashboard();
+  const { role, userProfiles, createProject, resubmitProposal, showAlert, projects, isDemoMode } = useDashboard();
 
   const isClient = role === "client";
   const myProfile = userProfiles[role];
@@ -138,14 +138,19 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         if (found) setSelectedUser(found);
       }
     } else {
-      // Default initial partner for convenience:
-      const defaultPartner = isClient
-        ? FREELANCER_OPTIONS[0] // Rohan Verma MSO-2W8L41
-        : CLIENT_OPTIONS[0]; // Sarah Chen MSO-7K4P92
-      const matched = lookupMilestoneOSUser(defaultPartner.milestoneOSId);
-      if (matched) setSelectedUser(matched);
+      if (isDemoMode) {
+        // Default initial partner for convenience in demo mode:
+        const defaultPartner = isClient
+          ? FREELANCER_OPTIONS[0] // Rohan Verma MSO-2W8L41
+          : CLIENT_OPTIONS[0]; // Sarah Chen MSO-7K4P92
+        const matched = lookupMilestoneOSUser(defaultPartner.milestoneOSId);
+        if (matched) setSelectedUser(matched);
+      } else {
+        setSelectedUser(null);
+        setMethod("share_link");
+      }
     }
-  }, [initialProject, isClient]);
+  }, [initialProject, isClient, isDemoMode]);
 
   if (!isOpen && !shareModalOpen) return null;
 
@@ -332,12 +337,12 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         };
       } else {
         freelancerData = {
-          name: selectedUser?.name || "Rohan Verma",
-          email: selectedUser?.email || "freelancer@domain.demo",
-          avatar: selectedUser?.avatar || "RV",
-          title: selectedUser?.title || "Specialist Developer",
-          rating: selectedUser?.rating || 4.98,
-          milestoneOSId: selectedUser?.milestoneOSId || "MSO-2W8L41",
+          name: selectedUser?.name || "Invited Specialist",
+          email: selectedUser?.email || "freelancer@milestoneos.link",
+          avatar: selectedUser?.avatar || "FS",
+          title: selectedUser?.title || "Specialist Freelancer",
+          rating: selectedUser?.rating || 5.0,
+          milestoneOSId: selectedUser?.milestoneOSId || "",
         };
       }
     } else {
@@ -346,7 +351,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         email: myProfile.email,
         avatar: myProfile.avatar,
         title: (myProfile as any).title || "Senior Specialist",
-        rating: 4.98,
+        rating: 5.0,
         milestoneOSId: myProfile.milestoneOSId,
       };
 
@@ -360,11 +365,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         };
       } else {
         clientData = {
-          name: selectedUser?.name || "Sarah Chen",
-          email: selectedUser?.email || "client@domain.demo",
-          avatar: selectedUser?.avatar || "SC",
+          name: selectedUser?.name || "Hiring Client",
+          email: selectedUser?.email || "client@milestoneos.link",
+          avatar: selectedUser?.avatar || "CL",
           company: selectedUser?.company || "Client Organization",
-          milestoneOSId: selectedUser?.milestoneOSId || "MSO-7K4P92",
+          milestoneOSId: selectedUser?.milestoneOSId || "",
         };
       }
     }
@@ -621,49 +626,51 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                         </p>
                       )}
 
-                      {/* Quick demo helper chips */}
-                      <div className="pt-1">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">
-                          Quick Demo Accounts to Connect:
-                        </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {isClient ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => handleLookupUserId("MSO-2W8L41")}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
-                              >
-                                + Rohan Verma (<span className="font-mono font-bold text-[#0070BA]">MSO-2W8L41</span>)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleLookupUserId("MSO-9B4T72")}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
-                              >
-                                + Elena Rostova (<span className="font-mono font-bold text-[#0070BA]">MSO-9B4T72</span>)
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => handleLookupUserId("MSO-7K4P92")}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
-                              >
-                                + Sarah Chen (<span className="font-mono font-bold text-[#0070BA]">MSO-7K4P92</span>)
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleLookupUserId("MSO-3X9M55")}
-                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
-                              >
-                                + David Kim (<span className="font-mono font-bold text-[#0070BA]">MSO-3X9M55</span>)
-                              </button>
-                            </>
-                          )}
+                      {/* Quick demo helper chips (Demo mode only) */}
+                      {isDemoMode && (
+                        <div className="pt-1">
+                          <span className="text-[10px] uppercase font-bold text-amber-500 tracking-wider block mb-1">
+                            Demo Sandbox Accounts to Connect:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {isClient ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleLookupUserId("MSO-2W8L41")}
+                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
+                                >
+                                  + Rohan Verma (<span className="font-mono font-bold text-[#0070BA]">MSO-2W8L41</span>)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleLookupUserId("MSO-9B4T72")}
+                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
+                                >
+                                  + Elena Rostova (<span className="font-mono font-bold text-[#0070BA]">MSO-9B4T72</span>)
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleLookupUserId("MSO-7K4P92")}
+                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
+                                >
+                                  + Sarah Chen (<span className="font-mono font-bold text-[#0070BA]">MSO-7K4P92</span>)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleLookupUserId("MSO-3X9M55")}
+                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
+                                >
+                                  + David Kim (<span className="font-mono font-bold text-[#0070BA]">MSO-3X9M55</span>)
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   ) : (
                     /* Confirmed Account Preview Card */

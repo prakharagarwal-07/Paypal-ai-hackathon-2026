@@ -400,6 +400,13 @@ export default function Sidebar({
             <button
               type="button"
               onClick={async () => {
+                try {
+                  localStorage.removeItem("milestoneos_active_user_v8");
+                  localStorage.removeItem("milestoneos_demo_mode");
+                  localStorage.removeItem("milestoneos_role_v8");
+                  localStorage.removeItem("milestoneos_projects_v7");
+                  localStorage.removeItem("milestoneos_transactions_v7");
+                } catch (_) {}
                 if (isSupabaseConfigured() && supabase) {
                   try {
                     await supabase.auth.signOut();

@@ -17,6 +17,7 @@ import {
   Clock,
   AlertCircle,
   FileText,
+  FolderGit2,
 } from "lucide-react";
 import CompletedProjectModal from "./CompletedProjectModal";
 
@@ -141,6 +142,33 @@ export default function ProjectsView({
           </span>
         </button>
       </div>
+
+      {/* Empty State for Zero Projects */}
+      {filteredProjects.length === 0 && (
+        <div className="p-10 rounded-3xl border-2 border-dashed border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#0D1527]/70 text-center space-y-4">
+          <div className="h-12 w-12 mx-auto rounded-2xl bg-blue-50 dark:bg-sky-950/40 text-[#0070BA] dark:text-sky-300 flex items-center justify-center font-bold">
+            <FolderGit2 className="h-6 w-6" />
+          </div>
+          <div className="max-w-md mx-auto space-y-1">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              {role === "client" ? "No projects created yet" : "No active freelance projects yet"}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {role === "client"
+                ? "Create your first project to define contract milestones and invite a specialist."
+                : "Accept a project proposal invitation or share your MilestoneOS ID with a hiring client."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenNewProject}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+          >
+            <Plus className="h-4 w-4" />
+            <span>{role === "client" ? "Create Project" : "Propose Project"}</span>
+          </button>
+        </div>
+      )}
 
       {/* PROPOSALS & PENDING AGREEMENTS */}
       {(filterTab === "all" || filterTab === "proposals") && proposalProjects.length > 0 && (

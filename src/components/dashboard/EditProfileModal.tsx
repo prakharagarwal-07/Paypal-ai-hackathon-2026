@@ -161,6 +161,17 @@ export default function EditProfileModal({ isOpen, onClose }: EditProfileModalPr
             </div>
           </div>
 
+          {/* Account Perspective Capabilities */}
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 space-y-1.5">
+            <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5 text-[#0070BA] dark:text-sky-400" />
+              <span>Universal Multi-Role Account</span>
+            </span>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Your account operates with a single Supabase UUID and email. Use the top navbar switcher anytime to seamlessly toggle between hiring freelancers as a Client and delivering milestones as a Freelancer.
+            </p>
+          </div>
+
           <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-2.5">
             <button
               type="button"

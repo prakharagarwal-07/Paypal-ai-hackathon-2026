@@ -81,7 +81,23 @@ export async function POST(
   try {
     const { token } = await params;
     const body = await req.json();
-    const { action, claimingUser, feedback } = body;
+
+    const claimingUser =
+      body.claimingUser ||
+      (body.name || body.userId
+        ? {
+            id: body.userId || body.id,
+            name: body.name,
+            email: body.userEmail || body.email,
+            avatar: body.avatar || "U",
+            milestoneOSId: body.milestoneOSId || "",
+            role: body.role || "freelancer",
+            companyOrTitle: body.companyOrTitle || body.title || body.company || "Specialist",
+          }
+        : null);
+
+    const action = body.action || (claimingUser ? "accept" : undefined);
+    const feedback = body.feedback;
 
     const project = db.getProjectByInvitationToken(token);
 

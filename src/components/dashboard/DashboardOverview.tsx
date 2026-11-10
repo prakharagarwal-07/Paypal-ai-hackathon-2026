@@ -381,6 +381,35 @@ export default function DashboardOverview({
         </p>
       </div>
 
+      {/* Brand New User Clean Workspace State */}
+      {projects.length === 0 && (
+        <div className="p-8 sm:p-10 rounded-3xl border-2 border-dashed border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#0D1527]/70 backdrop-blur-md text-center space-y-4">
+          <div className="h-14 w-14 mx-auto rounded-2xl bg-blue-50 dark:bg-sky-950/40 text-[#0070BA] dark:text-sky-300 flex items-center justify-center font-bold">
+            <FolderGit2 className="h-7 w-7" />
+          </div>
+          <div className="max-w-md mx-auto space-y-1.5">
+            <h3 className="text-lg font-black text-slate-900 dark:text-white">
+              {role === "client" ? "No client projects yet" : "No active freelance projects yet"}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              {role === "client"
+                ? "Create your first project to define custom milestone acceptance criteria, invite a freelancer, and fund escrow with PayPal Sandbox."
+                : "Accept a client invitation link or share your permanent MilestoneOS ID with a client to receive milestone proposals."}
+            </p>
+          </div>
+          <div className="pt-2 flex items-center justify-center gap-3">
+            <button
+              type="button"
+              onClick={onOpenNewProject}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold transition-all shadow-md shadow-blue-600/20 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{role === "client" ? "Create First Project" : "Propose a Project"}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* DEDICATED STANDOUT SECTION: INCOMING PROJECT PROPOSALS & REQUESTS */}
       {(incomingProposals.length > 0 || changesRequestedProposals.length > 0) && (
         <section aria-label="Incoming Project Proposals" className="space-y-4">

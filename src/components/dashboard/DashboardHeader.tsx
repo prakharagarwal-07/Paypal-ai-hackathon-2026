@@ -22,14 +22,15 @@ export default function DashboardHeader({
     setSearchQuery,
     notifications,
     userProfiles,
+    isDemoMode,
+    exitDemoMode,
+    enterDemoMode,
   } = useDashboard();
 
   const [copiedId, setCopiedId] = useState(false);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
   const currentProfile = userProfiles[role];
-  const clientFirstName = userProfiles.client.name.split(" ")[0] || "Client";
-  const freelancerFirstName = userProfiles.freelancer.name.split(" ")[0] || "Freelancer";
 
   const handleCopyId = () => {
     if (currentProfile.milestoneOSId) {
@@ -65,8 +66,8 @@ export default function DashboardHeader({
           </div>
         </div>
 
-        {/* Center: Clear, Understandable Role Switcher */}
-        <div className="flex items-center">
+        {/* Center: Workspace Perspective Switcher (Same User, Dual View) */}
+        <div className="flex items-center gap-2">
           <div className="flex items-center rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-white/10 dark:bg-[#0e1628]">
             <button
               type="button"
@@ -78,7 +79,7 @@ export default function DashboardHeader({
               }`}
             >
               <User className="h-3.5 w-3.5" />
-              <span>Client ({clientFirstName})</span>
+              <span>Client View</span>
             </button>
 
             <button
@@ -91,9 +92,32 @@ export default function DashboardHeader({
               }`}
             >
               <Briefcase className="h-3.5 w-3.5" />
-              <span>Freelancer ({freelancerFirstName})</span>
+              <span>Freelancer View</span>
             </button>
           </div>
+
+          {/* Demo Mode Indicator & Switcher */}
+          {isDemoMode ? (
+            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-bold">
+              <span>Demo Mode</span>
+              <button
+                type="button"
+                onClick={exitDemoMode}
+                className="underline hover:text-amber-900 dark:hover:text-white ml-0.5 cursor-pointer font-medium"
+              >
+                Exit
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => enterDemoMode(role)}
+              title="Launch sample demo projects for hackathon evaluation"
+              className="hidden lg:inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-white/10 text-[11px] text-slate-400 hover:text-[#0070BA] hover:border-[#0070BA] dark:hover:text-sky-300 dark:hover:border-sky-400 transition-colors cursor-pointer"
+            >
+              <span>Demo Sandbox</span>
+            </button>
+          )}
         </div>
 
         {/* Right: User ID badge, PayPal Sandbox status, Notifications, New Project */}
