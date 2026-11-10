@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   X,
   ExternalLink,
@@ -22,8 +22,11 @@ import {
   ChevronUp,
   Link as LinkIcon,
   Info,
+  Upload,
+  Paperclip,
+  Eye,
 } from "lucide-react";
-import { Milestone, ProjectContract, DeliverableLink } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, DeliverableLink, DeliverableAttachment } from "@/lib/dashboard-data";
 import { GitHubIcon } from "./icons";
 import { useDashboard } from "@/lib/dashboard-store";
 
@@ -57,6 +60,13 @@ export default function SubmissionModal({
   const latestSubmission = milestone.submissions[milestone.submissions.length - 1];
   const revisionFeedback = latestSubmission?.revisionRequest;
 
+  // Files uploaded directly from PC
+  const [uploadedFiles, setUploadedFiles] = useState<DeliverableAttachment[]>(
+    latestSubmission?.attachments || []
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
+
   // Generalized deliverable links
   const [deliverableLinks, setDeliverableLinks] = useState<DeliverableLink[]>(
     latestSubmission?.deliverableLinks && latestSubmission.deliverableLinks.length > 0
@@ -80,6 +90,51 @@ export default function SubmissionModal({
   const [checkPassed, setCheckPassed] = useState(false);
 
   if (!isOpen) return null;
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileList = Array.from(files);
+
+    fileList.forEach((file) => {
+      const reader = new FileReader();
+
+      const formatSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+        return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+      };
+
+      reader.onload = (uploadEvent) => {
+        const result = (uploadEvent.target?.result as string) || "";
+        const isImg = file.type.startsWith("image/");
+
+        setUploadedFiles((prev) => [
+          ...prev,
+          {
+            name: file.name,
+            size: formatSize(file.size),
+            type: file.type || "application/octet-stream",
+            dataUrl: result,
+            url: isImg ? result : undefined,
+            uploadedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
+        if (formError) setFormError(null);
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const handleAddDeliverableLink = (presetType?: DeliverableLink["type"]) => {
     let title = "";
@@ -126,13 +181,14 @@ export default function SubmissionModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const hasFiles = uploadedFiles.length > 0;
     const hasLinks = deliverableLinks.some((l) => l.url.trim().length > 0);
     const hasTechLinks = Boolean(demoUrl.trim() || githubRepo.trim() || loomVideo.trim());
     const hasNotes = notes.trim().length >= 5;
 
-    if (!hasLinks && !hasTechLinks && !hasNotes) {
+    if (!hasFiles && !hasLinks && !hasTechLinks && !hasNotes) {
       setFormError(
-        "Please provide at least one deliverable asset/link, or describe the completed work in the completion notes."
+        "Please upload a deliverable file/image from your computer, provide an asset link, or describe the completed work in notes."
       );
       return;
     }
@@ -147,6 +203,7 @@ export default function SubmissionModal({
       milestone.id,
       {
         deliverableLinks: cleanedLinks,
+        attachments: uploadedFiles,
         demoUrl: demoUrl.trim() || undefined,
         githubRepo: githubRepo.trim() || undefined,
         loomVideo: loomVideo.trim() || undefined,
@@ -236,75 +293,200 @@ export default function SubmissionModal({
             />
           </div>
 
-          {/* SECTION 2: GENERAL DELIVERABLES & ASSET LINKS */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-xs font-bold text-slate-900 dark:text-white block">
-                  Deliverable Assets & Links
-                </label>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Photos, cloud folders (Google Drive, Dropbox), Figma designs, or document links.
-                </p>
+          {/* SECTION 2: GENERAL DELIVERABLES & PC UPLOADS */}
+          <div className="space-y-4">
+            {/* Hidden file input for PC uploads */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.zip,.txt,.fig,.psd,.ai"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+
+            {/* Upload from Computer Box */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold text-slate-900 dark:text-white block">
+                    Upload from Computer (PC)
+                  </label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Upload drawings, artwork photos, design mockups, or documents directly from your device.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0070BA] text-white hover:bg-[#005a96] text-xs font-bold cursor-pointer transition-colors shadow-2xs"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Choose Files</span>
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => handleAddDeliverableLink()}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0070BA]/10 hover:bg-[#0070BA]/20 text-[#0070BA] dark:bg-sky-950/60 dark:hover:bg-sky-900/60 dark:text-sky-300 text-[11px] font-bold cursor-pointer transition-colors"
+              {/* Drag & drop / click-to-upload card */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-300 hover:border-[#0070BA] dark:border-white/15 dark:hover:border-sky-500 rounded-2xl p-4 sm:p-5 text-center bg-slate-50/60 dark:bg-white/[0.02] hover:bg-blue-50/40 dark:hover:bg-sky-950/20 transition-all cursor-pointer group"
               >
-                <Plus className="h-3 w-3" />
-                <span>Add Link</span>
-              </button>
-            </div>
-
-            {/* Quick Preset Buttons */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-1">
-                Quick Add:
-              </span>
-              <button
-                type="button"
-                onClick={() => handleAddDeliverableLink("photo")}
-                className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
-              >
-                <ImageIcon className="h-3 w-3 text-emerald-500" />
-                <span>+ Photos / Artwork</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddDeliverableLink("cloud")}
-                className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
-              >
-                <Cloud className="h-3 w-3 text-sky-500" />
-                <span>+ Cloud Drive Folder</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddDeliverableLink("design")}
-                className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
-              >
-                <Palette className="h-3 w-3 text-purple-500" />
-                <span>+ Figma / Design</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleAddDeliverableLink("document")}
-                className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
-              >
-                <FileText className="h-3 w-3 text-amber-500" />
-                <span>+ Document / PDF</span>
-              </button>
-            </div>
-
-            {/* List of Deliverable Link Rows */}
-            {deliverableLinks.length === 0 ? (
-              <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-white/15 bg-slate-50/50 dark:bg-white/[0.02] text-center">
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  No deliverable links attached yet. Click a quick button above to link your completed drawings, photos, or files.
-                </p>
+                <div className="flex flex-col items-center justify-center gap-2">
+                  <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-sky-950/50 text-[#0070BA] dark:text-sky-300 flex items-center justify-center group-hover:scale-110 transition-transform shadow-2xs">
+                    <Upload className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
+                      Click to browse or upload images & files from your PC
+                    </span>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Supports JPG, PNG, WEBP, PDF, DOCX, ZIP, PSD, AI files (select multiple)
+                    </p>
+                  </div>
+                </div>
               </div>
-            ) : (
+
+              {/* Uploaded Files Grid */}
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
+                    Attached from PC ({uploadedFiles.length}):
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {uploadedFiles.map((file, idx) => {
+                      const isImg = file.type.startsWith("image/") || file.dataUrl?.startsWith("data:image");
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131C31] shadow-2xs group"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                            {isImg && file.dataUrl ? (
+                              <button
+                                type="button"
+                                onClick={() => setPreviewImage({ url: file.dataUrl!, name: file.name })}
+                                className="h-9 w-9 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 shrink-0 cursor-pointer relative group/img"
+                                title="Click to view full photo"
+                              >
+                                <img
+                                  src={file.dataUrl}
+                                  alt={file.name}
+                                  className="h-full w-full object-cover"
+                                />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                  <Eye className="h-3 w-3" />
+                                </div>
+                              </button>
+                            ) : (
+                              <div className="h-9 w-9 rounded-lg bg-blue-50 dark:bg-sky-950/60 text-[#0070BA] dark:text-sky-400 flex items-center justify-center shrink-0">
+                                <FileText className="h-4 w-4" />
+                              </div>
+                            )}
+                            <div className="min-w-0 text-left">
+                              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                                {file.name}
+                              </p>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                <span>{file.size}</span>
+                                <span>•</span>
+                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Attached from PC</span>
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFile(idx)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors shrink-0"
+                            title="Remove file"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* External Links Section */}
+            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-white/5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold text-slate-900 dark:text-white block">
+                    Deliverable Assets & Links
+                  </label>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Photos, cloud folders (Google Drive, Dropbox), Figma designs, or document links.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleAddDeliverableLink()}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0070BA]/10 hover:bg-[#0070BA]/20 text-[#0070BA] dark:bg-sky-950/60 dark:hover:bg-sky-900/60 dark:text-sky-300 text-[11px] font-bold cursor-pointer transition-colors"
+                >
+                  <Plus className="h-3 w-3" />
+                  <span>Add Link</span>
+                </button>
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-1">
+                  Quick Add:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-2 py-0.5 rounded-md border border-[#0070BA]/30 bg-blue-50/80 hover:bg-blue-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-[11px] text-[#0070BA] dark:text-sky-300 font-bold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                >
+                  <Upload className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
+                  <span>+ Upload from PC</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddDeliverableLink("photo")}
+                  className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <ImageIcon className="h-3 w-3 text-emerald-500" />
+                  <span>+ Photos / Artwork</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddDeliverableLink("cloud")}
+                  className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Cloud className="h-3 w-3 text-sky-500" />
+                  <span>+ Cloud Drive Folder</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddDeliverableLink("design")}
+                  className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Palette className="h-3 w-3 text-purple-500" />
+                  <span>+ Figma / Design</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleAddDeliverableLink("document")}
+                  className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <FileText className="h-3 w-3 text-amber-500" />
+                  <span>+ Document / PDF</span>
+                </button>
+              </div>
+
+              {/* List of Deliverable Link Rows */}
+              {deliverableLinks.length === 0 ? (
+                <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-white/15 bg-slate-50/50 dark:bg-white/[0.02] text-center">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    No deliverable links attached. Click a quick button above to link cloud drives, Figma, or document links.
+                  </p>
+                </div>
+              ) : (
               <div className="space-y-2.5">
                 {deliverableLinks.map((item, index) => (
                   <div
@@ -358,6 +540,7 @@ export default function SubmissionModal({
                 ))}
               </div>
             )}
+            </div>
           </div>
 
           {/* SECTION 3: OPTIONAL SOFTWARE & TECHNICAL FIELDS (COLLAPSIBLE) */}
@@ -480,6 +663,37 @@ export default function SubmissionModal({
           </div>
         </form>
       </div>
+
+      {/* Full Image Preview Modal */}
+      {previewImage && (
+        <div
+          onClick={() => setPreviewImage(null)}
+          className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-3xl max-h-[85vh] bg-slate-900 rounded-2xl overflow-hidden border border-white/10 shadow-2xl flex flex-col"
+          >
+            <div className="p-3 border-b border-white/10 flex items-center justify-between text-white text-xs">
+              <span className="font-semibold truncate pr-4">{previewImage.name}</span>
+              <button
+                type="button"
+                onClick={() => setPreviewImage(null)}
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-2 flex-1 overflow-auto flex items-center justify-center bg-black/40">
+              <img
+                src={previewImage.url}
+                alt={previewImage.name}
+                className="max-h-[75vh] w-auto object-contain rounded-lg"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

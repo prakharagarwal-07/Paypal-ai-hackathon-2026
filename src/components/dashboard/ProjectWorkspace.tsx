@@ -25,6 +25,7 @@ import {
   Plus,
   Play,
   Pencil,
+  Image as ImageIcon,
 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 
@@ -847,51 +848,65 @@ export default function ProjectWorkspace({
                       )}
 
                       {/* Latest submission links */}
-                      {milestone.submissions && milestone.submissions.length > 0 && (
-                        <div className="p-3 rounded-xl border border-blue-200 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 text-xs mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
-                            <span className="font-bold text-slate-900 dark:text-white block">
-                              Latest Deliverable Submitted
-                            </span>
-                            <span className="text-slate-500 text-[11px]">
-                              {milestone.submissions[0].submittedAt}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            {milestone.submissions[0].deliverableLinks &&
-                            milestone.submissions[0].deliverableLinks.length > 0 ? (
-                              <a
-                                href={milestone.submissions[0].deliverableLinks[0].url}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/10 text-xs font-semibold text-[#0070BA] dark:text-sky-300 hover:underline border border-slate-200 dark:border-white/10"
+                      {milestone.submissions && milestone.submissions.length > 0 && (() => {
+                        const latestSub = milestone.submissions[milestone.submissions.length - 1];
+                        return (
+                          <div className="p-3 rounded-xl border border-blue-200 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 text-xs mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <span className="font-bold text-slate-900 dark:text-white block">
+                                Latest Deliverable Submitted (v{latestSub.version})
+                              </span>
+                              <span className="text-slate-500 text-[11px]">
+                                {latestSub.submittedAt}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {latestSub.attachments && latestSub.attachments.length > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenAudit(activeProject, milestone)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-xs font-semibold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                                >
+                                  <ImageIcon className="h-3 w-3" />
+                                  <span>{latestSub.attachments.length} PC File(s)</span>
+                                </button>
+                              )}
+
+                              {latestSub.deliverableLinks && latestSub.deliverableLinks.length > 0 ? (
+                                <a
+                                  href={latestSub.deliverableLinks[0].url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/10 text-xs font-semibold text-[#0070BA] dark:text-sky-300 hover:underline border border-slate-200 dark:border-white/10"
+                                >
+                                  <span>
+                                    {latestSub.deliverableLinks[0].title || "View Deliverable"}
+                                  </span>
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              ) : latestSub.demoUrl ? (
+                                <a
+                                  href={latestSub.demoUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/10 text-xs font-semibold text-[#0070BA] dark:text-sky-300 hover:underline border border-slate-200 dark:border-white/10"
+                                >
+                                  <span>Live Demo</span>
+                                  <ExternalLink className="h-3 w-3" />
+                                </a>
+                              ) : null}
+
+                              <button
+                                type="button"
+                                onClick={() => onOpenAudit(activeProject, milestone)}
+                                className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline cursor-pointer"
                               >
-                                <span>
-                                  {milestone.submissions[0].deliverableLinks[0].title || "View Deliverable"}
-                                </span>
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            ) : milestone.submissions[0].demoUrl ? (
-                              <a
-                                href={milestone.submissions[0].demoUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-white/10 text-xs font-semibold text-[#0070BA] dark:text-sky-300 hover:underline border border-slate-200 dark:border-white/10"
-                              >
-                                <span>Live Demo</span>
-                                <ExternalLink className="h-3 w-3" />
-                              </a>
-                            ) : null}
-                            <button
-                              type="button"
-                              onClick={() => onOpenAudit(activeProject, milestone)}
-                              className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline cursor-pointer"
-                            >
-                              Open AI Review Report →
-                            </button>
+                                Open AI Review Report →
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Requirements checklist */}
                       <div className="mt-3 space-y-2">

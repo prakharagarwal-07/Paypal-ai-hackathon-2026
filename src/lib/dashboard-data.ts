@@ -51,6 +51,8 @@ export interface DeliverableAttachment {
   size: string;
   type: string;
   url?: string;
+  dataUrl?: string;
+  uploadedAt?: string;
 }
 
 export interface DeliverableLink {
