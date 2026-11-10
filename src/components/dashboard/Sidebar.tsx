@@ -25,9 +25,15 @@ interface SidebarProps {
   mobileOpen: boolean;
   onCloseMobile: () => void;
   onOpenNewProject: () => void;
+  onSelectProject?: (projectId: string) => void;
 }
 
-export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }: SidebarProps) {
+export default function Sidebar({
+  mobileOpen,
+  onCloseMobile,
+  onOpenNewProject,
+  onSelectProject,
+}: SidebarProps) {
   const {
     role,
     userProfiles,
@@ -44,6 +50,17 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
 
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
   const currentProfile = userProfiles[role];
+
+  const handleProjectSelect = (projectId: string) => {
+    setActiveProjectId(projectId);
+    setProjectDropdownOpen(false);
+    onCloseMobile();
+    if (onSelectProject) {
+      onSelectProject(projectId);
+    } else {
+      setActiveTab("projects");
+    }
+  };
 
   // Count incoming proposals awaiting action
   const incomingPendingCount = projects.filter(
@@ -147,25 +164,37 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
             <label className="block text-[11px] font-medium text-slate-400 dark:text-slate-500 mb-1">
               Active Project
             </label>
-            <button
-              type="button"
-              onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors text-left cursor-pointer group"
-            >
-              <div className="min-w-0 pr-2">
-                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+            <div className="w-full flex items-center justify-between p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors text-left group">
+              <button
+                type="button"
+                onClick={() => handleProjectSelect(activeProject?.id || "")}
+                className="min-w-0 pr-2 flex-1 text-left cursor-pointer"
+                title="Open project workspace"
+              >
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
                   {activeProject?.title}
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                   ${activeProject?.totalBudget.toLocaleString()} USD • {activeProject?.milestones.length} Milestones
                 </p>
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 text-slate-400 shrink-0 transition-transform ${
-                  projectDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
-            </button>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setProjectDropdownOpen(!projectDropdownOpen);
+                }}
+                className="p-1.5 -mr-1 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
+                title={projectDropdownOpen ? "Close project list" : "Switch active project"}
+                aria-label="Switch project dropdown"
+              >
+                <ChevronDown
+                  className={`h-4 w-4 shrink-0 transition-transform ${
+                    projectDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+            </div>
 
             {/* Dropdown Menu */}
             {projectDropdownOpen && (
@@ -181,10 +210,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
                       <button
                         key={proj.id}
                         type="button"
-                        onClick={() => {
-                          setActiveProjectId(proj.id);
-                          setProjectDropdownOpen(false);
-                        }}
+                        onClick={() => handleProjectSelect(proj.id)}
                         className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex items-center justify-between cursor-pointer ${
                           proj.id === activeProjectId
                             ? "bg-blue-50 dark:bg-[#0070BA]/20 text-[#0070BA] dark:text-sky-300 font-bold"
@@ -214,10 +240,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
                         <button
                           key={proj.id}
                           type="button"
-                          onClick={() => {
-                            setActiveProjectId(proj.id);
-                            setProjectDropdownOpen(false);
-                          }}
+                          onClick={() => handleProjectSelect(proj.id)}
                           className={`w-full text-left p-2 rounded-lg text-xs transition-colors flex items-center justify-between cursor-pointer ${
                             proj.id === activeProjectId
                               ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 font-bold"
@@ -241,12 +264,13 @@ export default function Sidebar({ mobileOpen, onCloseMobile, onOpenNewProject }:
                     type="button"
                     onClick={() => {
                       setProjectDropdownOpen(false);
+                      onCloseMobile();
                       onOpenNewProject();
                     }}
                     className="w-full text-left p-2 rounded-lg text-xs font-bold text-[#0070BA] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-[#0070BA]/10 transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    <span>{role === "client" ? "+ Create Project" : "+ Propose Project"}</span>
+                    <span>{role === "client" ? "Create Project" : "Propose Project"}</span>
                   </button>
                 </div>
               </div>

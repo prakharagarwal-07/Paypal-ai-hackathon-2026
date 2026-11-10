@@ -20,12 +20,14 @@ interface NotificationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenProposal?: (project: ProjectContract) => void;
+  onSelectProject?: (projectId: string) => void;
 }
 
 export default function NotificationDrawer({
   isOpen,
   onClose,
   onOpenProposal,
+  onSelectProject,
 }: NotificationDrawerProps) {
   const {
     notifications,
@@ -53,8 +55,12 @@ export default function NotificationDrawer({
     } else if (isProposal) {
       setActiveTab("project-requests");
     } else if (notif.projectId) {
-      setActiveProjectId(notif.projectId);
-      setActiveTab("projects");
+      if (onSelectProject) {
+        onSelectProject(notif.projectId);
+      } else {
+        setActiveProjectId(notif.projectId);
+        setActiveTab("projects");
+      }
     }
     onClose();
   };

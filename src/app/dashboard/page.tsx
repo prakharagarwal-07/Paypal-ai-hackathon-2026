@@ -134,6 +134,11 @@ function DashboardInner() {
         mobileOpen={mobileSidebarOpen}
         onCloseMobile={() => setMobileSidebarOpen(false)}
         onOpenNewProject={() => setIsNewProjectModalOpen(true)}
+        onSelectProject={(projectId) => {
+          setActiveProjectId(projectId);
+          setActiveTab("projects");
+          setViewingWorkspace(true);
+        }}
       />
 
       {/* MAIN CONTENT CONTAINER */}
@@ -319,6 +324,11 @@ function DashboardInner() {
         isOpen={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
         onOpenProposal={(p) => setReviewingProposalProject(p)}
+        onSelectProject={(projectId) => {
+          setActiveProjectId(projectId);
+          setActiveTab("projects");
+          setViewingWorkspace(true);
+        }}
       />
 
       {/* AUDIT / INSPECTION MODAL */}
