@@ -341,8 +341,8 @@ export default function MilestonesView({
                                 )}
 
                                 {isPaid && (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                                       <Check className="h-3 w-3 stroke-[3]" />
                                       <span>Paid</span>
                                     </span>
@@ -353,7 +353,7 @@ export default function MilestonesView({
                                           e.stopPropagation();
                                           onOpenInvoice(project, milestone, milestone.paypalTransactionId);
                                         }}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                        className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
                                       >
                                         <Sparkles className="h-3 w-3" />
                                         <span>AI Invoice</span>
@@ -391,8 +391,8 @@ export default function MilestonesView({
                                 )}
 
                                 {isPaid && (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                                       <Check className="h-3 w-3 stroke-[3]" />
                                       <span>Paid</span>
                                     </span>
@@ -403,7 +403,7 @@ export default function MilestonesView({
                                           e.stopPropagation();
                                           onOpenInvoice(project, milestone, milestone.paypalTransactionId);
                                         }}
-                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                        className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
                                       >
                                         <Sparkles className="h-3 w-3" />
                                         <span>AI Invoice</span>

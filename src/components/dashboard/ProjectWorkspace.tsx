@@ -629,18 +629,18 @@ export default function ProjectWorkspace({
                             )}
 
                             {isPaid && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                                   <span>Paid via PayPal</span>
                                 </span>
                                 {onOpenInvoice && (
                                   <button
                                     type="button"
                                     onClick={() => onOpenInvoice(activeProject, milestone, milestone.paypalTransactionId)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                    className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
                                   >
-                                    <Sparkles className="h-3.5 w-3.5" />
+                                    <Sparkles className="h-3 w-3" />
                                     <span>AI Invoice</span>
                                   </button>
                                 )}
@@ -689,18 +689,18 @@ export default function ProjectWorkspace({
                             )}
 
                             {isPaid && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                                   <span>Payment Received</span>
                                 </span>
                                 {onOpenInvoice && (
                                   <button
                                     type="button"
                                     onClick={() => onOpenInvoice(activeProject, milestone, milestone.paypalTransactionId)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                    className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
                                   >
-                                    <Sparkles className="h-3.5 w-3.5" />
+                                    <Sparkles className="h-3 w-3" />
                                     <span>AI Invoice</span>
                                   </button>
                                 )}

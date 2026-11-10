@@ -166,11 +166,10 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                     </td>
                     <td className="p-3.5 text-slate-500">{tx.paidAt}</td>
                     <td className="p-3.5">
-                      <span className="font-bold text-slate-900 dark:text-white block">
+                      <span className="font-semibold text-slate-900 dark:text-white block">
                         {tx.milestoneTitle}
                       </span>
-                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 mt-1">
-                        <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
                         Project: {tx.projectTitle}
                       </span>
                     </td>
@@ -178,7 +177,7 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                       ${tx.amount.toLocaleString()} USD
                     </td>
                     <td className="p-3.5">
-                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                         Completed
                       </span>
@@ -190,9 +189,9 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                           e.stopPropagation();
                           handleOpenInvoice(tx);
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline cursor-pointer"
                       >
-                        <Sparkles className="h-3.5 w-3.5" />
+                        <Sparkles className="h-3 w-3" />
                         <span>AI Invoice</span>
                       </button>
                     </td>

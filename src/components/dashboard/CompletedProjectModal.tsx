@@ -232,16 +232,16 @@ export default function CompletedProjectModal({
                           {m.paypalTransactionId || "PAYID-SBX-COMPLETED"}
                         </td>
                         <td className="p-3 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                              <CheckCircle2 className="h-3 w-3" />
+                          <div className="flex items-center justify-end gap-2">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
                               <span>Paid</span>
                             </span>
                             {onOpenInvoice && (
                               <button
                                 type="button"
                                 onClick={() => onOpenInvoice(project, m, m.paypalTransactionId)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-bold transition-all shadow-2xs cursor-pointer"
+                                className="text-xs text-[#0070BA] dark:text-sky-400 font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
                               >
                                 <Sparkles className="h-3 w-3" />
                                 <span>AI Invoice</span>

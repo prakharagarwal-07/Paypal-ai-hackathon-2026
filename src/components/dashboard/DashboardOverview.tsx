@@ -750,263 +750,140 @@ export default function DashboardOverview({
               return (
                 <div
                   key={act.id}
-                  className={`p-4 sm:p-5 transition-colors duration-150 ${
+                  className={`p-4 transition-colors duration-150 ${
                     isExpanded
-                      ? "bg-slate-50/70 dark:bg-white/[0.02]"
-                      : "hover:bg-slate-50/50 dark:hover:bg-white/[0.015]"
+                      ? "bg-slate-50/50 dark:bg-white/[0.015]"
+                      : "hover:bg-slate-50/40 dark:hover:bg-white/[0.01]"
                   }`}
                 >
-                  {/* Top Header Row */}
-                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4">
-                    {/* Left: Category Icon + Content */}
-                    <div className="flex items-start gap-3 sm:gap-3.5 flex-1 min-w-0">
-                      {/* Stylized Category Icon */}
+                  {/* Clean, Linear Header Row */}
+                  <div className="flex items-start justify-between gap-3 sm:gap-4">
+                    {/* Left: Minimal Icon & Summary */}
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
                       <div
-                        className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 shadow-2xs ${meta.iconBg}`}
+                        className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${meta.iconBg}`}
                       >
                         <MetaIcon className="h-4 w-4" />
                       </div>
 
-                      {/* Main Summary Content */}
-                      <div className="flex-1 min-w-0">
-                        {/* Tags line: Project, Category, Milestone (if any), Timestamp */}
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5">
-                          {/* Clickable Project Tag */}
-                          <button
-                            type="button"
-                            onClick={() => handleProjectClick(act.projectId)}
-                            title={`Open ${act.projectTitle} workspace`}
-                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 hover:bg-[#0070BA]/20 transition-colors cursor-pointer"
-                          >
-                            <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
-                            <span className="truncate max-w-[220px]">Project: {act.projectTitle}</span>
-                          </button>
-
-                          {/* Category Tag */}
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${meta.badgeColor}`}
-                          >
-                            {meta.category}
-                          </span>
-
-                          {/* Target Milestone Pill if available */}
-                          {milestoneName && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-slate-300 border border-slate-200/60 dark:border-white/5 truncate max-w-[240px]">
-                              Milestone: {milestoneName}
-                            </span>
-                          )}
-
-                          {/* Timestamp */}
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500 flex items-center gap-1 ml-auto sm:ml-0">
-                            <Clock className="h-2.5 w-2.5" />
-                            {act.timestamp}
-                          </span>
-                        </div>
-
+                      <div className="flex-1 min-w-0 pt-0.5">
                         {/* Event Message */}
-                        <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
-                          <strong className="text-slate-900 dark:text-white font-bold">{act.actor}:</strong>{" "}
+                        <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed">
+                          <strong className="text-slate-900 dark:text-white font-semibold">
+                            {act.actor}:
+                          </strong>{" "}
                           <span>{act.action}</span>
                         </p>
 
-                        {/* Collapsed Details Snippet (if unexpanded and has details) */}
-                        {!isExpanded && act.details && (
-                          <p className="mt-1 text-slate-500 dark:text-slate-400 text-[11px] italic truncate">
-                            "{act.details}"
-                          </p>
-                        )}
+                        {/* Quiet Subtitle Metadata (Inline, no clutter) */}
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                          <button
+                            type="button"
+                            onClick={() => handleProjectClick(act.projectId)}
+                            className="font-medium text-[#0070BA] dark:text-sky-400 hover:underline cursor-pointer"
+                          >
+                            Project: {act.projectTitle}
+                          </button>
+                          <span>•</span>
+                          <span>{act.timestamp}</span>
+                          <span>•</span>
+                          <span className="capitalize">{meta.category}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Right: Expand Details Button */}
-                    <div className="shrink-0 flex items-center gap-2 self-start sm:self-center pl-12 sm:pl-0">
+                    {/* Right: Clean Details Toggle */}
+                    <div className="shrink-0 flex items-center gap-2 pt-0.5">
                       <button
                         type="button"
                         onClick={() => toggleExpand(act.id)}
-                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                           isExpanded
-                            ? "bg-[#0070BA] text-white hover:bg-[#005a96]"
-                            : "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/5 dark:hover:bg-white/10 dark:text-slate-300 border border-slate-200/80 dark:border-white/10"
+                            ? "bg-slate-200 text-slate-800 dark:bg-white/10 dark:text-white"
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
                         }`}
                         aria-expanded={isExpanded}
                       >
-                        <span>{isExpanded ? "Hide Details" : "Expand Details"}</span>
+                        <span>{isExpanded ? "Hide" : "Details"}</span>
                         {isExpanded ? (
-                          <ChevronUp className="h-3.5 w-3.5" />
+                          <ChevronUp className="h-3 w-3" />
                         ) : (
-                          <ChevronDown className="h-3.5 w-3.5" />
+                          <ChevronDown className="h-3 w-3" />
                         )}
                       </button>
                     </div>
                   </div>
 
-                  {/* Expanded Details Sub-Panel */}
+                  {/* Clean, Untidy-Free Expanded Details */}
                   {isExpanded && (
-                    <div className="mt-3.5 pt-3.5 border-t border-slate-200/70 dark:border-white/10 sm:ml-12.5 space-y-3 animate-in fade-in slide-in-from-top-1 duration-200">
-                      {/* Context Banner: Verified Receipt */}
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 ml-11 space-y-2.5 text-xs animate-in fade-in duration-150">
+                      {/* PayPal Receipt & Action Row */}
                       {receiptCode && (
-                        <div className="p-3.5 rounded-xl bg-gradient-to-r from-emerald-50 to-teal-50/50 dark:from-emerald-950/40 dark:to-teal-950/20 border border-emerald-200 dark:border-emerald-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="h-8.5 w-8.5 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300 flex items-center justify-center shrink-0 shadow-2xs">
-                              <Receipt className="h-4 w-4" />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider">
-                                  PayPal Sandbox Transaction Receipt
-                                </span>
-                                <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-emerald-200/60 text-emerald-900 dark:bg-emerald-900/80 dark:text-emerald-200 px-1.5 py-0.2 rounded-full">
-                                  <ShieldCheck className="h-2.5 w-2.5" />
-                                  100% Settled
-                                </span>
-                              </div>
-                              <p className="font-mono font-bold text-xs text-slate-900 dark:text-white truncate mt-0.5">
-                                {receiptCode}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const project = projects.find((p) => p.id === act.projectId) || projects[0];
-                                const milestone =
-                                  project?.milestones.find((m) => m.title === milestoneName) ||
-                                  project?.milestones[0];
-                                if (onOpenInvoice && project && milestone) {
-                                  onOpenInvoice(project, milestone, receiptCode);
-                                }
-                              }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition-colors shadow-2xs cursor-pointer"
-                            >
-                              <Sparkles className="h-3.5 w-3.5" />
-                              <span>AI Invoice & Receipt</span>
-                            </button>
-
+                        <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5">
+                          <div className="flex items-center gap-2">
+                            <Receipt className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-slate-500 dark:text-slate-400 text-[11px]">
+                              Receipt:
+                            </span>
+                            <span className="font-mono font-semibold text-slate-900 dark:text-white text-xs">
+                              {receiptCode}
+                            </span>
                             <button
                               type="button"
                               onClick={() => handleCopy(receiptCode, `receipt_${act.id}`)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#0D1527] border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors shadow-2xs cursor-pointer"
+                              className="text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-white ml-1 cursor-pointer"
+                              title="Copy transaction ID"
                             >
                               {copiedKey === `receipt_${act.id}` ? (
-                                <>
-                                  <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                  <span>Copied</span>
-                                </>
+                                <span className="text-emerald-600 font-medium">Copied</span>
                               ) : (
-                                <>
-                                  <Copy className="h-3.5 w-3.5" />
-                                  <span>Copy ID</span>
-                                </>
+                                <span>Copy</span>
                               )}
                             </button>
                           </div>
+
+                          {onOpenInvoice && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const project =
+                                  projects.find((p) => p.id === act.projectId) || projects[0];
+                                const milestone =
+                                  project?.milestones.find((m) => m.title === milestoneName) ||
+                                  project?.milestones[0];
+                                if (project && milestone) {
+                                  onOpenInvoice(project, milestone, receiptCode);
+                                }
+                              }}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:bg-[#0070BA]/10 transition-colors cursor-pointer"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              <span>View AI Invoice</span>
+                            </button>
+                          )}
                         </div>
                       )}
 
-                      {/* Context Banner: AI Work Review */}
-                      {meta.type === "ai" && (
-                        <div className="p-3.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/80 dark:border-purple-800/60 flex items-start gap-3 shadow-2xs">
-                          <div className="h-8.5 w-8.5 rounded-lg bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                            <Sparkles className="h-4 w-4" />
-                          </div>
-                          <div className="text-xs">
-                            <span className="text-[10px] font-bold text-purple-800 dark:text-purple-300 uppercase tracking-wider block">
-                              Automated Acceptance Review
-                            </span>
-                            <p className="text-slate-700 dark:text-slate-300 font-medium mt-0.5 leading-relaxed">
-                              Milestone deliverables were inspected against contract requirements by the AI assistant. Both parties can review the checklist before final approval.
-                            </p>
-                          </div>
-                        </div>
+                      {/* Notes / Details statement */}
+                      {act.details && (
+                        <p className="text-xs text-slate-600 dark:text-slate-300 italic leading-relaxed">
+                          "{act.details}"
+                        </p>
                       )}
 
-                      {/* Context Banner: Changes Requested */}
-                      {meta.type === "revision" && (
-                        <div className="p-3.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 flex items-start gap-3 shadow-2xs">
-                          <div className="h-8.5 w-8.5 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                            <AlertCircle className="h-4 w-4" />
-                          </div>
-                          <div className="text-xs flex-1">
-                            <span className="text-[10px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wider block">
-                              Client Revision Feedback
-                            </span>
-                            <p className="text-slate-800 dark:text-slate-200 italic mt-1 font-medium leading-relaxed bg-white/70 dark:bg-black/20 p-2.5 rounded-lg border border-amber-100 dark:border-amber-900/40">
-                              "{act.details || "Modifications requested before milestone funds can be released."}"
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Generic Details (when not revision and exists) */}
-                      {act.details && meta.type !== "revision" && (
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 text-xs">
-                          <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider mb-1">
-                            Activity Notes & Record
-                          </span>
-                          <p className="text-slate-700 dark:text-slate-300 leading-relaxed italic">
-                            "{act.details}"
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Structured 4-Column Metadata Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1 text-xs">
-                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
-                          <span className="text-[10px] text-slate-400 block font-medium">Logged Actor</span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block mt-0.5">
-                            {act.actor}
-                          </span>
-                          <span className="text-[10px] text-slate-500 capitalize">
-                            Role: {act.actorRole === "ai_system" ? "AI Agent" : act.actorRole}
-                          </span>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
-                          <span className="text-[10px] text-slate-400 block font-medium">Associated Project</span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block mt-0.5">
-                            {act.projectTitle}
-                          </span>
-                          <span className="text-[10px] text-slate-500">
-                            Milestone Contract
-                          </span>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
-                          <span className="text-[10px] text-slate-400 block font-medium">Target Milestone</span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block mt-0.5">
-                            {milestoneName || "General Stage"}
-                          </span>
-                          <span className="text-[10px] text-slate-500">
-                            Deliverable Scope
-                          </span>
-                        </div>
-
-                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5">
-                          <span className="text-[10px] text-slate-400 block font-medium">Recorded Date & Time</span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200 truncate block mt-0.5">
-                            {act.timestamp}
-                          </span>
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                            <ShieldCheck className="h-3 w-3" /> Verified Ledger
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Footer Actions */}
-                      <div className="pt-1 flex items-center justify-between flex-wrap gap-2 text-xs">
-                        <span className="text-[11px] text-slate-400">
-                          Log Identifier: <code className="font-mono text-[10px] text-slate-500">{act.id}</code>
+                      {/* Subtle Footer with quick workspace link */}
+                      <div className="flex items-center justify-between pt-1 text-[11px] text-slate-400">
+                        <span>
+                          {milestoneName ? `Target Milestone: ${milestoneName}` : `Event ID: ${act.id}`}
                         </span>
 
                         <button
                           type="button"
                           onClick={() => handleProjectClick(act.projectId)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-[#0070BA] dark:text-sky-400 hover:bg-blue-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                          className="font-medium text-[#0070BA] dark:text-sky-400 hover:underline flex items-center gap-1 cursor-pointer"
                         >
-                          <span>Open in Project Workspace</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
+                          <span>Open Workspace</span>
+                          <ArrowRight className="h-3 w-3" />
                         </button>
                       </div>
                     </div>
