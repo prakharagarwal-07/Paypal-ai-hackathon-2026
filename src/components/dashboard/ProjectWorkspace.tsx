@@ -22,6 +22,9 @@ import {
   ArrowRight,
   X,
   Send,
+  Plus,
+  Play,
+  Pencil,
 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 
@@ -33,6 +36,8 @@ interface ProjectWorkspaceProps {
   onOpenPayPal: (project: ProjectContract, milestone: Milestone) => void;
   onOpenInvoice?: (project: ProjectContract, milestone: Milestone, transactionId?: string) => void;
   onOpenEditProject: () => void;
+  onOpenAddMilestone?: () => void;
+  onOpenEditMilestone?: (milestone: Milestone) => void;
 }
 
 export default function ProjectWorkspace({
@@ -43,11 +48,14 @@ export default function ProjectWorkspace({
   onOpenPayPal,
   onOpenInvoice,
   onOpenEditProject,
+  onOpenAddMilestone,
+  onOpenEditMilestone,
 }: ProjectWorkspaceProps) {
   const {
     role,
     activeProject,
     approveMilestone,
+    startMilestoneWork,
     acceptProposal,
     requestProposalChanges,
     rejectProposal,
@@ -449,25 +457,43 @@ export default function ProjectWorkspace({
           </div>
         </div>
 
-        {/* Milestone Timeline Header with Expand/Collapse toggle */}
-        <div className="flex items-center justify-between">
+        {/* Milestone Timeline Header with Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              Stages of Work ({activeProject.milestones.length})
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Clear stage-by-stage progression from start to payout.
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                Stages of Work ({activeProject.milestones.length})
+              </h2>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40">
+                Work in Any Order
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Freelancer-controlled flexible execution — start, submit, and settle any stage independently.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={toggleAll}
-            className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline cursor-pointer flex items-center gap-1"
-          >
-            <span>{allExpanded ? "Collapse All Details" : "Expand All Details"}</span>
-            {allExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            {role === "freelancer" && onOpenAddMilestone && activeProject.status === "active" && (
+              <button
+                type="button"
+                onClick={onOpenAddMilestone}
+                className="px-3 py-1.5 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                <span>Add Milestone</span>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={toggleAll}
+              className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline cursor-pointer flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+            >
+              <span>{allExpanded ? "Collapse All Details" : "Expand All Details"}</span>
+              {allExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </button>
+          </div>
         </div>
 
         {/* Connected Vertical Timeline */}
@@ -601,14 +627,33 @@ export default function ProjectWorkspace({
                         ) : role === "client" ? (
                           <>
                             {isSubmitted && (
-                              <button
-                                type="button"
-                                onClick={() => onOpenAudit(activeProject, milestone)}
-                                className="px-4 py-2 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs flex items-center gap-1.5"
-                              >
-                                <Sparkles className="h-3.5 w-3.5" />
-                                <span>Review Work</span>
-                              </button>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => approveMilestone(activeProject.id, milestone.id)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer transition-colors shadow-xs flex items-center gap-1.5"
+                                  title="Approve milestone work and move to payment stage"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5" />
+                                  <span>Approve Work</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenRevision(activeProject, milestone)}
+                                  className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors"
+                                  title="Request specific revisions from the freelancer"
+                                >
+                                  Request Revision
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenAudit(activeProject, milestone)}
+                                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors flex items-center gap-1"
+                                >
+                                  <Sparkles className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
+                                  <span>Review</span>
+                                </button>
+                              </div>
                             )}
 
                             {isApproved && (
@@ -618,13 +663,13 @@ export default function ProjectWorkspace({
                                 className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
                               >
                                 <PayPalIcon className="h-3.5 w-3.5" />
-                                <span>Pay Now</span>
+                                <span>Pay Now (${milestone.amount.toLocaleString()})</span>
                               </button>
                             )}
 
                             {isChangesRequested && (
                               <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/30">
-                                Waiting for Updates
+                                Revision Requested • Waiting for Updates
                               </span>
                             )}
 
@@ -648,43 +693,116 @@ export default function ProjectWorkspace({
                             )}
 
                             {milestone.status === "in_progress" && (
-                              <span className="text-xs text-slate-500 font-medium">
+                              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5">
                                 In Progress
                               </span>
                             )}
 
                             {milestone.status === "not_started" && (
-                              <span className="text-xs text-slate-400 font-medium">
-                                Upcoming
+                              <span className="text-xs text-slate-400 font-medium px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5">
+                                Not Started (Flexible Order)
                               </span>
                             )}
                           </>
                         ) : (
                           <>
-                            {(milestone.status === "in_progress" || isChangesRequested) && (
-                              <button
-                                type="button"
-                                onClick={() => onOpenSubmission(activeProject, milestone)}
-                                className="px-4 py-2 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs flex items-center gap-1.5"
-                              >
-                                <Upload className="h-3.5 w-3.5" />
-                                <span>{isChangesRequested ? "Update & Resubmit" : "Submit Work"}</span>
-                              </button>
+                            {milestone.status === "not_started" && (
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenSubmission(activeProject, milestone)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs flex items-center gap-1.5"
+                                  title="Submit deliverables for this milestone directly"
+                                >
+                                  <Upload className="h-3.5 w-3.5" />
+                                  <span>Submit Work</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => startMilestoneWork(activeProject.id, milestone.id)}
+                                  className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/15 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors flex items-center gap-1.5"
+                                  title="Mark milestone as actively in progress"
+                                >
+                                  <Play className="h-3 w-3 text-[#0070BA] dark:text-sky-400 fill-current" />
+                                  <span>Start Working</span>
+                                </button>
+                                {onOpenEditMilestone && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenEditMilestone(milestone)}
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors"
+                                    title="Edit milestone title, amount, or due date"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {milestone.status === "in_progress" && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenSubmission(activeProject, milestone)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs flex items-center gap-1.5"
+                                >
+                                  <Upload className="h-3.5 w-3.5" />
+                                  <span>Submit Work</span>
+                                </button>
+                                {onOpenEditMilestone && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenEditMilestone(milestone)}
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors"
+                                    title="Edit milestone title, amount, or due date"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {isChangesRequested && (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenSubmission(activeProject, milestone)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs flex items-center gap-1.5"
+                                >
+                                  <Upload className="h-3.5 w-3.5" />
+                                  <span>Update & Resubmit</span>
+                                </button>
+                                {onOpenEditMilestone && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenEditMilestone(milestone)}
+                                    className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors"
+                                    title="Edit milestone title, amount, or due date"
+                                  >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             )}
 
                             {isSubmitted && (
-                              <button
-                                type="button"
-                                onClick={() => onOpenAudit(activeProject, milestone)}
-                                className="px-3.5 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 text-[#0070BA] dark:text-sky-300 text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-950/30 cursor-pointer transition-colors"
-                              >
-                                View Submission
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenAudit(activeProject, milestone)}
+                                  className="px-3.5 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 text-[#0070BA] dark:text-sky-300 text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-950/30 cursor-pointer transition-colors"
+                                >
+                                  View Submission
+                                </button>
+                                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                  Under Client Review
+                                </span>
+                              </div>
                             )}
 
                             {isApproved && (
-                              <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold">
-                                Awaiting Client Payment
+                              <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+                                Approved • Awaiting Client Payment
                               </span>
                             )}
 
@@ -705,12 +823,6 @@ export default function ProjectWorkspace({
                                   </button>
                                 )}
                               </div>
-                            )}
-
-                            {milestone.status === "not_started" && (
-                              <span className="text-xs text-slate-400 font-medium">
-                                Upcoming
-                              </span>
                             )}
                           </>
                         )}

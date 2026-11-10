@@ -318,7 +318,8 @@ export default function AuditModal({
                 {onOpenSubmissionModal &&
                   (milestone.status === "changes_requested" ||
                     milestone.status === "revision_requested" ||
-                    milestone.status === "in_progress") && (
+                    milestone.status === "in_progress" ||
+                    milestone.status === "not_started") && (
                     <button
                       type="button"
                       onClick={() => {
@@ -327,9 +328,9 @@ export default function AuditModal({
                       }}
                       className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white font-bold cursor-pointer transition-colors shadow-xs"
                     >
-                      {milestone.status === "in_progress"
-                        ? "Submit Deliverables"
-                        : "Update & Resubmit Work"}
+                      {milestone.status === "changes_requested" || milestone.status === "revision_requested"
+                        ? "Update & Resubmit Work"
+                        : "Submit Deliverables"}
                     </button>
                   )}
               </div>

@@ -155,6 +155,27 @@ interface DashboardContextType {
     }
   ) => { success: boolean; project?: ProjectContract; error?: string };
   lookupUserById: (id: string) => MilestoneOSUser | null;
+  addMilestone: (
+    projectId: string,
+    data: {
+      title: string;
+      description?: string;
+      amount: number;
+      dueDate?: string;
+      acceptanceCriteria?: string[];
+    }
+  ) => void;
+  editMilestone: (
+    projectId: string,
+    milestoneId: string,
+    updates: {
+      title?: string;
+      description?: string;
+      amount?: number;
+      dueDate?: string;
+    }
+  ) => void;
+  startMilestoneWork: (projectId: string, milestoneId: string) => void;
   submitMilestoneDeliverables: (
     projectId: string,
     milestoneId: string,
@@ -172,8 +193,8 @@ interface DashboardContextType {
   requestRevision: (projectId: string, milestoneId: string, reason: string) => void;
   requestChanges: (projectId: string, milestoneId: string, reason: string) => void;
   approveMilestone: (projectId: string, milestoneId: string) => void;
-  releasePayPalPayment: (projectId: string, milestoneId: string) => string;
-  makePayment: (projectId: string, milestoneId: string) => string;
+  releasePayPalPayment: (projectId: string, milestoneId: string, customTxId?: string) => string;
+  makePayment: (projectId: string, milestoneId: string, customTxId?: string) => string;
   markNotificationRead: (id: string) => void;
   clearAllNotifications: () => void;
   resetToFactoryDefaults: () => void;
@@ -504,10 +525,10 @@ export function DashboardProvider({
 
         const accepterName = activeUser.name;
 
-        // Activate milestones: stage 1 becomes in_progress, others not_started
-        const updatedMilestones = project.milestones.map((m, idx) => ({
+        // In flexible milestone management, each milestone is independent and non-sequential
+        const updatedMilestones = project.milestones.map((m) => ({
           ...m,
-          status: idx === 0 ? ("in_progress" as const) : ("not_started" as const),
+          status: m.status || ("not_started" as const),
         }));
 
         const newLog: ActivityItem = {
@@ -641,9 +662,9 @@ export function DashboardProvider({
 
     const isClientSender = project.initiatedBy === "client";
 
-    const updatedMilestones = project.milestones.map((m, idx) => ({
+    const updatedMilestones = project.milestones.map((m) => ({
       ...m,
-      status: idx === 0 ? ("in_progress" as const) : ("not_started" as const),
+      status: m.status || ("not_started" as const),
     }));
 
     const newLog: ActivityItem = {
@@ -840,6 +861,157 @@ export function DashboardProvider({
       prev.map((p) => (p.id === projectId ? { ...p, status: "archived" as const } : p))
     );
     showToast("Project moved to archive.", "info");
+  };
+
+  // Action: Add Milestone to Project (Freelancer - Flexible Milestone Creation)
+  const addMilestone = (
+    projectId: string,
+    data: {
+      title: string;
+      description?: string;
+      amount: number;
+      dueDate?: string;
+      acceptanceCriteria?: string[];
+    }
+  ) => {
+    const newId = `ms_${Date.now()}`;
+    let stageNumber = 1;
+
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+        stageNumber = project.milestones.length + 1;
+
+        const newMilestone: Milestone = {
+          id: newId,
+          stageNumber,
+          title: data.title.trim(),
+          description: data.description?.trim() || "Milestone deliverables agreed with client.",
+          amount: data.amount,
+          currency: project.currency || "USD",
+          dueDate: data.dueDate?.trim() || project.targetDeadline || "TBD",
+          status: "not_started" as MilestoneStatus,
+          acceptanceCriteria: (data.acceptanceCriteria && data.acceptanceCriteria.length > 0
+            ? data.acceptanceCriteria
+            : ["Agreed deliverable completion"]
+          ).map((critTitle, idx) => ({
+            id: `crit_${Date.now()}_${idx}`,
+            title: critTitle,
+            description: `Deliverable requirement: ${critTitle}`,
+            status: "met" as const,
+          })),
+          submissions: [],
+        };
+
+        const newLog: ActivityItem = {
+          id: `act_${Date.now()}`,
+          timestamp: "Just now",
+          actor: project.freelancer.name,
+          actorRole: "freelancer",
+          action: `${project.freelancer.name} added Stage 0${stageNumber}: "${data.title}" ($${data.amount.toLocaleString()} USD).`,
+          milestoneTitle: data.title,
+        };
+
+        return {
+          ...project,
+          totalBudget: project.totalBudget + data.amount,
+          milestones: [...project.milestones, newMilestone],
+          activityLog: [newLog, ...project.activityLog],
+        };
+      })
+    );
+
+    const notif: NotificationItem = {
+      id: `notif_${Date.now()}`,
+      timestamp: "Just now",
+      title: "New Milestone Added",
+      message: `Freelancer added Stage 0${stageNumber}: "${data.title}" ($${data.amount.toLocaleString()} USD) to project scope.`,
+      type: "system",
+      unread: true,
+      projectId,
+    };
+    setNotifications((prev) => [notif, ...prev]);
+
+    showToast(`Milestone "Stage 0${stageNumber}: ${data.title}" added to project!`, "success");
+  };
+
+  // Action: Edit Milestone Details (Freelancer)
+  const editMilestone = (
+    projectId: string,
+    milestoneId: string,
+    updates: {
+      title?: string;
+      description?: string;
+      amount?: number;
+      dueDate?: string;
+    }
+  ) => {
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+
+        let deltaBudget = 0;
+        const updatedMilestones = project.milestones.map((m) => {
+          if (m.id !== milestoneId) return m;
+
+          if (updates.amount !== undefined && updates.amount !== m.amount) {
+            deltaBudget = updates.amount - m.amount;
+          }
+
+          return {
+            ...m,
+            title: updates.title !== undefined ? updates.title.trim() : m.title,
+            description: updates.description !== undefined ? updates.description.trim() : m.description,
+            amount: updates.amount !== undefined ? updates.amount : m.amount,
+            dueDate: updates.dueDate !== undefined ? updates.dueDate.trim() : m.dueDate,
+          };
+        });
+
+        return {
+          ...project,
+          totalBudget: project.totalBudget + deltaBudget,
+          milestones: updatedMilestones,
+        };
+      })
+    );
+
+    showToast("Milestone updated.", "info");
+  };
+
+  // Action: Start Working on Milestone (Freelancer - flexible parallel execution)
+  const startMilestoneWork = (projectId: string, milestoneId: string) => {
+    setProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+
+        const updatedMilestones = project.milestones.map((m) => {
+          if (m.id !== milestoneId) return m;
+          return {
+            ...m,
+            status: "in_progress" as MilestoneStatus,
+          };
+        });
+
+        const targetMilestone = project.milestones.find((m) => m.id === milestoneId);
+
+        const newLog: ActivityItem = {
+          id: `act_${Date.now()}`,
+          timestamp: "Just now",
+          actor: project.freelancer.name,
+          actorRole: "freelancer",
+          action: `${project.freelancer.name} started working on Stage 0${targetMilestone?.stageNumber}: "${targetMilestone?.title}"`,
+          milestoneTitle: targetMilestone?.title,
+        };
+
+        return {
+          ...project,
+          milestones: updatedMilestones,
+          activityLog: [newLog, ...project.activityLog],
+        };
+      })
+    );
+
+    showToast("Milestone marked as In Progress. You can work on milestones in any order.", "info");
   };
 
   // Action: Submit Milestone Deliverables
@@ -1132,8 +1304,8 @@ export function DashboardProvider({
   };
 
   // Action: Make Payment via PayPal Sandbox (Client)
-  const releasePayPalPayment = (projectId: string, milestoneId: string): string => {
-    const txId = `PAYID-SBX-${Math.floor(100000 + Math.random() * 900000)}-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
+  const releasePayPalPayment = (projectId: string, milestoneId: string, customTxId?: string): string => {
+    const txId = customTxId || `PAYID-SBX-${Math.floor(100000 + Math.random() * 900000)}-${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
     const nowStr = new Date().toLocaleDateString("en-US", {
       month: "short",
       day: "2-digit",
@@ -1295,6 +1467,9 @@ export function DashboardProvider({
         revokeInvitation,
         acceptInvitationByToken,
         lookupUserById,
+        addMilestone,
+        editMilestone,
+        startMilestoneWork,
         submitMilestoneDeliverables,
         requestRevision,
         requestChanges,

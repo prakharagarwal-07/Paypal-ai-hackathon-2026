@@ -134,8 +134,10 @@ export const db = {
     project.termsAgreed = true;
     project.invitationStatus = "claimed";
 
-    project.milestones.forEach((m, idx) => {
-      m.status = idx === 0 ? "in_progress" : "not_started";
+    project.milestones.forEach((m) => {
+      if (!m.status) {
+        m.status = "not_started";
+      }
     });
 
     const activity: ActivityItem = {
@@ -292,15 +294,10 @@ export const db = {
     // Update project total paid
     project.totalPaid = (project.totalPaid || 0) + milestone.amount;
 
-    // Advance next milestone if available
-    const nextMilestone = project.milestones.find((m) => m.status === "not_started");
-    if (nextMilestone) {
-      nextMilestone.status = "in_progress";
-    } else {
-      const allPaid = project.milestones.every((m) => m.status === "paid");
-      if (allPaid) {
-        project.status = "completed";
-      }
+    // In flexible milestone management, each milestone maintains its own independent status.
+    const allPaid = project.milestones.every((m) => m.status === "paid");
+    if (allPaid) {
+      project.status = "completed";
     }
 
     // Create ledger transaction
@@ -340,6 +337,90 @@ export const db = {
 
     persistDatabase();
     return { project, milestone, transaction: newTx };
+  },
+
+  addMilestone(
+    projectId: string,
+    milestone: {
+      title: string;
+      description: string;
+      amount: number;
+      dueDate?: string;
+      acceptanceCriteria?: string[];
+    }
+  ): { project: ProjectContract; milestone: any } | null {
+    const project = memoryState.projects.find((p) => p.id === projectId);
+    if (!project) return null;
+
+    const newStageNumber = project.milestones.length + 1;
+    const newId = `ms_${Date.now()}`;
+    const newMilestone: any = {
+      id: newId,
+      stageNumber: newStageNumber,
+      title: milestone.title,
+      description: milestone.description || "Milestone deliverables agreed with client.",
+      amount: milestone.amount,
+      currency: project.currency || "USD",
+      dueDate: milestone.dueDate || project.targetDeadline || "TBD",
+      status: "not_started",
+      acceptanceCriteria: (milestone.acceptanceCriteria || []).map((critTitle, idx) => ({
+        id: `crit_${Date.now()}_${idx}`,
+        title: critTitle,
+        description: `Verified deliverable for ${critTitle}`,
+        status: "pending",
+      })),
+      submissions: [],
+    };
+
+    project.milestones.push(newMilestone);
+    project.totalBudget = (project.totalBudget || 0) + milestone.amount;
+
+    const activity: ActivityItem = {
+      id: `act_${Date.now()}`,
+      action: `${project.freelancer.name} added a new milestone: Stage 0${newStageNumber}: "${milestone.title}" ($${milestone.amount.toLocaleString()} USD).`,
+      actor: project.freelancer.name,
+      actorRole: "freelancer",
+      timestamp: "Just now",
+      milestoneTitle: milestone.title,
+    };
+    project.activityLog.unshift(activity);
+
+    persistDatabase();
+    return { project, milestone: newMilestone };
+  },
+
+  editMilestone(
+    projectId: string,
+    milestoneId: string,
+    updates: {
+      title?: string;
+      description?: string;
+      amount?: number;
+      dueDate?: string;
+    }
+  ): { project: ProjectContract; milestone: any } | null {
+    const project = memoryState.projects.find((p) => p.id === projectId);
+    if (!project) return null;
+
+    const milestone = project.milestones.find((m) => m.id === milestoneId);
+    if (!milestone) return null;
+
+    if (milestone.status === "paid" || milestone.status === "approved") {
+      return null;
+    }
+
+    if (updates.amount !== undefined && updates.amount !== milestone.amount) {
+      const diff = updates.amount - milestone.amount;
+      project.totalBudget = (project.totalBudget || 0) + diff;
+      milestone.amount = updates.amount;
+    }
+
+    if (updates.title) milestone.title = updates.title;
+    if (updates.description) milestone.description = updates.description;
+    if (updates.dueDate) milestone.dueDate = updates.dueDate;
+
+    persistDatabase();
+    return { project, milestone };
   },
 
   getTransactions(): TransactionRecord[] {

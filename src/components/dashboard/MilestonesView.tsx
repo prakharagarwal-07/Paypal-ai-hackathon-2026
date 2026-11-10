@@ -14,6 +14,8 @@ import {
   Calendar,
   Layers,
   Check,
+  Upload,
+  Play,
 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 
@@ -21,6 +23,7 @@ interface MilestonesViewProps {
   onOpenAudit: (project: ProjectContract, milestone: Milestone) => void;
   onOpenSubmission: (project: ProjectContract, milestone: Milestone) => void;
   onOpenPayPal: (project: ProjectContract, milestone: Milestone) => void;
+  onOpenRevision?: (project: ProjectContract, milestone: Milestone) => void;
   onOpenInvoice?: (project: ProjectContract, milestone: Milestone, transactionId?: string) => void;
   onSelectProject: (projectId: string) => void;
 }
@@ -39,10 +42,11 @@ export default function MilestonesView({
   onOpenAudit,
   onOpenSubmission,
   onOpenPayPal,
+  onOpenRevision,
   onOpenInvoice,
   onSelectProject,
 }: MilestonesViewProps) {
-  const { projects, role, searchQuery } = useDashboard();
+  const { projects, role, searchQuery, approveMilestone, startMilestoneWork } = useDashboard();
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
 
@@ -115,11 +119,16 @@ export default function MilestonesView({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          Milestones by Project
-        </h1>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Milestones by Project
+          </h1>
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 shadow-2xs">
+            Work in Any Order
+          </span>
+        </div>
         <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          Track individual stages of work clearly classified and organized under each project.
+          Non-sequential milestone execution — start, submit, and approve any stage independently.
         </p>
       </div>
 
@@ -314,16 +323,41 @@ export default function MilestonesView({
                             {role === "client" ? (
                               <>
                                 {isSubmitted && (
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onOpenAudit(project, milestone);
-                                    }}
-                                    className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs"
-                                  >
-                                    Review Work
-                                  </button>
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        approveMilestone(project.id, milestone.id);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer transition-colors shadow-xs flex items-center gap-1"
+                                    >
+                                      <Check className="h-3 w-3 stroke-[3]" />
+                                      <span>Approve</span>
+                                    </button>
+                                    {onOpenRevision && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onOpenRevision(project, milestone);
+                                        }}
+                                        className="px-2.5 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/40 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors"
+                                      >
+                                        Revision
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onOpenAudit(project, milestone);
+                                      }}
+                                      className="px-2.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs"
+                                    >
+                                      Review
+                                    </button>
+                                  </div>
                                 )}
 
                                 {isApproved && (
@@ -338,6 +372,12 @@ export default function MilestonesView({
                                     <PayPalIcon className="h-3.5 w-3.5" />
                                     <span>Pay Now</span>
                                   </button>
+                                )}
+
+                                {isChangesRequested && (
+                                  <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold px-2 py-0.5 rounded-lg bg-rose-50 dark:bg-rose-950/30">
+                                    Revision Requested
+                                  </span>
                                 )}
 
                                 {isPaid && (
@@ -364,6 +404,35 @@ export default function MilestonesView({
                               </>
                             ) : (
                               <>
+                                {milestone.status === "not_started" && (
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onOpenSubmission(project, milestone);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs flex items-center gap-1"
+                                      title="Submit deliverables directly"
+                                    >
+                                      <Upload className="h-3 w-3" />
+                                      <span>Submit</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        startMilestoneWork(project.id, milestone.id);
+                                      }}
+                                      className="px-2.5 py-1.5 rounded-xl border border-slate-300 dark:border-white/15 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors flex items-center gap-1"
+                                      title="Start working"
+                                    >
+                                      <Play className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400 fill-current" />
+                                      <span>Start</span>
+                                    </button>
+                                  </div>
+                                )}
+
                                 {(milestone.status === "in_progress" || isChangesRequested) && (
                                   <button
                                     type="button"
@@ -371,9 +440,10 @@ export default function MilestonesView({
                                       e.stopPropagation();
                                       onOpenSubmission(project, milestone);
                                     }}
-                                    className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs"
+                                    className="px-3.5 py-1.5 rounded-xl bg-[#0070BA] text-white text-xs font-bold hover:bg-[#005a96] cursor-pointer transition-colors shadow-xs flex items-center gap-1"
                                   >
-                                    {isChangesRequested ? "Update Work" : "Submit Work"}
+                                    <Upload className="h-3 w-3" />
+                                    <span>{isChangesRequested ? "Update Work" : "Submit Work"}</span>
                                   </button>
                                 )}
 
@@ -388,6 +458,12 @@ export default function MilestonesView({
                                   >
                                     View Submission
                                   </button>
+                                )}
+
+                                {isApproved && (
+                                  <span className="text-xs text-amber-600 dark:text-amber-400 font-semibold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/30">
+                                    Approved
+                                  </span>
                                 )}
 
                                 {isPaid && (
