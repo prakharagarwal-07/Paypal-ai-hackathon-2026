@@ -747,6 +747,13 @@ export default function DashboardOverview({
               const milestoneName = extractMilestoneTitle(act);
               const MetaIcon = meta.icon;
 
+              // Strip receipt or transaction codes from the main headline notification
+              const cleanAction = act.action
+                .replace(/\s*\((?:Receipt:?\s*)?PAYID-[A-Za-z0-9\-_]+\)/gi, "")
+                .replace(/\s*\(Receipt:?\s*[^)]+\)/gi, "")
+                .replace(/\s*\(PAYID-[A-Za-z0-9\-_]+\)/gi, "")
+                .trim();
+
               return (
                 <div
                   key={act.id}
@@ -772,7 +779,7 @@ export default function DashboardOverview({
                           <strong className="text-slate-900 dark:text-white font-semibold">
                             {act.actor}:
                           </strong>{" "}
-                          <span>{act.action}</span>
+                          <span>{cleanAction}</span>
                         </p>
 
                         {/* Quiet Subtitle Metadata (Inline, no clutter) */}

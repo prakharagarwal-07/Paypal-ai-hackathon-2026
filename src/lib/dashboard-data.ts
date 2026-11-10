@@ -1257,7 +1257,7 @@ export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     id: "notif_4",
     timestamp: "3 days ago",
     title: "Payment Completed",
-    message: "$1,200 USD paid to Rohan Verma via PayPal Sandbox (PAYID-SBX-109283-A).",
+    message: "$1,200 USD paid to Rohan Verma via PayPal Sandbox.",
     type: "payment",
     unread: false,
     projectId: "proj_online_store_2026",

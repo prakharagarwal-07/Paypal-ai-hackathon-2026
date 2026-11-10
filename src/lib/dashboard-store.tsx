@@ -1179,7 +1179,8 @@ export function DashboardProvider({
               timestamp: "Just now",
               actor: project.client.name,
               actorRole: "paypal",
-              action: `Completed payment of $${paidAmount.toLocaleString()} USD via PayPal Sandbox (Receipt: ${txId})`,
+              action: `Completed payment of $${paidAmount.toLocaleString()} USD via PayPal Sandbox`,
+              details: `PayPal Transaction: ${txId}`,
               milestoneTitle,
             },
             ...project.activityLog,
@@ -1211,7 +1212,7 @@ export function DashboardProvider({
       id: `notif_${Date.now()}`,
       timestamp: "Just now",
       title: "Payment Completed",
-      message: `$${paidAmount.toLocaleString()} USD paid to ${freelancerName} via PayPal Sandbox (${txId}).`,
+      message: `$${paidAmount.toLocaleString()} USD paid to ${freelancerName} via PayPal Sandbox.`,
       type: "payment",
       unread: true,
       projectId,
@@ -1220,7 +1221,7 @@ export function DashboardProvider({
     setNotifications((prev) => [notif, ...prev]);
 
     showToast(
-      `Payment of $${paidAmount.toLocaleString()} USD completed via PayPal Sandbox! Transaction: ${txId}`,
+      `Payment of $${paidAmount.toLocaleString()} USD completed via PayPal Sandbox!`,
       "success"
     );
 
