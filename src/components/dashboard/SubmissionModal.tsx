@@ -218,23 +218,14 @@ export default function SubmissionModal({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="relative w-full max-w-xl rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-white/10 dark:bg-[#0D1527] overflow-hidden my-8 max-h-[92vh] flex flex-col">
         {/* Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between shrink-0">
           <div>
-            <span className="text-xs font-bold text-[#0070BA] dark:text-sky-400 block mb-0.5">
-              {isRevision ? "Resubmit Revised Deliverables" : "Submit Milestone Deliverables"}
-            </span>
             <h2 className="text-base font-bold text-slate-900 dark:text-white">
-              Stage 0{milestone.stageNumber}: {milestone.title}
+              {isRevision ? "Resubmit Deliverables" : "Submit Deliverables"}
             </h2>
-            <div className="flex flex-wrap items-center gap-2 mt-1">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40">
-                <FolderGit2 className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
-                Project: {project.title}
-              </span>
-              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                • ${milestone.amount.toLocaleString()} USD
-              </span>
-            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Stage 0{milestone.stageNumber}: {milestone.title} • ${milestone.amount.toLocaleString()} USD
+            </p>
           </div>
 
           <button
@@ -247,15 +238,15 @@ export default function SubmissionModal({
         </div>
 
         {/* Content Form */}
-        <form onSubmit={handleSubmit} className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 text-xs">
           {/* Changes Requested Banner */}
           {isRevision && revisionFeedback && (
-            <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-950/20 text-slate-700 dark:text-slate-200 space-y-1">
-              <span className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
-                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-                Requested Changes from {revisionFeedback.requestedBy}:
+            <div className="p-3 rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-950/20 text-slate-700 dark:text-slate-200">
+              <span className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-200 text-xs">
+                <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                Revision Feedback from {revisionFeedback.requestedBy}:
               </span>
-              <p className="text-[11px] leading-relaxed pl-5">
+              <p className="text-[11px] mt-1 pl-5 text-amber-800 dark:text-amber-300">
                 "{revisionFeedback.reason}"
               </p>
             </div>
@@ -269,33 +260,34 @@ export default function SubmissionModal({
             </div>
           )}
 
-          {/* SECTION 1: WORK COMPLETION SUMMARY & NOTES */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
+          {/* 1. DELIVERABLE FILES & LINKS */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-900 dark:text-white">
-                Work Completion Summary & Deliverable Notes *
+                Deliverables (Files & Links)
               </label>
-              <span className="text-[11px] text-slate-400">Required</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Upload from PC</span>
+                </button>
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+                <button
+                  type="button"
+                  onClick={() => handleAddDeliverableLink()}
+                  className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add Link</span>
+                </button>
+              </div>
             </div>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-1.5">
-              Describe what work you completed, how the agreed criteria were satisfied, or where files and drawing photos can be reviewed.
-            </p>
-            <textarea
-              rows={4}
-              required
-              value={notes}
-              onChange={(e) => {
-                setNotes(e.target.value);
-                if (formError) setFormError(null);
-              }}
-              placeholder="e.g. All 3 pencil drawing portraits are completed and photographed under clean lighting. High-res photo files are uploaded in the Drive link below. Acceptance criteria for shading, dimensions, and framing have been satisfied..."
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white leading-relaxed"
-            />
-          </div>
 
-          {/* SECTION 2: GENERAL DELIVERABLES & PC UPLOADS */}
-          <div className="space-y-4">
-            {/* Hidden file input for PC uploads */}
+            {/* Hidden file input */}
             <input
               ref={fileInputRef}
               type="file"
@@ -305,224 +297,114 @@ export default function SubmissionModal({
               className="hidden"
             />
 
-            {/* Upload from Computer Box */}
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-xs font-bold text-slate-900 dark:text-white block">
-                    Upload from Computer (PC)
-                  </label>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Upload drawings, artwork photos, design mockups, or documents directly from your device.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0070BA] text-white hover:bg-[#005a96] text-xs font-bold cursor-pointer transition-colors shadow-2xs"
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  <span>Choose Files</span>
-                </button>
+            {/* Clean, compact drag & drop zone */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-slate-200 hover:border-[#0070BA] dark:border-white/10 dark:hover:border-sky-500 rounded-xl p-3.5 sm:p-4 text-center bg-slate-50/50 hover:bg-blue-50/30 dark:bg-white/[0.02] dark:hover:bg-sky-950/20 transition-all cursor-pointer group"
+            >
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <Upload className="h-4 w-4 text-[#0070BA] dark:text-sky-400 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  Click to upload files from your PC
+                </span>
+                <span className="text-slate-400 text-[11px] hidden sm:inline">
+                  (photos, drawings, PDFs, or ZIP)
+                </span>
               </div>
-
-              {/* Drag & drop / click-to-upload card */}
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-slate-300 hover:border-[#0070BA] dark:border-white/15 dark:hover:border-sky-500 rounded-2xl p-4 sm:p-5 text-center bg-slate-50/60 dark:bg-white/[0.02] hover:bg-blue-50/40 dark:hover:bg-sky-950/20 transition-all cursor-pointer group"
-              >
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-sky-950/50 text-[#0070BA] dark:text-sky-300 flex items-center justify-center group-hover:scale-110 transition-transform shadow-2xs">
-                    <Upload className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
-                      Click to browse or upload images & files from your PC
-                    </span>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Supports JPG, PNG, WEBP, PDF, DOCX, ZIP, PSD, AI files (select multiple)
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Uploaded Files Grid */}
-              {uploadedFiles.length > 0 && (
-                <div className="space-y-1.5 pt-1">
-                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
-                    Attached from PC ({uploadedFiles.length}):
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {uploadedFiles.map((file, idx) => {
-                      const isImg = file.type.startsWith("image/") || file.dataUrl?.startsWith("data:image");
-                      return (
-                        <div
-                          key={idx}
-                          className="flex items-center justify-between p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131C31] shadow-2xs group"
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                            {isImg && file.dataUrl ? (
-                              <button
-                                type="button"
-                                onClick={() => setPreviewImage({ url: file.dataUrl!, name: file.name })}
-                                className="h-9 w-9 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 shrink-0 cursor-pointer relative group/img"
-                                title="Click to view full photo"
-                              >
-                                <img
-                                  src={file.dataUrl}
-                                  alt={file.name}
-                                  className="h-full w-full object-cover"
-                                />
-                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity text-white">
-                                  <Eye className="h-3 w-3" />
-                                </div>
-                              </button>
-                            ) : (
-                              <div className="h-9 w-9 rounded-lg bg-blue-50 dark:bg-sky-950/60 text-[#0070BA] dark:text-sky-400 flex items-center justify-center shrink-0">
-                                <FileText className="h-4 w-4" />
-                              </div>
-                            )}
-                            <div className="min-w-0 text-left">
-                              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                                {file.name}
-                              </p>
-                              <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                                <span>{file.size}</span>
-                                <span>•</span>
-                                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Attached from PC</span>
-                              </div>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveFile(idx)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors shrink-0"
-                            title="Remove file"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* External Links Section */}
-            <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-white/5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-xs font-bold text-slate-900 dark:text-white block">
-                    Deliverable Assets & Links
-                  </label>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Photos, cloud folders (Google Drive, Dropbox), Figma designs, or document links.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleAddDeliverableLink()}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#0070BA]/10 hover:bg-[#0070BA]/20 text-[#0070BA] dark:bg-sky-950/60 dark:hover:bg-sky-900/60 dark:text-sky-300 text-[11px] font-bold cursor-pointer transition-colors"
-                >
-                  <Plus className="h-3 w-3" />
-                  <span>Add Link</span>
-                </button>
+            {/* Uploaded Files Chips */}
+            {uploadedFiles.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                {uploadedFiles.map((file, idx) => {
+                  const isImg = file.type.startsWith("image/") || file.dataUrl?.startsWith("data:image");
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131C31] shadow-2xs group"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 pr-2">
+                        {isImg && file.dataUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewImage({ url: file.dataUrl!, name: file.name })}
+                            className="h-8 w-8 rounded-lg overflow-hidden border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 shrink-0 cursor-pointer relative group/img"
+                            title="Click to view image"
+                          >
+                            <img
+                              src={file.dataUrl}
+                              alt={file.name}
+                              className="h-full w-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity text-white">
+                              <Eye className="h-3 w-3" />
+                            </div>
+                          </button>
+                        ) : (
+                          <div className="h-8 w-8 rounded-lg bg-blue-50 dark:bg-sky-950/60 text-[#0070BA] dark:text-sky-400 flex items-center justify-center shrink-0">
+                            <FileText className="h-4 w-4" />
+                          </div>
+                        )}
+                        <div className="min-w-0 text-left">
+                          <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                            {file.name}
+                          </p>
+                          <span className="text-[10px] text-slate-400 block">
+                            {file.size}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(idx)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors shrink-0"
+                        title="Remove file"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
+            )}
 
-              {/* Quick Preset Buttons */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mr-1">
-                  Quick Add:
-                </span>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-2 py-0.5 rounded-md border border-[#0070BA]/30 bg-blue-50/80 hover:bg-blue-100 dark:bg-sky-950/60 dark:hover:bg-sky-900/60 text-[11px] text-[#0070BA] dark:text-sky-300 font-bold inline-flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
-                >
-                  <Upload className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
-                  <span>+ Upload from PC</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAddDeliverableLink("photo")}
-                  className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <ImageIcon className="h-3 w-3 text-emerald-500" />
-                  <span>+ Photos / Artwork</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAddDeliverableLink("cloud")}
-                  className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <Cloud className="h-3 w-3 text-sky-500" />
-                  <span>+ Cloud Drive Folder</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAddDeliverableLink("design")}
-                  className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <Palette className="h-3 w-3 text-purple-500" />
-                  <span>+ Figma / Design</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleAddDeliverableLink("document")}
-                  className="px-2 py-0.5 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 hover:bg-slate-100 dark:bg-white/5 dark:hover:bg-white/10 text-[11px] text-slate-600 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer transition-colors"
-                >
-                  <FileText className="h-3 w-3 text-amber-500" />
-                  <span>+ Document / PDF</span>
-                </button>
-              </div>
-
-              {/* List of Deliverable Link Rows */}
-              {deliverableLinks.length === 0 ? (
-                <div className="p-3.5 rounded-xl border border-dashed border-slate-300 dark:border-white/15 bg-slate-50/50 dark:bg-white/[0.02] text-center">
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    No deliverable links attached. Click a quick button above to link cloud drives, Figma, or document links.
-                  </p>
-                </div>
-              ) : (
-              <div className="space-y-2.5">
+            {/* Attached Links List */}
+            {deliverableLinks.length > 0 && (
+              <div className="space-y-2 pt-1">
                 {deliverableLinks.map((item, index) => (
                   <div
                     key={index}
-                    className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 space-y-2"
+                    className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#131C31] space-y-1.5"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-1">
-                        <select
-                          value={item.type || "photo"}
-                          onChange={(e) =>
-                            handleUpdateDeliverableLink(index, "type", e.target.value as any)
-                          }
-                          className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 dark:border-white/10 dark:bg-[#131C31] dark:text-slate-200"
-                        >
-                          {DELIVERABLE_TYPE_OPTIONS.map((opt) => (
-                            <option key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          type="text"
-                          value={item.title}
-                          onChange={(e) =>
-                            handleUpdateDeliverableLink(index, "title", e.target.value)
-                          }
-                          placeholder="Deliverable Name (e.g. Artwork Photos, Chapter 1 Doc)"
-                          className="flex-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
-                        />
-                      </div>
+                      <select
+                        value={item.type || "photo"}
+                        onChange={(e) =>
+                          handleUpdateDeliverableLink(index, "type", e.target.value as any)
+                        }
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+                      >
+                        {DELIVERABLE_TYPE_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      <input
+                        type="text"
+                        value={item.title}
+                        onChange={(e) =>
+                          handleUpdateDeliverableLink(index, "title", e.target.value)
+                        }
+                        placeholder="Link label (e.g. Google Drive Folder)"
+                        className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                      />
 
                       <button
                         type="button"
                         onClick={() => handleRemoveDeliverableLink(index)}
-                        className="p-1 text-slate-400 hover:text-rose-500 cursor-pointer transition-colors"
+                        className="p-1 text-slate-400 hover:text-rose-500 cursor-pointer"
                         title="Remove link"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -533,116 +415,71 @@ export default function SubmissionModal({
                       type="url"
                       value={item.url}
                       onChange={(e) => handleUpdateDeliverableLink(index, "url", e.target.value)}
-                      placeholder="https://drive.google.com/... or https://..."
-                      className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder-slate-400 dark:border-white/10 dark:bg-[#131C31] dark:text-white font-mono"
+                      placeholder="https://..."
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-900 placeholder-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono"
                     />
                   </div>
                 ))}
               </div>
             )}
-            </div>
           </div>
 
-          {/* SECTION 3: OPTIONAL SOFTWARE & TECHNICAL FIELDS (COLLAPSIBLE) */}
-          <div className="rounded-xl border border-slate-200/80 dark:border-white/10 overflow-hidden bg-white dark:bg-white/[0.02]">
+          {/* 2. COMPLETION NOTES */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-900 dark:text-white block">
+              Notes & Comments
+            </label>
+            <textarea
+              rows={3}
+              value={notes}
+              onChange={(e) => {
+                setNotes(e.target.value);
+                if (formError) setFormError(null);
+              }}
+              placeholder="Describe what was completed or any notes for the client..."
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white leading-relaxed"
+            />
+          </div>
+
+          {/* 3. OPTIONAL CODE & DEMO LINKS (QUIET ACCORDION) */}
+          <div className="pt-1">
             <button
               type="button"
               onClick={() => setShowTechFields(!showTechFields)}
-              className="w-full p-3 flex items-center justify-between text-left hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer transition-colors"
+              className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white inline-flex items-center gap-1 cursor-pointer transition-colors"
             >
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-slate-400" />
-                <div>
-                  <span className="font-bold text-slate-800 dark:text-slate-200 text-xs block">
-                    Software & Staging Links (Optional)
-                  </span>
-                  <span className="text-[11px] text-slate-400">
-                    Only needed if your project is a website, web app, or software repository.
-                  </span>
-                </div>
-              </div>
-              {showTechFields ? (
-                <ChevronUp className="h-4 w-4 text-slate-400" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-slate-400" />
-              )}
+              <span>{showTechFields ? "− Hide" : "+ Add"} live demo or code links (optional)</span>
             </button>
 
             {showTechFields && (
-              <div className="p-3.5 border-t border-slate-100 dark:border-white/5 space-y-3 bg-slate-50/50 dark:bg-transparent">
-                {/* Website / Demo Link */}
+              <div className="mt-2 p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/60 dark:bg-white/[0.02] space-y-2.5 animate-in fade-in duration-200">
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Live Demo / Staging Preview URL (Optional)
+                  <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    Live Demo / Preview URL
                   </label>
                   <input
                     type="url"
                     value={demoUrl}
                     onChange={(e) => setDemoUrl(e.target.value)}
-                    placeholder="https://your-preview-site.com"
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white font-mono"
+                    placeholder="https://preview.example.com"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono"
                   />
                 </div>
 
-                {/* Code Repository Link */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Code Repository or Git URL (Optional)
+                  <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                    GitHub or Code Repository
                   </label>
                   <input
                     type="url"
                     value={githubRepo}
                     onChange={(e) => setGithubRepo(e.target.value)}
                     placeholder="https://github.com/..."
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white font-mono"
-                  />
-                </div>
-
-                {/* Video Walkthrough */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Video Walkthrough / Loom URL (Optional)
-                  </label>
-                  <input
-                    type="url"
-                    value={loomVideo}
-                    onChange={(e) => setLoomVideo(e.target.value)}
-                    placeholder="https://loom.com/share/..."
-                    className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white font-mono"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-900 placeholder-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-white font-mono"
                   />
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Quick Pre-Check Button */}
-          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 flex items-center justify-between gap-3">
-            <div>
-              <span className="font-bold text-slate-900 dark:text-white block text-xs">
-                Quick Deliverables Check
-              </span>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Verify deliverable formatting before sending for AI acceptance review.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleQuickCheck}
-              disabled={isRunningCheck}
-              className="px-3 py-1.5 rounded-lg bg-white dark:bg-white/10 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 cursor-pointer shrink-0 transition-colors"
-            >
-              {isRunningCheck ? (
-                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              ) : checkPassed ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                  <Check className="h-3.5 w-3.5" />
-                  Ready
-                </span>
-              ) : (
-                "Run Check"
-              )}
-            </button>
           </div>
 
           {/* Footer Actions */}
@@ -658,7 +495,7 @@ export default function SubmissionModal({
               type="submit"
               className="px-5 py-2 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
             >
-              {isRevision ? "Resubmit for Review" : "Submit for Review"}
+              {isRevision ? "Resubmit Work" : "Submit Work"}
             </button>
           </div>
         </form>
