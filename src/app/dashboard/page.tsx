@@ -22,6 +22,7 @@ import PayPalPaymentModal from "@/components/dashboard/PayPalPaymentModal";
 import NewProjectModal from "@/components/dashboard/NewProjectModal";
 import EditProjectModal from "@/components/dashboard/EditProjectModal";
 import UIAlertDialog from "@/components/dashboard/UIAlertDialog";
+import InvoiceModal from "@/components/dashboard/InvoiceModal";
 
 import WebThreads from "@/components/WebThreads";
 import { CheckCircle2, AlertCircle, X, Sparkles } from "lucide-react";
@@ -81,6 +82,12 @@ function DashboardInner() {
   const [payPalTarget, setPayPalTarget] = useState<{
     project: ProjectContract;
     milestone: Milestone;
+  } | null>(null);
+
+  const [invoiceTarget, setInvoiceTarget] = useState<{
+    project: ProjectContract;
+    milestone: Milestone;
+    transactionId?: string;
   } | null>(null);
 
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
@@ -173,6 +180,7 @@ function DashboardInner() {
               onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
               onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
               onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+              onOpenInvoice={(p, m, tx) => setInvoiceTarget({ project: p, milestone: m, transactionId: tx })}
               onOpenNewProject={() => setIsNewProjectModalOpen(true)}
               onSelectProject={(projectId) => {
                 setActiveProjectId(projectId);
@@ -196,6 +204,7 @@ function DashboardInner() {
                   onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
                   onOpenRevision={(p, m) => setRevisionTarget({ project: p, milestone: m })}
                   onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+                  onOpenInvoice={(p, m, tx) => setInvoiceTarget({ project: p, milestone: m, transactionId: tx })}
                   onOpenEditProject={() => setIsEditProjectModalOpen(true)}
                 />
               ) : (
@@ -205,6 +214,7 @@ function DashboardInner() {
                     setActiveProjectId(projectId);
                     setViewingWorkspace(true);
                   }}
+                  onOpenInvoice={(p, m, tx) => setInvoiceTarget({ project: p, milestone: m, transactionId: tx })}
                 />
               )}
             </>
@@ -216,6 +226,7 @@ function DashboardInner() {
               onOpenAudit={(p, m) => setAuditTarget({ project: p, milestone: m })}
               onOpenSubmission={(p, m) => setSubmissionTarget({ project: p, milestone: m })}
               onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+              onOpenInvoice={(p, m, tx) => setInvoiceTarget({ project: p, milestone: m, transactionId: tx })}
               onSelectProject={(projectId) => {
                 setActiveProjectId(projectId);
                 setActiveTab("projects");
@@ -240,6 +251,7 @@ function DashboardInner() {
           {activeTab === "payments" && (
             <PaymentsView
               onOpenPayPal={(p, m) => setPayPalTarget({ project: p, milestone: m })}
+              onOpenInvoice={(p, m, tx) => setInvoiceTarget({ project: p, milestone: m, transactionId: tx })}
             />
           )}
         </main>
@@ -315,6 +327,18 @@ function DashboardInner() {
           milestone={payPalTarget.milestone}
           isOpen={true}
           onClose={() => setPayPalTarget(null)}
+          onOpenInvoice={(p, m, tx) => setInvoiceTarget({ project: p, milestone: m, transactionId: tx })}
+        />
+      )}
+
+      {/* AI INVOICE & RECEIPT MODAL */}
+      {invoiceTarget && (
+        <InvoiceModal
+          project={invoiceTarget.project}
+          milestone={invoiceTarget.milestone}
+          transactionId={invoiceTarget.transactionId}
+          isOpen={true}
+          onClose={() => setInvoiceTarget(null)}
         />
       )}
 

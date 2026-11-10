@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { ProjectContract, getFriendlyProjectStatus } from "@/lib/dashboard-data";
+import { ProjectContract, Milestone, getFriendlyProjectStatus } from "@/lib/dashboard-data";
 import {
   Plus,
   ArrowRight,
@@ -23,9 +23,14 @@ import CompletedProjectModal from "./CompletedProjectModal";
 interface ProjectsViewProps {
   onOpenNewProject: () => void;
   onSelectProject: (projectId: string) => void;
+  onOpenInvoice?: (project: ProjectContract, milestone: Milestone, transactionId?: string) => void;
 }
 
-export default function ProjectsView({ onOpenNewProject, onSelectProject }: ProjectsViewProps) {
+export default function ProjectsView({
+  onOpenNewProject,
+  onSelectProject,
+  onOpenInvoice,
+}: ProjectsViewProps) {
   const { projects, role, searchQuery } = useDashboard();
   const [filterTab, setFilterTab] = useState<"all" | "active" | "proposals" | "completed">("all");
   const [selectedCompletedProject, setSelectedCompletedProject] = useState<ProjectContract | null>(null);
@@ -476,6 +481,7 @@ export default function ProjectsView({ onOpenNewProject, onSelectProject }: Proj
         project={selectedCompletedProject}
         isOpen={!!selectedCompletedProject}
         onClose={() => setSelectedCompletedProject(null)}
+        onOpenInvoice={onOpenInvoice}
         onViewWorkspace={(projectId) => {
           setSelectedCompletedProject(null);
           onSelectProject(projectId);

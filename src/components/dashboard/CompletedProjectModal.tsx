@@ -1,6 +1,6 @@
 "use client";
 
-import { ProjectContract } from "@/lib/dashboard-data";
+import { ProjectContract, Milestone } from "@/lib/dashboard-data";
 import {
   X,
   CheckCircle2,
@@ -13,6 +13,7 @@ import {
   Star,
   ArrowRight,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 
@@ -21,6 +22,7 @@ interface CompletedProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onViewWorkspace: (projectId: string) => void;
+  onOpenInvoice?: (project: ProjectContract, milestone: Milestone, transactionId?: string) => void;
 }
 
 export default function CompletedProjectModal({
@@ -28,6 +30,7 @@ export default function CompletedProjectModal({
   isOpen,
   onClose,
   onViewWorkspace,
+  onOpenInvoice,
 }: CompletedProjectModalProps) {
   if (!isOpen || !project) return null;
 
@@ -229,10 +232,22 @@ export default function CompletedProjectModal({
                           {m.paypalTransactionId || "PAYID-SBX-COMPLETED"}
                         </td>
                         <td className="p-3 text-right whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                            <CheckCircle2 className="h-3 w-3" />
-                            <span>Paid</span>
-                          </span>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                              <CheckCircle2 className="h-3 w-3" />
+                              <span>Paid</span>
+                            </span>
+                            {onOpenInvoice && (
+                              <button
+                                type="button"
+                                onClick={() => onOpenInvoice(project, m, m.paypalTransactionId)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-bold transition-all shadow-2xs cursor-pointer"
+                              >
+                                <Sparkles className="h-3 w-3" />
+                                <span>AI Invoice</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

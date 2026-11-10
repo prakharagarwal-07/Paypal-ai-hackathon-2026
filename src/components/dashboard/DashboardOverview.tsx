@@ -29,6 +29,7 @@ interface DashboardOverviewProps {
   onOpenAudit: (project: ProjectContract, milestone: Milestone) => void;
   onOpenSubmission: (project: ProjectContract, milestone: Milestone) => void;
   onOpenPayPal: (project: ProjectContract, milestone: Milestone) => void;
+  onOpenInvoice?: (project: ProjectContract, milestone: Milestone, transactionId?: string) => void;
   onOpenNewProject: () => void;
   onSelectProject?: (projectId: string) => void;
   onNavigateToProjects?: () => void;
@@ -150,6 +151,7 @@ export default function DashboardOverview({
   onOpenAudit,
   onOpenSubmission,
   onOpenPayPal,
+  onOpenInvoice,
   onOpenNewProject,
   onSelectProject,
   onNavigateToProjects,
@@ -864,23 +866,42 @@ export default function DashboardOverview({
                             </div>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(receiptCode, `receipt_${act.id}`)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#0D1527] border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors shadow-2xs self-start sm:self-auto cursor-pointer"
-                          >
-                            {copiedKey === `receipt_${act.id}` ? (
-                              <>
-                                <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                <span>Copied to Clipboard</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-3.5 w-3.5" />
-                                <span>Copy Receipt ID</span>
-                              </>
-                            )}
-                          </button>
+                          <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const project = projects.find((p) => p.id === act.projectId) || projects[0];
+                                const milestone =
+                                  project?.milestones.find((m) => m.title === milestoneName) ||
+                                  project?.milestones[0];
+                                if (onOpenInvoice && project && milestone) {
+                                  onOpenInvoice(project, milestone, receiptCode);
+                                }
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white transition-colors shadow-2xs cursor-pointer"
+                            >
+                              <Sparkles className="h-3.5 w-3.5" />
+                              <span>AI Invoice & Receipt</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(receiptCode, `receipt_${act.id}`)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-white dark:bg-[#0D1527] border border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors shadow-2xs cursor-pointer"
+                            >
+                              {copiedKey === `receipt_${act.id}` ? (
+                                <>
+                                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                  <span>Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3.5 w-3.5" />
+                                  <span>Copy ID</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       )}
 

@@ -21,6 +21,7 @@ interface MilestonesViewProps {
   onOpenAudit: (project: ProjectContract, milestone: Milestone) => void;
   onOpenSubmission: (project: ProjectContract, milestone: Milestone) => void;
   onOpenPayPal: (project: ProjectContract, milestone: Milestone) => void;
+  onOpenInvoice?: (project: ProjectContract, milestone: Milestone, transactionId?: string) => void;
   onSelectProject: (projectId: string) => void;
 }
 
@@ -38,6 +39,7 @@ export default function MilestonesView({
   onOpenAudit,
   onOpenSubmission,
   onOpenPayPal,
+  onOpenInvoice,
   onSelectProject,
 }: MilestonesViewProps) {
   const { projects, role, searchQuery } = useDashboard();
@@ -339,10 +341,25 @@ export default function MilestonesView({
                                 )}
 
                                 {isPaid && (
-                                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                                    <Check className="h-3 w-3 stroke-[3]" />
-                                    <span>Paid</span>
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                                      <Check className="h-3 w-3 stroke-[3]" />
+                                      <span>Paid</span>
+                                    </span>
+                                    {onOpenInvoice && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onOpenInvoice(project, milestone, milestone.paypalTransactionId);
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                      >
+                                        <Sparkles className="h-3 w-3" />
+                                        <span>AI Invoice</span>
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
                               </>
                             ) : (
@@ -374,10 +391,25 @@ export default function MilestonesView({
                                 )}
 
                                 {isPaid && (
-                                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                                    <Check className="h-3 w-3 stroke-[3]" />
-                                    <span>Paid</span>
-                                  </span>
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/30 px-2.5 py-1 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                                      <Check className="h-3 w-3 stroke-[3]" />
+                                      <span>Paid</span>
+                                    </span>
+                                    {onOpenInvoice && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          onOpenInvoice(project, milestone, milestone.paypalTransactionId);
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                                      >
+                                        <Sparkles className="h-3 w-3" />
+                                        <span>AI Invoice</span>
+                                      </button>
+                                    )}
+                                  </div>
                                 )}
                               </>
                             )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, CheckCircle2, RefreshCw, Receipt, FolderGit2 } from "lucide-react";
+import { X, CheckCircle2, RefreshCw, Receipt, FolderGit2, Sparkles } from "lucide-react";
 import { Milestone, ProjectContract } from "@/lib/dashboard-data";
 import { PayPalIcon } from "./icons";
 import { useDashboard } from "@/lib/dashboard-store";
@@ -11,6 +11,7 @@ interface PayPalPaymentModalProps {
   milestone: Milestone;
   isOpen: boolean;
   onClose: () => void;
+  onOpenInvoice?: (project: ProjectContract, milestone: Milestone, transactionId?: string) => void;
 }
 
 export default function PayPalPaymentModal({
@@ -18,6 +19,7 @@ export default function PayPalPaymentModal({
   milestone,
   isOpen,
   onClose,
+  onOpenInvoice,
 }: PayPalPaymentModalProps) {
   const { makePayment } = useDashboard();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -93,13 +95,29 @@ export default function PayPalPaymentModal({
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-xs font-bold transition-colors cursor-pointer"
-            >
-              Done
-            </button>
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  if (onOpenInvoice) {
+                    onOpenInvoice(project, milestone, receiptTxId || undefined);
+                  }
+                }}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-[#0070BA] hover:from-purple-500 hover:to-[#005a96] text-white text-xs font-bold transition-all shadow-md shadow-purple-600/20 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>Download AI Settlement Invoice & Receipt</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-white/10 dark:text-slate-300 dark:hover:bg-white/20 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
           </div>
         ) : (
           /* Pre-Payment Review */
