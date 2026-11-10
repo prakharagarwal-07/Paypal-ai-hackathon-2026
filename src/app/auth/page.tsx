@@ -23,6 +23,7 @@ import {
   Check,
 } from "lucide-react";
 import { generateMilestoneOSId } from "@/lib/dashboard-data";
+import { isSupabaseConfigured, getSupabaseClient } from "@/lib/supabase";
 
 type AuthMode = "login" | "signup";
 type UserRole = "client" | "freelancer";
@@ -74,6 +75,63 @@ function AuthForm() {
     }
   }, [searchParams]);
 
+  const syncLocalProfile = (userName: string, userEmail: string, userRole: UserRole, userMsoId: string) => {
+    try {
+      const existingProfilesStr = localStorage.getItem("milestoneos_profiles_v7");
+      const existingProfiles = existingProfilesStr ? JSON.parse(existingProfilesStr) : null;
+      const initials = (userName || (userRole === "client" ? "Sarah Chen" : "Rohan Verma"))
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+
+      const updatedProfiles = {
+        client: existingProfiles?.client || {
+          name: "Sarah Chen",
+          email: "sarah.chen@apexcommerce.com",
+          avatar: "SC",
+          company: "Apex Commerce",
+          milestoneOSId: "MSO-7K4P92",
+        },
+        freelancer: existingProfiles?.freelancer || {
+          name: "Rohan Verma",
+          email: "rohan.verma@craftdev.io",
+          avatar: "RV",
+          title: "Senior Full-Stack Engineer",
+          rating: 4.98,
+          milestoneOSId: "MSO-2W8L41",
+        },
+        [userRole]: {
+          name: userName || (userRole === "client" ? "Sarah Chen" : "Rohan Verma"),
+          email: userEmail || (userRole === "client" ? "sarah.chen@apexcommerce.com" : "rohan.verma@craftdev.io"),
+          avatar: initials || (userRole === "client" ? "SC" : "RV"),
+          milestoneOSId: userMsoId,
+          ...(userRole === "client" ? { company: "Apex Commerce" } : { title: "Senior Full-Stack Engineer", rating: 5.0 }),
+        },
+      };
+      localStorage.setItem("milestoneos_profiles_v7", JSON.stringify(updatedProfiles));
+      localStorage.setItem("milestoneos_role_v7", userRole);
+    } catch (_) {}
+  };
+
+  // Instant Demo Login for Hackathon Judges
+  const handleDemoLogin = (demoRole: UserRole) => {
+    setLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    const demoUser =
+      demoRole === "client"
+        ? { name: "Sarah Chen", email: "sarah.chen@apexcommerce.com", id: "MSO-7K4P92" }
+        : { name: "Rohan Verma", email: "rohan.verma@craftdev.io", id: "MSO-2W8L41" };
+
+    syncLocalProfile(demoUser.name, demoUser.email, demoRole, demoUser.id);
+    setSuccessMsg(`Signing in as ${demoUser.name} (${demoRole.toUpperCase()})...`);
+    setTimeout(() => {
+      router.push(`/dashboard?role=${demoRole}`);
+    }, 400);
+  };
+
   // Instant PayPal Authentication
   const handlePayPalInstantAuth = () => {
     setLoading(true);
@@ -92,7 +150,7 @@ function AuthForm() {
     }, 700);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -119,59 +177,81 @@ function AuthForm() {
     }
 
     setLoading(true);
-
-    try {
-      const existingProfilesStr = localStorage.getItem("milestoneos_profiles_v7");
-      const existingProfiles = existingProfilesStr ? JSON.parse(existingProfilesStr) : null;
-      const newId = existingProfiles?.[role]?.milestoneOSId || generateMilestoneOSId();
-      const initials = (name || (role === "client" ? "Sarah Chen" : "Rohan Verma"))
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2);
-
-      const updatedProfiles = {
-        client: existingProfiles?.client || {
-          name: "Sarah Chen",
-          email: "sarah.chen@apexcommerce.com",
-          avatar: "SC",
-          company: "Apex Commerce",
-          milestoneOSId: "MSO-7K4P92",
-        },
-        freelancer: existingProfiles?.freelancer || {
-          name: "Rohan Verma",
-          email: "rohan.verma@craftdev.io",
-          avatar: "RV",
-          title: "Senior Full-Stack Engineer",
-          rating: 4.98,
-          milestoneOSId: "MSO-2W8L41",
-        },
-        [role]: {
-          name: name || (role === "client" ? "Sarah Chen" : "Rohan Verma"),
-          email: email || (role === "client" ? "sarah.chen@apexcommerce.com" : "rohan.verma@craftdev.io"),
-          avatar: initials || (role === "client" ? "SC" : "RV"),
-          milestoneOSId: newId,
-          ...(role === "client" ? { company: "Client Workspace" } : { title: "Specialist Freelancer", rating: 5.0 }),
-        },
-      };
-      localStorage.setItem("milestoneos_profiles_v7", JSON.stringify(updatedProfiles));
-      localStorage.setItem("milestoneos_role_v7", role);
-    } catch (_) {}
-
     const returnUrl = searchParams.get("returnUrl") || `/dashboard?role=${role}`;
+    const supabaseClient = getSupabaseClient();
+
+    // 1. If Supabase is configured in .env.local, use Supabase Auth
+    if (supabaseClient) {
+      try {
+        if (mode === "signup") {
+          const newMsoId = generateMilestoneOSId();
+          const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                name: name.trim() || (role === "client" ? "Sarah Chen" : "Rohan Verma"),
+                role,
+                milestoneOSId: newMsoId,
+              },
+            },
+          });
+
+          if (error) {
+            setLoading(false);
+            setErrorMsg(error.message);
+            return;
+          }
+
+          syncLocalProfile(name || "New Member", email, role, newMsoId);
+          setSuccessMsg(`Account created on Supabase! ID: ${newMsoId}. Redirecting...`);
+          setTimeout(() => router.push(returnUrl), 500);
+          return;
+        } else {
+          // Login with Supabase
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (error) {
+            setLoading(false);
+            setErrorMsg(error.message || "Invalid email or password.");
+            return;
+          }
+
+          const userMeta = data.user?.user_metadata || {};
+          const userRole = (userMeta.role as UserRole) || role;
+          const userName = userMeta.name || email.split("@")[0];
+          const userMsoId = userMeta.milestoneOSId || generateMilestoneOSId();
+
+          syncLocalProfile(userName, email, userRole, userMsoId);
+          setSuccessMsg(`Welcome back, ${userName}! Authenticated via Supabase.`);
+          setTimeout(() => router.push(`/dashboard?role=${userRole}`), 500);
+          return;
+        }
+      } catch (err: any) {
+        setLoading(false);
+        setErrorMsg(err.message || "Authentication failed. Please verify your connection.");
+        return;
+      }
+    }
+
+    // 2. Fallback: Built-in local authentication
+    const newId = generateMilestoneOSId();
+    syncLocalProfile(name, email, role, newId);
 
     setTimeout(() => {
       setLoading(false);
       setSuccessMsg(
         mode === "login"
           ? `Welcome back, ${name || (role === "client" ? "Sarah" : "Rohan")}! Redirecting to your workspace...`
-          : `Account created successfully with unique MilestoneOS ID! Welcome to MilestoneOS.`
+          : `Account created successfully with unique MilestoneOS ID (${newId})! Welcome to MilestoneOS.`
       );
       setTimeout(() => {
         router.push(returnUrl);
       }, 400);
-    }, 900);
+    }, 700);
   };
 
   return (
@@ -228,7 +308,7 @@ function AuthForm() {
         </div>
 
         {/* ONE-CLICK PAYPAL LOGIN (Featured for PayPal Hackathon) */}
-        <div className="mt-5">
+        <div className="mt-5 space-y-2.5">
           <button
             type="button"
             onClick={handlePayPalInstantAuth}
@@ -238,6 +318,44 @@ function AuthForm() {
             <PayPalIcon className="h-4 w-4" />
             <span>Continue with PayPal</span>
           </button>
+
+          {/* Quick Demo Access for Hackathon Judges */}
+          <div className="p-2.5 rounded-2xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/10">
+            <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1.5 px-1">
+              <span className="flex items-center gap-1">
+                <Sparkles className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
+                <span>Instant Hackathon Demo Access</span>
+              </span>
+              <span className="text-[10px] text-slate-400 font-normal">1-Click</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleDemoLogin("client")}
+                disabled={loading}
+                className="py-1.5 px-2 rounded-xl bg-white dark:bg-white/10 border border-slate-200/80 dark:border-white/10 hover:border-[#0070BA] hover:text-[#0070BA] dark:hover:border-sky-400 dark:hover:text-sky-300 text-[11px] font-bold text-slate-700 dark:text-slate-200 transition-colors shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <User className="h-3 w-3 text-[#0070BA]" />
+                <span>Sarah (Client)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoLogin("freelancer")}
+                disabled={loading}
+                className="py-1.5 px-2 rounded-xl bg-white dark:bg-white/10 border border-slate-200/80 dark:border-white/10 hover:border-[#0070BA] hover:text-[#0070BA] dark:hover:border-sky-400 dark:hover:text-sky-300 text-[11px] font-bold text-slate-700 dark:text-slate-200 transition-colors shadow-2xs flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <Briefcase className="h-3 w-3 text-[#0070BA]" />
+                <span>Rohan (Freelancer)</span>
+              </button>
+            </div>
+          </div>
+
+          {isSupabaseConfigured() && (
+            <div className="flex items-center justify-center gap-1.5 py-1 px-2.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Supabase Cloud Auth Active</span>
+            </div>
+          )}
         </div>
 
         {/* Divider */}
