@@ -64,6 +64,7 @@ export async function POST(
         loomVideo,
         notes: submission.notes,
         deliverableLinks: submission.deliverableLinks,
+        attachments: submission.attachments,
       },
     });
 

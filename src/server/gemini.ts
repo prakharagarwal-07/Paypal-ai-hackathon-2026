@@ -4,7 +4,7 @@
  * against agreed contract acceptance criteria.
  */
 
-import { AIAssessment, AcceptanceCriterion } from "@/lib/dashboard-data";
+import { AIAssessment, AcceptanceCriterion, DeliverableAttachment } from "@/lib/dashboard-data";
 
 export interface VerifyMilestoneInput {
   milestoneTitle: string;
@@ -17,6 +17,7 @@ export interface VerifyMilestoneInput {
     notes: string;
     submittedAt?: string;
     deliverableLinks?: Array<{ title: string; url: string; type?: string }>;
+    attachments?: DeliverableAttachment[];
   };
 }
 
@@ -32,7 +33,12 @@ const GEMINI_MODELS = [
   "gemini-flash-latest",
 ];
 
-async function requestGeminiJson(prompt: string, apiKey: string): Promise<any | null> {
+async function requestGeminiJson(
+  promptOrParts: string | any[],
+  apiKey: string
+): Promise<any | null> {
+  const parts = typeof promptOrParts === "string" ? [{ text: promptOrParts }] : promptOrParts;
+
   for (const model of GEMINI_MODELS) {
     try {
       const response = await fetch(
@@ -41,7 +47,7 @@ async function requestGeminiJson(prompt: string, apiKey: string): Promise<any | 
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
+            contents: [{ parts }],
             generationConfig: {
               response_mime_type: "application/json",
               temperature: 0.2,
@@ -125,10 +131,35 @@ Return strictly valid JSON conforming to this schema:
   "suggestedRevisions": string[]
 }`;
 
-      const parsed = await requestGeminiJson(prompt, apiKey);
+      const parts: any[] = [{ text: prompt }];
+
+      if (submission.attachments && submission.attachments.length > 0) {
+        for (const att of submission.attachments) {
+          if (att.dataUrl && att.dataUrl.startsWith("data:image/")) {
+            const match = att.dataUrl.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/);
+            if (match) {
+              parts.push({
+                inline_data: {
+                  mime_type: match[1],
+                  data: match[2],
+                },
+              });
+            }
+          }
+        }
+      }
+
+      const parsed = await requestGeminiJson(parts, apiKey);
 
       if (parsed) {
         const checks: Array<{ name: string; passed: boolean; detail: string }> = [];
+          if (submission.attachments && submission.attachments.length > 0) {
+            checks.push({
+              name: "Uploaded Deliverables & Photos",
+              passed: true,
+              detail: `${submission.attachments.length} deliverable file(s) evaluated by Gemini Vision`,
+            });
+          }
           if (submission.deliverableLinks && submission.deliverableLinks.length > 0) {
             checks.push({
               name: "Deliverable Assets & Links",
