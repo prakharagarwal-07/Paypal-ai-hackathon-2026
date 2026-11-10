@@ -786,38 +786,6 @@ export default function ProjectWorkspace({
         </div>
       </div>
 
-      {/* SECTION 3: Recent Updates */}
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-            Recent Updates
-          </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Latest submissions, review feedback, and payment records.
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0D1527] divide-y divide-slate-100 dark:divide-white/5">
-          {activeProject.activityLog.map((act) => (
-            <div key={act.id} className="p-4 flex items-start gap-3 text-xs">
-              <div className="h-2 w-2 rounded-full bg-[#0070BA] mt-1.5 shrink-0" />
-              <div className="flex-1">
-                <span className="font-bold text-slate-900 dark:text-white">{act.actor}:</span>{" "}
-                <span className="text-slate-700 dark:text-slate-300">{act.action}</span>
-                {act.details && (
-                  <p className="mt-1 text-slate-500 dark:text-slate-400 text-[11px] italic">
-                    "{act.details}"
-                  </p>
-                )}
-                <span className="text-[10px] text-slate-400 block mt-1">
-                  {act.timestamp}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Request Changes on Proposal Modal */}
       {isRequestingChanges && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4">
