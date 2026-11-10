@@ -1,14 +1,32 @@
 "use client";
 
 import { useDashboard } from "@/lib/dashboard-store";
-import { X, CheckCircle2, AlertCircle, Clock, Wallet, Bell, Sparkles, Check, FolderGit2 } from "lucide-react";
+import { ProjectContract } from "@/lib/dashboard-data";
+import {
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Wallet,
+  Bell,
+  Sparkles,
+  Check,
+  FolderGit2,
+  FileText,
+  ArrowRight,
+} from "lucide-react";
 
 interface NotificationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenProposal?: (project: ProjectContract) => void;
 }
 
-export default function NotificationDrawer({ isOpen, onClose }: NotificationDrawerProps) {
+export default function NotificationDrawer({
+  isOpen,
+  onClose,
+  onOpenProposal,
+}: NotificationDrawerProps) {
   const {
     notifications,
     markNotificationRead,
@@ -24,7 +42,17 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
 
   const handleNotificationClick = (notif: (typeof notifications)[0]) => {
     markNotificationRead(notif.id);
-    if (notif.projectId) {
+    const isProposal =
+      notif.type === "proposal" ||
+      notif.title.toLowerCase().includes("proposal");
+
+    const project = notif.projectId ? projects.find((p) => p.id === notif.projectId) : null;
+
+    if (isProposal && project && onOpenProposal) {
+      onOpenProposal(project);
+    } else if (isProposal) {
+      setActiveTab("project-requests");
+    } else if (notif.projectId) {
       setActiveProjectId(notif.projectId);
       setActiveTab("projects");
     }
@@ -33,6 +61,8 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
 
   const getIcon = (type: string) => {
     switch (type) {
+      case "proposal":
+        return <FileText className="h-4 w-4" />;
       case "submission":
         return <Sparkles className="h-4 w-4 text-[#0070BA] dark:text-sky-400" />;
       case "revision":
@@ -103,55 +133,113 @@ export default function NotificationDrawer({ isOpen, onClose }: NotificationDraw
                   ? projects.find((p) => p.id === notif.projectId)
                   : null;
 
+                const isProposal =
+                  notif.type === "proposal" ||
+                  notif.title.toLowerCase().includes("proposal");
+
                 return (
                   <div
                     key={notif.id}
                     onClick={() => handleNotificationClick(notif)}
-                    className={`p-4 rounded-xl transition-all cursor-pointer hover:bg-slate-50 dark:hover:bg-white/5 flex items-start gap-3 relative ${
-                      notif.unread
-                        ? "bg-blue-50/50 dark:bg-blue-900/10"
-                        : "opacity-80 hover:opacity-100"
+                    className={`p-4 rounded-2xl transition-all cursor-pointer relative overflow-hidden ${
+                      isProposal
+                        ? "border-2 border-[#0070BA] dark:border-sky-400 bg-gradient-to-br from-blue-50/95 via-sky-50/50 to-white dark:from-sky-950/70 dark:via-[#0D1527] dark:to-[#0A1020] shadow-md shadow-blue-500/15 ring-1 ring-[#0070BA]/20 hover:shadow-xl hover:border-sky-500"
+                        : notif.unread
+                        ? "bg-blue-50/50 dark:bg-blue-900/10 border border-slate-200/80 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5"
+                        : "opacity-80 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-white/5"
                     }`}
                   >
-                    {notif.unread && (
-                      <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-[#0070BA] dark:bg-sky-400" />
-                    )}
-                    <div className="p-2 rounded-lg bg-white dark:bg-[#131C31] shadow-xs border border-slate-200/60 dark:border-white/10 shrink-0">
-                      {getIcon(notif.type)}
-                    </div>
-                    <div className="flex-1 min-w-0 pr-4">
-                      {project && (
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 shadow-2xs">
-                            <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
-                            Project: {project.title}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between gap-2">
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                          {notif.title}
-                        </h4>
-                        <span className="text-[10px] text-slate-400 shrink-0 flex items-center gap-1">
-                          <Clock className="h-2.5 w-2.5" />
-                          {notif.timestamp}
+                    {isProposal ? (
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#0070BA]" />
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {notif.message
-                          .replace(/\s*\((?:Receipt:?\s*)?PAYID-[A-Za-z0-9\-_]+\)/gi, "")
-                          .replace(/\s*\(Receipt:?\s*[^)]+\)/gi, "")
-                          .replace(/\s*\(PAYID-[A-Za-z0-9\-_]+\)/gi, "")
-                          .trim()}
-                      </p>
-                      {notif.projectId && (
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="inline-flex items-center text-[10px] font-semibold text-[#0070BA] dark:text-sky-400 hover:underline">
-                            View Milestone Workspace →
+                    ) : notif.unread ? (
+                      <div className="absolute top-4 right-4 h-2 w-2 rounded-full bg-[#0070BA] dark:bg-sky-400" />
+                    ) : null}
+
+                    {isProposal && (
+                      <div className="mb-2.5">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#0070BA] text-white shadow-2xs tracking-wide uppercase">
+                          <Sparkles className="h-3 w-3" />
+                          <span>Action Required • Project Proposal</span>
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`p-2 rounded-xl shrink-0 shadow-xs ${
+                          isProposal
+                            ? "bg-[#0070BA] text-white dark:bg-sky-500 shadow-md shadow-blue-600/30"
+                            : "bg-white dark:bg-[#131C31] border border-slate-200/60 dark:border-white/10 text-slate-700 dark:text-slate-300"
+                        }`}
+                      >
+                        {getIcon(notif.type)}
+                      </div>
+
+                      <div className="flex-1 min-w-0 pr-2">
+                        {project && (
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/10 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 border border-[#0070BA]/20 dark:border-sky-800/40 shadow-2xs">
+                              <FolderGit2 className="h-2.5 w-2.5 text-[#0070BA] dark:text-sky-400" />
+                              Project: {project.title}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {notif.title}
+                          </h4>
+                          <span className="text-[10px] text-slate-400 shrink-0 flex items-center gap-1">
+                            <Clock className="h-2.5 w-2.5" />
+                            {notif.timestamp}
                           </span>
                         </div>
-                      )}
+
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                          {notif.message
+                            .replace(/\s*\((?:Receipt:?\s*)?PAYID-[A-Za-z0-9\-_]+\)/gi, "")
+                            .replace(/\s*\(Receipt:?\s*[^)]+\)/gi, "")
+                            .replace(/\s*\(PAYID-[A-Za-z0-9\-_]+\)/gi, "")
+                            .trim()}
+                        </p>
+
+                        {isProposal ? (
+                          <div className="mt-3 pt-2.5 border-t border-[#0070BA]/15 dark:border-white/10 flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                              Terms & Milestones ready
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                markNotificationRead(notif.id);
+                                if (project && onOpenProposal) {
+                                  onOpenProposal(project);
+                                } else {
+                                  setActiveTab("project-requests");
+                                }
+                                onClose();
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              <span>Review Proposal</span>
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : notif.projectId ? (
+                          <div className="mt-2 flex items-center justify-between">
+                            <span className="inline-flex items-center text-[10px] font-semibold text-[#0070BA] dark:text-sky-400 hover:underline">
+                              View Milestone Workspace →
+                            </span>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 );

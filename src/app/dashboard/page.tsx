@@ -22,6 +22,7 @@ import RevisionRequestModal from "@/components/dashboard/RevisionRequestModal";
 import PayPalPaymentModal from "@/components/dashboard/PayPalPaymentModal";
 import NewProjectModal from "@/components/dashboard/NewProjectModal";
 import EditProjectModal from "@/components/dashboard/EditProjectModal";
+import ProposalReviewModal from "@/components/dashboard/ProposalReviewModal";
 import UIAlertDialog from "@/components/dashboard/UIAlertDialog";
 import InvoiceModal from "@/components/dashboard/InvoiceModal";
 
@@ -93,6 +94,7 @@ function DashboardInner() {
 
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
   const [editingRevisionProject, setEditingRevisionProject] = useState<ProjectContract | null>(null);
+  const [reviewingProposalProject, setReviewingProposalProject] = useState<ProjectContract | null>(null);
   const [isEditProjectModalOpen, setIsEditProjectModalOpen] = useState(false);
 
   return (
@@ -196,6 +198,11 @@ function DashboardInner() {
                 setViewingWorkspace(false);
                 setActiveTab("projects");
               }}
+              onReviewProposal={(proj) => setReviewingProposalProject(proj)}
+              onOpenRevision={(proj) => {
+                setEditingRevisionProject(proj);
+                setIsNewProjectModalOpen(true);
+              }}
             />
           )}
 
@@ -297,6 +304,7 @@ function DashboardInner() {
       <NotificationDrawer
         isOpen={notificationsOpen}
         onClose={() => setNotificationsOpen(false)}
+        onOpenProposal={(p) => setReviewingProposalProject(p)}
       />
 
       {/* AUDIT / INSPECTION MODAL */}
@@ -384,6 +392,18 @@ function DashboardInner() {
           onClose={() => setIsEditProjectModalOpen(false)}
         />
       )}
+
+      {/* PROPOSAL REVIEW MODAL */}
+      <ProposalReviewModal
+        project={reviewingProposalProject}
+        isOpen={!!reviewingProposalProject}
+        onClose={() => setReviewingProposalProject(null)}
+        onOpenRevision={(proj) => {
+          setReviewingProposalProject(null);
+          setEditingRevisionProject(proj);
+          setIsNewProjectModalOpen(true);
+        }}
+      />
 
       {/* GLOBAL UI ALERT & CONFIRM DIALOG */}
       {alertState && (

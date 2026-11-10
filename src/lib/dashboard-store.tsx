@@ -468,7 +468,7 @@ export function DashboardProvider({
         timestamp: "Just now",
         title: isClientInitiator ? "New Project Initiated" : "New Project Proposal",
         message: `${senderName} sent a project proposal for "${newProject.title}" ($${newProject.totalBudget.toLocaleString()} USD).`,
-        type: "system",
+        type: "proposal",
         unread: true,
         projectId: id,
       };

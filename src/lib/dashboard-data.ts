@@ -126,7 +126,7 @@ export interface NotificationItem {
   timestamp: string;
   title: string;
   message: string;
-  type: "submission" | "revision" | "approval" | "payment" | "system";
+  type: "submission" | "revision" | "approval" | "payment" | "proposal" | "system";
   unread: boolean;
   projectId?: string;
   milestoneId?: string;
@@ -1216,10 +1216,10 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
 export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "notif_proposal_ai",
-    timestamp: "1 hour ago",
+    timestamp: "Just now",
     title: "New Project Proposal Received",
-    message: "Rohan Verma proposed 'AI Search & Smart Recommendation Engine' ($3,600 USD) for your acceptance.",
-    type: "system",
+    message: "Rohan Verma proposed 'AI Search & Smart Recommendation Engine' ($3,600 USD across 2 milestones). Review deliverables and criteria to accept.",
+    type: "proposal",
     unread: true,
     projectId: "proj_ai_recommendation_2026",
   },

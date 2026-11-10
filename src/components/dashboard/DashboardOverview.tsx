@@ -22,6 +22,9 @@ import {
   Check,
   ShieldCheck,
   FileCheck,
+  FileText,
+  Layers,
+  DollarSign,
 } from "lucide-react";
 import { PayPalIcon } from "./icons";
 
@@ -33,6 +36,8 @@ interface DashboardOverviewProps {
   onOpenNewProject: () => void;
   onSelectProject?: (projectId: string) => void;
   onNavigateToProjects?: () => void;
+  onReviewProposal?: (project: ProjectContract) => void;
+  onOpenRevision?: (project: ProjectContract) => void;
 }
 
 interface EnrichedActivity extends ActivityItem {
@@ -66,6 +71,11 @@ function getActivityMeta(act: EnrichedActivity) {
   const isSubmission =
     act.action.toLowerCase().includes("submitted") ||
     act.action.toLowerCase().includes("resubmitted");
+
+  const isProposal =
+    act.action.toLowerCase().includes("proposal") ||
+    act.action.toLowerCase().includes("proposed") ||
+    act.action.toLowerCase().includes("invitation link");
 
   if (isPayment) {
     return {
@@ -108,6 +118,17 @@ function getActivityMeta(act: EnrichedActivity) {
       iconBg: "bg-sky-100 text-[#0070BA] dark:bg-sky-950/70 dark:text-sky-400",
       icon: CheckCircle2,
       type: "approval" as const,
+    };
+  }
+
+  if (isProposal) {
+    return {
+      category: "Project Proposal",
+      badgeColor:
+        "bg-indigo-50 text-[#0070BA] border-indigo-200 dark:bg-indigo-950/60 dark:text-sky-300 dark:border-indigo-800",
+      iconBg: "bg-indigo-100 text-[#0070BA] dark:bg-indigo-950/80 dark:text-sky-400",
+      icon: FileText,
+      type: "proposal" as const,
     };
   }
 
@@ -155,6 +176,8 @@ export default function DashboardOverview({
   onOpenNewProject,
   onSelectProject,
   onNavigateToProjects,
+  onReviewProposal,
+  onOpenRevision,
 }: DashboardOverviewProps) {
   const {
     projects,
@@ -180,6 +203,16 @@ export default function DashboardOverview({
 
   const totalPaid = projects.reduce((sum, p) => sum + p.totalPaid, 0);
 
+  // Dedicated proposals requiring user action
+  const incomingProposals = projects.filter((p) => {
+    if (p.status !== "awaiting_acceptance") return false;
+    return role === "client" ? p.initiatedBy === "freelancer" : p.initiatedBy === "client";
+  });
+
+  const changesRequestedProposals = projects.filter((p) => {
+    return p.status === "changes_requested" && p.initiatedBy === role;
+  });
+
   // Actions Needed list (items that need user attention)
   const actionsNeeded: {
     type: "review" | "payment" | "submit" | "revision" | "proposal";
@@ -192,9 +225,6 @@ export default function DashboardOverview({
 
   if (role === "client") {
     // 0. Incoming proposals sent by freelancer to client
-    const incomingProposals = projects.filter(
-      (p) => p.status === "awaiting_acceptance" && p.initiatedBy === "freelancer"
-    );
     incomingProposals.forEach((project) => {
       actionsNeeded.push({
         type: "proposal",
@@ -231,10 +261,7 @@ export default function DashboardOverview({
   } else {
     // Freelancer actions
     // 0. Incoming projects initiated by client awaiting freelancer acceptance
-    const incomingProjects = projects.filter(
-      (p) => p.status === "awaiting_acceptance" && p.initiatedBy === "client"
-    );
-    incomingProjects.forEach((project) => {
+    incomingProposals.forEach((project) => {
       actionsNeeded.push({
         type: "proposal",
         title: `Project assignment from ${project.client.name}`,
@@ -353,6 +380,208 @@ export default function DashboardOverview({
           Overall project progress and payment activity.
         </p>
       </div>
+
+      {/* DEDICATED STANDOUT SECTION: INCOMING PROJECT PROPOSALS & REQUESTS */}
+      {(incomingProposals.length > 0 || changesRequestedProposals.length > 0) && (
+        <section aria-label="Incoming Project Proposals" className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#0070BA] dark:bg-sky-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[#0070BA] dark:bg-sky-500 shadow-sm" />
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                <span>Incoming Project Proposals</span>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-[#0070BA] text-white shadow-2xs">
+                  {incomingProposals.length + changesRequestedProposals.length} Action Required
+                </span>
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("project-requests")}
+              className="text-xs font-bold text-[#0070BA] dark:text-sky-400 hover:text-[#005a96] dark:hover:text-sky-300 flex items-center gap-1.5 cursor-pointer group transition-colors"
+            >
+              <span>Manage in Project Requests Hub</span>
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {incomingProposals.map((proj) => {
+              const proposer = proj.initiatedBy === "client" ? proj.client : proj.freelancer;
+              const proposerRoleLabel = proj.initiatedBy === "client" ? "Client" : "Freelancer";
+
+              return (
+                <div
+                  key={proj.id}
+                  className="relative overflow-hidden rounded-3xl border-2 border-[#0070BA] dark:border-sky-500/80 bg-gradient-to-br from-blue-50/95 via-sky-50/40 to-white dark:from-[#0B1528] dark:via-[#0D1527] dark:to-[#08101F] p-5 sm:p-6 shadow-xl shadow-blue-500/10 transition-all hover:shadow-2xl hover:border-sky-500"
+                >
+                  {/* Subtle decorative glow */}
+                  <div className="absolute top-0 right-0 -mt-12 -mr-12 h-44 w-44 rounded-full bg-[#0070BA]/15 dark:bg-sky-500/15 blur-3xl pointer-events-none" />
+
+                  {/* Header Row: Proposer & Status Pill */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10 pb-4 border-b border-blue-200/60 dark:border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="h-11 w-11 rounded-2xl bg-[#0070BA] text-white font-black text-sm flex items-center justify-center shadow-md shadow-blue-600/30 shrink-0">
+                        {proposer.avatar || proposer.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-900 dark:text-white text-sm">
+                            {proposer.name}
+                          </span>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#0070BA]/15 text-[#0070BA] dark:bg-sky-950/70 dark:text-sky-300 border border-[#0070BA]/25 dark:border-sky-800/50">
+                            {proposerRoleLabel}
+                          </span>
+                        </div>
+                        {proposer.milestoneOSId && (
+                          <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+                            MilestoneOS ID: <strong className="text-slate-800 dark:text-slate-200">{proposer.milestoneOSId}</strong>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#0070BA] text-white shadow-2xs">
+                        <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
+                        <span>Awaiting Your Acceptance</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Body: Title, Description, and Key Contract Terms */}
+                  <div className="py-4 space-y-3 relative z-10">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-1">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300">
+                          {proj.category || "General Project"}
+                        </span>
+                        <span>•</span>
+                        <span>Proposed {proj.createdAt}</span>
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                        {proj.title}
+                      </h3>
+                      <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
+                        {proj.description}
+                      </p>
+                    </div>
+
+                    {/* Financial & Milestone Badges */}
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
+                        <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-slate-500 dark:text-slate-400">Total Proposed Budget:</span>
+                        <span className="font-mono font-black text-slate-900 dark:text-white text-sm text-emerald-600 dark:text-emerald-400">
+                          ${proj.totalBudget.toLocaleString()} {proj.currency}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
+                        <Layers className="h-4 w-4 text-[#0070BA] dark:text-sky-400" />
+                        <span className="text-slate-500 dark:text-slate-400">Milestones:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {proj.milestones.length} Stages with criteria
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
+                        <Calendar className="h-4 w-4 text-slate-500" />
+                        <span className="text-slate-500 dark:text-slate-400">Target Delivery:</span>
+                        <span className="font-bold text-slate-900 dark:text-white">
+                          {proj.targetDeadline}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer Row: Security Notice & Primary Action Button */}
+                  <div className="pt-4 border-t border-blue-200/60 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs">
+                      <ShieldCheck className="h-4 w-4 text-[#0070BA] dark:text-sky-400 shrink-0" />
+                      <span>Review milestone criteria before accepting. Funds remain safe until milestones are approved.</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (onReviewProposal) {
+                            onReviewProposal(proj);
+                          } else {
+                            setActiveProjectId(proj.id);
+                            setActiveTab("project-requests");
+                          }
+                        }}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold transition-all shadow-md shadow-blue-600/25 hover:shadow-lg cursor-pointer"
+                      >
+                        <FileText className="h-4 w-4" />
+                        <span>Review & Accept Proposal</span>
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Changes Requested Proposals (if user sent proposal and got feedback) */}
+            {changesRequestedProposals.map((proj) => (
+              <div
+                key={proj.id}
+                className="relative overflow-hidden rounded-3xl border-2 border-amber-400 dark:border-amber-500/80 bg-gradient-to-br from-amber-50/95 via-orange-50/30 to-white dark:from-[#211608] dark:via-[#0D1527] dark:to-[#0A1020] p-5 sm:p-6 shadow-xl shadow-amber-500/10"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200 dark:border-white/10">
+                  <div className="flex items-center gap-2">
+                    <span className="p-2 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-950/70 dark:text-amber-300">
+                      <AlertCircle className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                        Feedback on Proposal: {proj.title}
+                      </h4>
+                      <span className="text-xs text-amber-700 dark:text-amber-300">
+                        The counterparty requested adjustments to the proposal scope or budget.
+                      </span>
+                    </div>
+                  </div>
+
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-500 text-white shadow-2xs self-start sm:self-auto">
+                    <span>Changes Requested</span>
+                  </span>
+                </div>
+
+                {proj.proposalFeedback && (
+                  <div className="my-3 p-3 rounded-xl bg-white/80 dark:bg-white/5 border border-amber-200/80 dark:border-white/10 text-xs italic text-slate-700 dark:text-slate-300">
+                    "{proj.proposalFeedback}"
+                  </div>
+                )}
+
+                <div className="pt-3 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onOpenRevision) {
+                        onOpenRevision(proj);
+                      } else {
+                        setActiveProjectId(proj.id);
+                        setActiveTab("project-requests");
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all shadow-md shadow-amber-600/20 cursor-pointer"
+                  >
+                    <span>Revise & Resubmit Proposal</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 2. Four Clean, Compact Summary Cards (Clickable) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -754,11 +983,15 @@ export default function DashboardOverview({
                 .replace(/\s*\(PAYID-[A-Za-z0-9\-_]+\)/gi, "")
                 .trim();
 
+              const isProposalActivity = meta.type === "proposal";
+
               return (
                 <div
                   key={act.id}
                   className={`p-4 transition-colors duration-150 ${
-                    isExpanded
+                    isProposalActivity
+                      ? "border-l-4 border-l-[#0070BA] bg-blue-50/40 dark:bg-sky-950/25 shadow-2xs"
+                      : isExpanded
                       ? "bg-slate-50/50 dark:bg-white/[0.015]"
                       : "hover:bg-slate-50/40 dark:hover:bg-white/[0.01]"
                   }`}
@@ -799,8 +1032,26 @@ export default function DashboardOverview({
                       </div>
                     </div>
 
-                    {/* Right: Clean Details Toggle */}
+                    {/* Right: Clean Details & Proposal Action */}
                     <div className="shrink-0 flex items-center gap-2 pt-0.5">
+                      {isProposalActivity && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const p = projects.find((proj) => proj.id === act.projectId);
+                            if (p && onReviewProposal) {
+                              onReviewProposal(p);
+                            } else {
+                              setActiveTab("project-requests");
+                            }
+                          }}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        >
+                          <FileText className="h-3 w-3" />
+                          <span>Review Proposal</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
                         onClick={() => toggleExpand(act.id)}
