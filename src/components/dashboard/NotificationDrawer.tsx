@@ -208,9 +208,9 @@ export default function NotificationDrawer({
 
                         <p className="mt-1 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                           {notif.message
-                            .replace(/\s*\((?:Receipt:?\s*)?PAYID-[A-Za-z0-9\-_]+\)/gi, "")
+                            .replace(/\s*\([^)]*(?:receipt|payid|transaction)[^)]*\)/gi, "")
                             .replace(/\s*\(Receipt:?\s*[^)]+\)/gi, "")
-                            .replace(/\s*\(PAYID-[A-Za-z0-9\-_]+\)/gi, "")
+                            .replace(/\s*\(PAYID-[A-Za-z0-9\-_–—]+\)/gi, "")
                             .trim()}
                         </p>
 

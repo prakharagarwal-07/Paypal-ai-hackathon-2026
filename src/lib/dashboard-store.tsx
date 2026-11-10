@@ -20,6 +20,7 @@ import {
   generateMilestoneOSId,
   generateInvitationToken,
   lookupMilestoneOSUser,
+  isProjectCompleted,
 } from "./dashboard-data";
 
 export type DashboardTab =
@@ -345,7 +346,19 @@ export function DashboardProvider({
       const savedProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
 
       if (savedProjects) {
-        setProjects(JSON.parse(savedProjects));
+        const parsed = JSON.parse(savedProjects) as ProjectContract[];
+        const normalized = parsed.map((p) => {
+          if (isProjectCompleted(p) && p.status !== "completed") {
+            return {
+              ...p,
+              status: "completed" as const,
+              proposalStatus: "accepted" as const,
+              termsAgreed: true,
+            };
+          }
+          return p;
+        });
+        setProjects(normalized);
       }
       if (savedTransactions) {
         setTransactions(JSON.parse(savedTransactions));
@@ -1162,6 +1175,7 @@ export function DashboardProvider({
       projectId,
       milestoneId,
     };
+
     setNotifications((prev) => [notif, ...prev]);
 
     showToast(
@@ -1244,6 +1258,7 @@ export function DashboardProvider({
       projectId,
       milestoneId,
     };
+
     setNotifications((prev) => [notif, ...prev]);
 
     showToast("Change request sent to the freelancer.", "info");
@@ -1298,6 +1313,7 @@ export function DashboardProvider({
       projectId,
       milestoneId,
     };
+
     setNotifications((prev) => [notif, ...prev]);
 
     showToast(`Milestone approved! $${targetM?.amount.toLocaleString()} is now ready for payment.`, "success");
@@ -1340,12 +1356,31 @@ export function DashboardProvider({
           };
         });
 
+        const allMilestonesPaid =
+          updatedMilestones.length > 0 &&
+          updatedMilestones.every((m) => m.status === "paid");
+
+        const completionActivity: ActivityItem[] = allMilestonesPaid
+          ? [
+              {
+                id: `act_completed_${Date.now()}`,
+                timestamp: "Just now",
+                actor: "MilestoneOS",
+                actorRole: "paypal",
+                action: `Project "${project.title}" completed! All ${updatedMilestones.length} milestones paid and fully settled.`,
+                details: `100% of milestones completed. Total project payout: $${(project.totalPaid + paidAmount).toLocaleString()} USD.`,
+              },
+            ]
+          : [];
+
         return {
           ...project,
+          status: allMilestonesPaid ? ("completed" as const) : project.status,
           totalPaid: project.totalPaid + paidAmount,
           escrowReleased: project.escrowReleased + paidAmount,
           milestones: updatedMilestones,
           activityLog: [
+            ...completionActivity,
             {
               id: `act_${Date.now()}`,
               timestamp: "Just now",
@@ -1390,7 +1425,29 @@ export function DashboardProvider({
       projectId,
       milestoneId,
     };
-    setNotifications((prev) => [notif, ...prev]);
+
+    // If this payment completes the entire project, add project completion notification
+    const currentProj = projects.find((p) => p.id === projectId);
+    const isCompletedNow =
+      currentProj &&
+      currentProj.milestones.length > 0 &&
+      currentProj.milestones.every((m) => (m.id === milestoneId ? true : m.status === "paid"));
+
+    const extraNotifs: NotificationItem[] = isCompletedNow
+      ? [
+          {
+            id: `notif_comp_${Date.now()}`,
+            timestamp: "Just now",
+            title: "Project Completed & Settled",
+            message: `All milestones for "${projectTitle || currentProj.title}" are now 100% paid and settled via PayPal!`,
+            type: "payment",
+            unread: true,
+            projectId,
+          },
+        ]
+      : [];
+
+    setNotifications((prev) => [...extraNotifs, notif, ...prev]);
 
     showToast(
       `Payment of $${paidAmount.toLocaleString()} USD completed via PayPal Sandbox!`,

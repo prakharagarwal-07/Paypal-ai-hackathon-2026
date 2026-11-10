@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { ProjectContract, Milestone, getFriendlyProjectStatus } from "@/lib/dashboard-data";
+import { ProjectContract, Milestone, getFriendlyProjectStatus, isProjectCompleted } from "@/lib/dashboard-data";
 import {
   Plus,
   ArrowRight,
@@ -47,14 +47,17 @@ export default function ProjectsView({
     return true;
   });
 
+  const completedProjects = filteredProjects.filter((p) => isProjectCompleted(p));
   const proposalProjects = filteredProjects.filter(
     (p) =>
-      p.status === "awaiting_acceptance" ||
-      p.status === "changes_requested" ||
-      p.status === "draft"
+      !isProjectCompleted(p) &&
+      (p.status === "awaiting_acceptance" ||
+        p.status === "changes_requested" ||
+        p.status === "draft")
   );
-  const activeProjects = filteredProjects.filter((p) => p.status === "active");
-  const completedProjects = filteredProjects.filter((p) => p.status === "completed");
+  const activeProjects = filteredProjects.filter(
+    (p) => !isProjectCompleted(p) && p.status === "active"
+  );
 
   return (
     <div className="space-y-8">
@@ -391,6 +394,10 @@ export default function ProjectsView({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {completedProjects.map((project) => {
                 const otherPartyName = role === "client" ? project.freelancer.name : project.client.name;
+                const totalSettled =
+                  project.milestones
+                    .filter((m) => m.status === "paid")
+                    .reduce((sum, m) => sum + m.amount, 0) || project.totalPaid;
 
                 return (
                   <div
@@ -427,7 +434,7 @@ export default function ProjectsView({
                         <div className="text-right shrink-0">
                           <span className="text-[10px] text-slate-400 block font-medium">Total Paid</span>
                           <span className="font-mono font-black text-base text-emerald-600 dark:text-emerald-400">
-                            ${project.totalPaid.toLocaleString()} USD
+                            ${totalSettled.toLocaleString()} USD
                           </span>
                         </div>
                       </div>

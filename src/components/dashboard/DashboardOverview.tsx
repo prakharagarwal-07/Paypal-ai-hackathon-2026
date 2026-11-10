@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, ActivityItem, getFriendlyStatus } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, ActivityItem, getFriendlyStatus, isProjectCompleted } from "@/lib/dashboard-data";
 import {
   FolderGit2,
   Sparkles,
@@ -187,7 +187,7 @@ export default function DashboardOverview({
   } = useDashboard();
 
   // Clean metrics calculations
-  const totalProjects = projects.filter((p) => p.status === "active").length;
+  const totalProjects = projects.filter((p) => p.status === "active" && !isProjectCompleted(p)).length;
   const allMilestones = projects.flatMap((p) =>
     p.milestones.map((m) => ({ project: p, milestone: m }))
   );
@@ -978,9 +978,9 @@ export default function DashboardOverview({
 
               // Strip receipt or transaction codes from the main headline notification
               const cleanAction = act.action
-                .replace(/\s*\((?:Receipt:?\s*)?PAYID-[A-Za-z0-9\-_]+\)/gi, "")
+                .replace(/\s*\([^)]*(?:receipt|payid|transaction)[^)]*\)/gi, "")
                 .replace(/\s*\(Receipt:?\s*[^)]+\)/gi, "")
-                .replace(/\s*\(PAYID-[A-Za-z0-9\-_]+\)/gi, "")
+                .replace(/\s*\(PAYID-[A-Za-z0-9\-_–—]+\)/gi, "")
                 .trim();
 
               const isProposalActivity = meta.type === "proposal";

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted } from "@/lib/dashboard-data";
 import {
   ArrowLeft,
   Calendar,
@@ -112,7 +112,7 @@ export default function ProjectWorkspace({
       )}
 
       {/* Completed Project Banner */}
-      {activeProject.status === "completed" && (
+      {isProjectCompleted(activeProject) && (
         <div className="p-4 sm:p-5 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 via-white to-blue-50/40 dark:border-emerald-900/40 dark:from-emerald-950/30 dark:via-[#0D1527] dark:to-blue-950/20 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-start sm:items-center gap-3">
             <div className="h-9 w-9 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
@@ -297,7 +297,7 @@ export default function ProjectWorkspace({
         </div>
       )}
 
-      {activeProject.status === "active" && (
+      {!isProjectCompleted(activeProject) && activeProject.status === "active" && (
         <div className="p-3.5 rounded-2xl border border-emerald-200/80 bg-emerald-50/50 dark:border-emerald-900/30 dark:bg-emerald-950/20 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-2.5 text-emerald-800 dark:text-emerald-300 font-semibold">
             <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -475,7 +475,7 @@ export default function ProjectWorkspace({
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            {role === "freelancer" && onOpenAddMilestone && activeProject.status === "active" && (
+            {role === "freelancer" && onOpenAddMilestone && !isProjectCompleted(activeProject) && activeProject.status === "active" && (
               <button
                 type="button"
                 onClick={onOpenAddMilestone}
@@ -621,7 +621,7 @@ export default function ProjectWorkspace({
 
                       {/* Primary Role Action Button */}
                       <div>
-                        {activeProject.status !== "active" && activeProject.status !== "completed" ? (
+                        {activeProject.status !== "active" && !isProjectCompleted(activeProject) ? (
                           <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium italic">
                             Unlocks once contract is active
                           </span>

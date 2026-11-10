@@ -194,6 +194,13 @@ export interface ProjectContract {
   invitationCreatedByRole?: "client" | "freelancer";
 }
 
+export function isProjectCompleted(project: ProjectContract | null | undefined): boolean {
+  if (!project) return false;
+  if (project.status === "completed") return true;
+  if (!project.milestones || project.milestones.length === 0) return false;
+  return project.milestones.every((m) => m.status === "paid");
+}
+
 export function getFriendlyStatus(status: MilestoneStatus): {
   label: string;
   badgeClass: string;

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted } from "@/lib/dashboard-data";
 import {
   FolderGit2,
   ArrowRight,
@@ -221,12 +221,12 @@ export default function MilestonesView({
                       </h2>
                       <span
                         className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          project.status === "completed"
+                          isProjectCompleted(project)
                             ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                             : "bg-blue-50 text-[#0070BA] dark:bg-blue-950/40 dark:text-sky-300 border border-blue-200 dark:border-blue-800"
                         }`}
                       >
-                        {project.status === "completed" ? "Completed & Settled" : "Active Project"}
+                        {isProjectCompleted(project) ? "Completed & Settled" : "Active Project"}
                       </span>
                     </div>
 

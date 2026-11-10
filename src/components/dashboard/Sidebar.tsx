@@ -20,6 +20,7 @@ import {
   Check,
 } from "lucide-react";
 import { useState } from "react";
+import { isProjectCompleted } from "@/lib/dashboard-data";
 
 interface SidebarProps {
   mobileOpen: boolean;
@@ -171,9 +172,16 @@ export default function Sidebar({
                 className="min-w-0 pr-2 flex-1 text-left cursor-pointer"
                 title="Open project workspace"
               >
-                <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
-                  {activeProject?.title}
-                </p>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <p className="text-xs font-bold text-slate-900 dark:text-white truncate group-hover:text-[#0070BA] dark:group-hover:text-sky-300 transition-colors">
+                    {activeProject?.title}
+                  </p>
+                  {activeProject && isProjectCompleted(activeProject) && (
+                    <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 shrink-0">
+                      Completed
+                    </span>
+                  )}
+                </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                   ${activeProject?.totalBudget.toLocaleString()} USD • {activeProject?.milestones.length} Milestones
                 </p>
@@ -205,7 +213,7 @@ export default function Sidebar({
                     Active Projects
                   </span>
                   {projects
-                    .filter((p) => p.status === "active")
+                    .filter((p) => p.status === "active" && !isProjectCompleted(p))
                     .map((proj) => (
                       <button
                         key={proj.id}
@@ -226,7 +234,7 @@ export default function Sidebar({
                 </div>
 
                 {/* Completed Projects */}
-                {projects.some((p) => p.status === "completed") && (
+                {projects.some((p) => isProjectCompleted(p)) && (
                   <div className="space-y-1 py-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 px-2 py-0.5 flex items-center gap-1">
                       <span>Completed Projects</span>
@@ -235,7 +243,7 @@ export default function Sidebar({
                       </span>
                     </span>
                     {projects
-                      .filter((p) => p.status === "completed")
+                      .filter((p) => isProjectCompleted(p))
                       .map((proj) => (
                         <button
                           key={proj.id}
