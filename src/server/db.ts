@@ -163,31 +163,67 @@ function rowToTransaction(row: any): TransactionRecord {
   };
 }
 
+let cachedProjects: { data: ProjectContract[]; timestamp: number } | null = null;
+let cachedTransactions: { data: TransactionRecord[]; timestamp: number } | null = null;
+const CACHE_TTL_MS = 10000; // 10s TTL for fast responses
+
+export function invalidateServerCache() {
+  cachedProjects = null;
+  cachedTransactions = null;
+}
+
+async function getLiveProjects(): Promise<ProjectContract[]> {
+  const now = Date.now();
+  if (cachedProjects && now - cachedProjects.timestamp < CACHE_TTL_MS) {
+    return cachedProjects.data;
+  }
+  const supabase = getServerSupabase();
+  if (!supabase) return cachedProjects?.data || [];
+  const { data, error } = await supabase.from("projects").select("*").order("updated_at", { ascending: false });
+  if (error || !data) {
+    console.error("Supabase getLiveProjects error:", error);
+    return cachedProjects?.data || [];
+  }
+  const mapped = data.map(rowToProject);
+  cachedProjects = { data: mapped, timestamp: now };
+  return mapped;
+}
+
+async function getLiveTransactions(): Promise<TransactionRecord[]> {
+  const now = Date.now();
+  if (cachedTransactions && now - cachedTransactions.timestamp < CACHE_TTL_MS) {
+    return cachedTransactions.data;
+  }
+  const supabase = getServerSupabase();
+  if (!supabase) return cachedTransactions?.data || [];
+  const { data, error } = await supabase.from("transactions").select("*").order("paid_at", { ascending: false });
+  if (error || !data) {
+    console.error("Supabase getLiveTransactions error:", error);
+    return cachedTransactions?.data || [];
+  }
+  const mapped = data.map(rowToTransaction);
+  cachedTransactions = { data: mapped, timestamp: now };
+  return mapped;
+}
+
 export const db = {
   /**
    * Retrieves projects scoped strictly to the authenticated user or demo sandbox.
-   * Supabase PostgreSQL is the authoritative single source of truth.
+   * Supabase PostgreSQL is the authoritative single source of truth with 10s server cache.
    */
   async getProjects(filter?: ProjectFilter): Promise<ProjectContract[]> {
-    const supabase = getServerSupabase();
-    if (!supabase) return [];
-
+    const all = await getLiveProjects();
     const isDemo = Boolean(filter?.isDemo);
     const userId = filter?.userId?.trim();
     const userEmail = filter?.userEmail?.trim().toLowerCase();
     const role = filter?.role;
     const status = filter?.status;
 
-    // 1. Explicit Demo Mode: Return all demo projects from Supabase
+    // 1. Explicit Demo Mode: Return all demo projects
     if (isDemo) {
-      let query = supabase.from("projects").select("*").eq("is_demo", true).order("updated_at", { ascending: false });
-      if (status) query = query.eq("status", status);
-      const { data, error } = await query;
-      if (error || !data) {
-        console.error("Supabase getProjects error (demo):", error);
-        return [];
-      }
-      return data.map(rowToProject);
+      let demos = all.filter((p) => p.isDemo);
+      if (status) demos = demos.filter((p) => p.status === status);
+      return demos;
     }
 
     // 2. Real Registered Users: Filter projects where user is authorized participant
@@ -195,16 +231,9 @@ export const db = {
     const userBaseCode = extractBaseCode(userMsoId);
 
     if (userId || userEmail || userMsoId) {
-      let query = supabase.from("projects").select("*").order("updated_at", { ascending: false });
-      if (status) query = query.eq("status", status);
-      const { data, error } = await query;
-      if (error || !data) {
-        console.error("Supabase getProjects error (user):", error);
-        return [];
-      }
-
-      const all = data.map(rowToProject);
       return all.filter((p) => {
+        if (status && p.status !== status) return false;
+
         const clientBase = extractBaseCode(p.client?.milestoneOSId);
         const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
 
@@ -228,8 +257,7 @@ export const db = {
 
     // 3. Fallback for unauthenticated requests or system health checks
     if (!filter) {
-      const { data } = await supabase.from("projects").select("*");
-      return (data || []).map(rowToProject);
+      return all;
     }
 
     return [];
@@ -242,13 +270,9 @@ export const db = {
     id: string,
     authUser?: { id?: string; email?: string; milestoneOSId?: string; isDemo?: boolean }
   ): Promise<ProjectContract | undefined> {
-    const supabase = getServerSupabase();
-    if (!supabase) return undefined;
-
-    const { data, error } = await supabase.from("projects").select("*").eq("id", id).maybeSingle();
-    if (error || !data) return undefined;
-
-    const project = rowToProject(data);
+    const all = await getLiveProjects();
+    const project = all.find((p) => p.id === id);
+    if (!project) return undefined;
 
     if (authUser) {
       if (project.isDemo && authUser.isDemo) {
@@ -398,6 +422,7 @@ export const db = {
       } catch (_) {}
     }
 
+    invalidateServerCache();
     return project;
   },
 
@@ -416,6 +441,7 @@ export const db = {
       })
       .eq("invitation_token", token);
 
+    invalidateServerCache();
     return !error;
   },
 
@@ -468,6 +494,7 @@ export const db = {
       }
     }
 
+    invalidateServerCache();
     return project;
   },
 
@@ -486,6 +513,7 @@ export const db = {
       console.error("Supabase updateProject error:", upsertErr);
       return null;
     }
+    invalidateServerCache();
     return updated;
   },
 
@@ -563,6 +591,7 @@ export const db = {
       await db.createNotification(notif);
     }
 
+    invalidateServerCache();
     return project;
   },
 
@@ -602,6 +631,7 @@ export const db = {
     const row = projectToRow(project);
     await supabase.from("projects").upsert(row, { onConflict: "id" });
 
+    invalidateServerCache();
     return { project, milestone };
   },
 
@@ -628,6 +658,7 @@ export const db = {
     const row = projectToRow(project);
     await supabase.from("projects").upsert(row, { onConflict: "id" });
 
+    invalidateServerCache();
     return { project, milestone };
   },
 
@@ -675,6 +706,7 @@ export const db = {
     const row = projectToRow(project);
     await supabase.from("projects").upsert(row, { onConflict: "id" });
 
+    invalidateServerCache();
     return { project, milestone };
   },
 
@@ -772,6 +804,7 @@ export const db = {
     };
     await supabase.from("transactions").upsert(txRow, { onConflict: "id" });
 
+    invalidateServerCache();
     return { project, milestone, transaction: newTx };
   },
 
@@ -828,6 +861,7 @@ export const db = {
     const row = projectToRow(project);
     await supabase.from("projects").upsert(row, { onConflict: "id" });
 
+    invalidateServerCache();
     return { project, milestone: newMilestone };
   },
 
@@ -869,6 +903,7 @@ export const db = {
     const row = projectToRow(project);
     await supabase.from("projects").upsert(row, { onConflict: "id" });
 
+    invalidateServerCache();
     return { project, milestone };
   },
 
@@ -878,40 +913,31 @@ export const db = {
     isDemo?: boolean;
     projectId?: string;
   }): Promise<TransactionRecord[]> {
-    const supabase = getServerSupabase();
-    if (!supabase) return [];
-
+    const all = await getLiveTransactions();
     const isDemo = Boolean(filter?.isDemo);
     const userId = filter?.userId?.trim();
     const userEmail = filter?.userEmail?.trim().toLowerCase();
     const projectId = filter?.projectId;
 
     if (isDemo) {
-      let query = supabase.from("transactions").select("*").eq("is_demo", true).order("paid_at", { ascending: false });
-      if (projectId) query = query.eq("project_id", projectId);
-      const { data, error } = await query;
-      if (error || !data) return [];
-      return data.map(rowToTransaction);
+      let demos = all.filter((t) => t.isDemo);
+      if (projectId) demos = demos.filter((t) => t.projectId === projectId);
+      return demos;
     }
 
     if (userId || userEmail) {
       const userProjects = await db.getProjects({ userId, userEmail });
       const userProjectIds = new Set(userProjects.map((p) => p.id));
 
-      let query = supabase.from("transactions").select("*").order("paid_at", { ascending: false });
-      if (projectId) query = query.eq("project_id", projectId);
-      const { data, error } = await query;
-      if (error || !data) return [];
-
-      const txs = data.map(rowToTransaction);
-      return txs.filter(
+      let userTxs = all.filter(
         (t) => userProjectIds.has(t.projectId) || (userId && (t.payerId === userId || t.payeeId === userId))
       );
+      if (projectId) userTxs = userTxs.filter((t) => t.projectId === projectId);
+      return userTxs;
     }
 
     if (!filter) {
-      const { data } = await supabase.from("transactions").select("*").order("paid_at", { ascending: false });
-      return (data || []).map(rowToTransaction);
+      return all;
     }
 
     return [];

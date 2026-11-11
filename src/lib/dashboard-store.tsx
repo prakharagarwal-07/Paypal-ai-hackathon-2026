@@ -531,31 +531,35 @@ export function DashboardProvider({
     }
 
     try {
-      const pRes = await fetch(
-        `/api/projects?userId=${encodeURIComponent(authUser.id)}&userEmail=${encodeURIComponent(authUser.email)}`
-      );
-      const pData = await pRes.json();
-      if (pData.success && Array.isArray(pData.projects)) {
-        setRawProjects(pData.projects);
+      const msoParam = authUser.milestoneOSId ? `&milestoneOSId=${encodeURIComponent(authUser.milestoneOSId)}` : "";
+      const [pRes, tRes] = await Promise.all([
+        fetch(
+          `/api/projects?userId=${encodeURIComponent(authUser.id)}&userEmail=${encodeURIComponent(authUser.email)}${msoParam}`
+        ).then((r) => r.json()).catch(() => ({})),
+        fetch(
+          `/api/transactions?userId=${encodeURIComponent(authUser.id)}&userEmail=${encodeURIComponent(authUser.email)}`
+        ).then((r) => r.json()).catch(() => ({})),
+      ]);
+
+      if (pRes?.success && Array.isArray(pRes.projects)) {
+        setRawProjects(pRes.projects);
+        try {
+          localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(pRes.projects));
+        } catch (_) {}
       } else {
         setRawProjects([]);
       }
-    } catch (err) {
-      console.warn("Could not fetch user projects:", err);
-    }
 
-    try {
-      const tRes = await fetch(
-        `/api/transactions?userId=${encodeURIComponent(authUser.id)}&userEmail=${encodeURIComponent(authUser.email)}`
-      );
-      const tData = await tRes.json();
-      if (tData.success && Array.isArray(tData.transactions)) {
-        setTransactions(tData.transactions);
+      if (tRes?.success && Array.isArray(tRes.transactions)) {
+        setTransactions(tRes.transactions);
+        try {
+          localStorage.setItem(`milestoneos_transactions_${authUser.id}`, JSON.stringify(tRes.transactions));
+        } catch (_) {}
       } else {
         setTransactions([]);
       }
     } catch (err) {
-      console.warn("Could not fetch user transactions:", err);
+      console.warn("Could not fetch user projects/transactions:", err);
     }
   };
 
@@ -643,6 +647,83 @@ export function DashboardProvider({
         } catch (_) {}
       }
 
+      // Instant SWR Hydration: Render cached projects and transactions immediately (0ms latency!)
+      let hadCachedData = false;
+      if (isDemo) {
+        const cachedDemo = localStorage.getItem("milestoneos_demo_projects_v2");
+        if (cachedDemo) {
+          try {
+            const parsedDemo = JSON.parse(cachedDemo);
+            if (Array.isArray(parsedDemo) && parsedDemo.length > 0) {
+              setRawProjects(parsedDemo);
+              if (!savedActiveProj) setActiveProjectIdState(parsedDemo[0]?.id || "proj_customer_reviews_2026");
+              hadCachedData = true;
+            }
+          } catch (_) {}
+        }
+      } else if (initialUser?.id) {
+        const cachedProjectsStr = localStorage.getItem(`milestoneos_projects_${initialUser.id}`);
+        if (cachedProjectsStr) {
+          try {
+            const parsedP = JSON.parse(cachedProjectsStr);
+            if (Array.isArray(parsedP) && parsedP.length > 0) {
+              setRawProjects(parsedP);
+              if (!savedActiveProj) setActiveProjectIdState(parsedP[0].id);
+              hadCachedData = true;
+            }
+          } catch (_) {}
+        }
+
+        const cachedTxsStr = localStorage.getItem(`milestoneos_transactions_${initialUser.id}`);
+        if (cachedTxsStr) {
+          try {
+            const parsedT = JSON.parse(cachedTxsStr);
+            if (Array.isArray(parsedT) && parsedT.length > 0) {
+              setTransactions(parsedT);
+              hadCachedData = true;
+            }
+          } catch (_) {}
+        }
+      }
+
+      // If cached data was present, display it immediately without waiting for network
+      if (hadCachedData) {
+        setIsLoaded(true);
+      }
+
+      // Helper to fetch live projects & transactions in parallel in background
+      const refreshUserData = async (uId: string, uEmail: string, uMsoId?: string) => {
+        try {
+          const msoParam = uMsoId ? `&milestoneOSId=${encodeURIComponent(uMsoId)}` : "";
+          const [pData, tData] = await Promise.all([
+            fetch(
+              `/api/projects?userId=${encodeURIComponent(uId)}&userEmail=${encodeURIComponent(uEmail)}${msoParam}`
+            )
+              .then((r) => r.json())
+              .catch(() => ({})),
+            fetch(
+              `/api/transactions?userId=${encodeURIComponent(uId)}&userEmail=${encodeURIComponent(uEmail)}`
+            )
+              .then((r) => r.json())
+              .catch(() => ({})),
+          ]);
+          if (!mounted) return;
+          if (pData?.success && Array.isArray(pData.projects)) {
+            setRawProjects(pData.projects);
+            try {
+              localStorage.setItem(`milestoneos_projects_${uId}`, JSON.stringify(pData.projects));
+            } catch (_) {}
+          }
+          if (tData?.success && Array.isArray(tData.transactions)) {
+            setTransactions(tData.transactions);
+            try {
+              localStorage.setItem(`milestoneos_transactions_${uId}`, JSON.stringify(tData.transactions));
+            } catch (_) {}
+          }
+        } catch (_) {}
+        if (mounted) setIsLoaded(true);
+      };
+
       // If demo mode is active on load, load real records from Supabase
       if (isDemo) {
         Promise.all([
@@ -660,6 +741,11 @@ export function DashboardProvider({
           setIsLoaded(true);
         });
         return;
+      }
+
+      // Fire background parallel refresh immediately using cached user info (zero wait!)
+      if (initialUser?.id) {
+        refreshUserData(initialUser.id, initialUser.email, initialUser.milestoneOSId);
       }
 
       // Supabase cloud auth session verification
@@ -713,56 +799,23 @@ export function DashboardProvider({
               localStorage.setItem(STORAGE_KEYS.ACTIVE_USER, JSON.stringify(resolvedUser));
             } catch (_) {}
 
-            // Load real projects for this user from server API
-            try {
-              const pRes = await fetch(
-                `/api/projects?userId=${encodeURIComponent(resolvedUser.id)}&userEmail=${encodeURIComponent(resolvedUser.email)}&milestoneOSId=${encodeURIComponent(resolvedUser.milestoneOSId)}`
-              );
-              const pData = await pRes.json();
-              if (mounted) {
-                if (pData.success && Array.isArray(pData.projects)) {
-                  setRawProjects(pData.projects);
-                } else {
-                  setRawProjects([]);
-                }
-              }
-            } catch (_) {
-              if (mounted) setRawProjects([]);
+            // If user was not already hydrated or has changed ID, refresh now
+            if (!initialUser || initialUser.id !== resolvedUser.id) {
+              refreshUserData(resolvedUser.id, resolvedUser.email, resolvedUser.milestoneOSId);
             }
-
-            // Load real transactions
-            try {
-              const tRes = await fetch(
-                `/api/transactions?userId=${encodeURIComponent(resolvedUser.id)}&userEmail=${encodeURIComponent(resolvedUser.email)}`
-              );
-              const tData = await tRes.json();
-              if (mounted && tData.success && Array.isArray(tData.transactions)) {
-                setTransactions(tData.transactions);
-              }
-            } catch (_) {}
           } else {
             // Unauthenticated user: fresh empty state
+            setAuthUser(null);
             setRawProjects([]);
             setTransactions([]);
             setNotifications([]);
+            setIsLoaded(true);
           }
-          setIsLoaded(true);
         });
       } else {
-        // Fallback if Supabase not configured
-        if (initialUser) {
-          fetch(
-            `/api/projects?userId=${encodeURIComponent(initialUser.id)}&userEmail=${encodeURIComponent(initialUser.email)}`
-          )
-            .then((r) => r.json())
-            .then((d) => {
-              if (mounted && d.success && Array.isArray(d.projects)) {
-                setRawProjects(d.projects);
-              }
-            })
-            .catch(() => {});
+        if (!initialUser) {
+          setIsLoaded(true);
         }
-        setIsLoaded(true);
       }
     } catch (e) {
       console.warn("Could not hydrate dashboard state:", e);
@@ -787,6 +840,14 @@ export function DashboardProvider({
       } catch (_) {}
     }
   }, [rawProjects, isLoaded, isDemoMode, authUser]);
+
+  // Save transactions to scoped cache
+  useEffect(() => {
+    if (!isLoaded || !authUser?.id) return;
+    try {
+      localStorage.setItem(`milestoneos_transactions_${authUser.id}`, JSON.stringify(transactions));
+    } catch (_) {}
+  }, [transactions, isLoaded, authUser]);
 
   // Action: Create Project / Propose Project
   const createProject = (
