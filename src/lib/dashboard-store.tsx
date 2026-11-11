@@ -872,6 +872,25 @@ export function DashboardProvider({
     } catch (_) {}
   }, [transactions, isLoaded, authUser]);
 
+  // Real-time synchronization: sync on window focus and periodic interval
+  useEffect(() => {
+    if (!isLoaded || isDemoMode || !authUser?.id) return;
+
+    const handleFocus = () => {
+      refreshProjects();
+    };
+    window.addEventListener("focus", handleFocus);
+
+    const interval = setInterval(() => {
+      refreshProjects();
+    }, 8000);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      clearInterval(interval);
+    };
+  }, [isLoaded, isDemoMode, authUser?.id]);
+
   // Action: Create Project / Propose Project
   const createProject = (
     newProjectData: Omit<

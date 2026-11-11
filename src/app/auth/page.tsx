@@ -122,14 +122,41 @@ function AuthForm() {
   };
 
   // Instant Demo Login for Hackathon Judges
-  const handleDemoLogin = (demoRole: "client" | "freelancer" = demoPerspective) => {
+  const handleDemoLogin = async (demoRole: "client" | "freelancer" = demoPerspective) => {
     setLoading(true);
     setErrorMsg(null);
     setSuccessMsg(null);
+
     const demoUser =
       demoRole === "client"
-        ? { name: "Sarah Chen", email: "sarah.chen@apexcommerce.com", id: "MSO-7K4P92" }
-        : { name: "Rohan Verma", email: "rohan.verma@craftdev.io", id: "MSO-2W8L41" };
+        ? { name: "Sarah Chen", email: "sarah.chen@apexcommerce.com", id: "MSO-7K4P92", password: "Password123!" }
+        : { name: "Rohan Verma", email: "rohan.verma@craftdev.io", id: "MSO-2W8L41", password: "Password123!" };
+
+    const supabaseClient = getSupabaseClient();
+    if (supabaseClient) {
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email: demoUser.email,
+          password: demoUser.password,
+        });
+
+        if (!error && data.user) {
+          const userMeta = data.user.user_metadata || {};
+          const userName = userMeta.name || demoUser.name;
+          const userMsoId = userMeta.milestoneOSId || demoUser.id;
+
+          localStorage.removeItem("milestoneos_demo_mode");
+          syncLocalProfile(userName, demoUser.email, userMsoId, demoRole);
+          setSuccessMsg(`Welcome, ${userName}! Signed in via Supabase Auth.`);
+          setTimeout(() => {
+            router.push(`/dashboard?role=${demoRole}`);
+          }, 350);
+          return;
+        }
+      } catch (err) {
+        console.warn("Supabase quick sign-in fallback", err);
+      }
+    }
 
     try {
       localStorage.setItem("milestoneos_demo_mode", "true");

@@ -29,6 +29,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Also accept x-user-id and x-user-email headers
+    if (!userId) userId = req.headers.get("x-user-id") || undefined;
+    if (!userEmail) userEmail = req.headers.get("x-user-email") || undefined;
+
     const projects = await db.getProjects({
       userId,
       userEmail,
