@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Verify project and milestone exist in server contract database
-    const project = await db.getProjectById(projectId);
+    const project = await db.getProjectById(projectId, undefined, true);
     if (!project) {
       return NextResponse.json({ error: "Project not found in contract database" }, { status: 404 });
     }
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       (callerEmail && callerEmail.toLowerCase() === clientEmail)
     );
 
-    if (callerId && !isClientCaller && !project.isDemo) {
+    if (!isClientCaller && !project.isDemo) {
       return NextResponse.json(
         { error: "Unauthorized. Only the designated client can capture payments for this project." },
         { status: 403 }

@@ -3,7 +3,15 @@
  * Tests full dynamic multi-user lifecycle across real Supabase PostgreSQL persistence.
  */
 
+import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
+
+// Load environment variables from .env.local
+const envFile = fs.readFileSync(".env.local", "utf8");
+envFile.split("\n").forEach((line) => {
+  const [k, ...v] = line.split("=");
+  if (k && v.length) process.env[k.trim()] = v.join("=").trim();
+});
 
 const APP_URL = "http://localhost:3000";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -524,8 +532,8 @@ async function runAllTests() {
     "26. Both Client and Freelancer see the identical accepted contract in active projects"
   );
 
-  // 9. Page refresh / refetch persistence check
-  const refetchRes = await fetch(`${APP_URL}/api/projects/${actualIId}`);
+  // 9. Page refresh / refetch persistence check (authenticated client refetch)
+  const refetchRes = await fetch(`${APP_URL}/api/projects/${actualIId}?userId=${CLIENT_PRAKHAR.id}`);
   const refetchData = await refetchRes.json();
   assert(
     refetchData.success && refetchData.project?.status === "active" && refetchData.project?.id === actualIId,

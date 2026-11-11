@@ -1,4 +1,12 @@
+import fs from "fs";
 import { createClient } from "@supabase/supabase-js";
+
+// Load environment variables from .env.local
+const envFile = fs.readFileSync(".env.local", "utf8");
+envFile.split("\n").forEach((line) => {
+  const [k, ...v] = line.split("=");
+  if (k && v.length) process.env[k.trim()] = v.join("=").trim();
+});
 
 const APP_URL = "http://localhost:3000";
 

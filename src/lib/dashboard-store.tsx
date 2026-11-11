@@ -325,7 +325,16 @@ export function DashboardProvider({
   // Derive perspective-scoped projects based on active role
   const projects: ProjectContract[] = useMemo(() => {
     if (isDemoMode) {
-      return rawProjects.filter((p) => Boolean(p.isDemo));
+      const demos = rawProjects.filter((p) => Boolean(p.isDemo));
+      return demos.filter((p) => {
+        if (role === "client") {
+          return p.client?.milestoneOSId === "CL-7K4P92" || p.client?.name === "Sarah Chen";
+        }
+        if (role === "freelancer") {
+          return p.freelancer?.milestoneOSId === "FL-2W8L41" || p.freelancer?.name === "Rohan Verma";
+        }
+        return true;
+      });
     }
 
     const uId = authUser?.id;
@@ -334,6 +343,9 @@ export function DashboardProvider({
     const uBase = extractBaseCode(uMsoId) || authUser?.baseCode?.trim().toUpperCase();
 
     return rawProjects.filter((p) => {
+      // Must not be a demo project in real user mode
+      if (p.isDemo) return false;
+
       const clientBase = extractBaseCode(p.client?.milestoneOSId);
       const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
 
@@ -349,10 +361,12 @@ export function DashboardProvider({
         (uMsoId && p.freelancer?.milestoneOSId?.trim().toUpperCase() === uMsoId) ||
         (uBase && freelancerBase === uBase);
 
-      // User must be a direct participant (client or freelancer) to see the project
-      return isClient || isFreelancer;
+      // Perspective-scoped: only show client projects in client view, freelancer projects in freelancer view
+      if (role === "client") return Boolean(isClient);
+      if (role === "freelancer") return Boolean(isFreelancer);
+      return false;
     });
-  }, [isDemoMode, rawProjects, authUser]);
+  }, [isDemoMode, rawProjects, authUser, role]);
 
   const activeProject = useMemo(() => {
     if (!projects || projects.length === 0) return undefined;

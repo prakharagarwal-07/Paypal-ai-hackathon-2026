@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { verifyMilestoneWithAI } from "@/server/gemini";
 import { MilestoneSubmission } from "@/lib/dashboard-data";
+import { getServerSupabase } from "@/server/supabase";
 
 export async function POST(
   req: NextRequest,
@@ -12,13 +13,47 @@ export async function POST(
     const body = await req.json();
     const { projectId, repoUrl, githubRepo, demoUrl, loomVideo, notes, deliverableLinks, attachments } = body;
 
+    let callerId = body.userId || body.callerId || req.headers.get("x-user-id");
+    let callerEmail = body.userEmail || req.headers.get("x-user-email");
+
+    // Verify caller session token if provided
+    const authHeader = req.headers.get("authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "").trim();
+      const supabase = getServerSupabase();
+      if (supabase) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser(token);
+          if (user) {
+            callerId = user.id;
+            callerEmail = user.email;
+          }
+        } catch (_) {}
+      }
+    }
+
     if (!projectId) {
       return NextResponse.json({ error: "projectId is required" }, { status: 400 });
     }
 
-    const project = await db.getProjectById(projectId);
+    const project = await db.getProjectById(projectId, undefined, true);
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    // Strict Freelancer Authorization Check
+    const isDemo = Boolean(project.isDemo);
+    if (!isDemo && (callerId || callerEmail)) {
+      const isFreelancer = Boolean(
+        (callerId && (project.freelancerId === callerId || project.freelancer?.id === callerId)) ||
+        (callerEmail && project.freelancer?.email?.toLowerCase() === callerEmail.toLowerCase())
+      );
+      if (!isFreelancer) {
+        return NextResponse.json(
+          { error: "Unauthorized. Only the designated freelancer can submit deliverables for this milestone." },
+          { status: 403 }
+        );
+      }
     }
 
     const milestone = project.milestones.find((m) => m.id === milestoneId);

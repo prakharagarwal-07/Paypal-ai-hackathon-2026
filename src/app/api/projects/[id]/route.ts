@@ -60,6 +60,41 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
+    const existing = await db.getProjectById(id, undefined, true);
+    if (!existing) {
+      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    }
+
+    let callerId = body.userId || body.callerId || req.headers.get("x-user-id");
+    let callerEmail = body.userEmail || req.headers.get("x-user-email");
+    const authHeader = req.headers.get("authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "").trim();
+      const supabase = getServerSupabase();
+      if (supabase) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser(token);
+          if (user) {
+            callerId = user.id;
+            callerEmail = user.email;
+          }
+        } catch (_) {}
+      }
+    }
+
+    if (!existing.isDemo) {
+      const isAuthorized = Boolean(
+        (callerId && (existing.clientId === callerId || existing.freelancerId === callerId || existing.client?.id === callerId || existing.freelancer?.id === callerId)) ||
+        (callerEmail && (existing.client?.email?.toLowerCase() === callerEmail.toLowerCase() || existing.freelancer?.email?.toLowerCase() === callerEmail.toLowerCase()))
+      );
+      if (!isAuthorized) {
+        return NextResponse.json(
+          { error: "Unauthorized. Only authorized project participants can update this project." },
+          { status: 403 }
+        );
+      }
+    }
+
     const updated = await db.updateProject(id, body);
     if (!updated) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });

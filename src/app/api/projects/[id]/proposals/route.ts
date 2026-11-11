@@ -30,7 +30,7 @@ export async function POST(
       }
     }
 
-    const project = await db.getProjectById(id);
+    const project = await db.getProjectById(id, undefined, true);
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
@@ -60,7 +60,7 @@ export async function POST(
         );
       }
 
-      if (callerId && !isRecipient) {
+      if (!isRecipient && !project.isDemo) {
         return NextResponse.json(
           { error: "Unauthorized. Only the designated recipient can accept or review this project proposal." },
           { status: 403 }

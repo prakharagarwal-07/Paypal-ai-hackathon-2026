@@ -266,20 +266,18 @@ export const db = {
       });
     }
 
-    // 3. Fallback for unauthenticated requests or system health checks
-    if (!filter) {
-      return all;
-    }
-
+    // 3. Fallback for unauthenticated requests: never leak all projects
     return [];
   },
 
   /**
    * Retrieves a single project by ID, verifying user authorization if authUser is provided.
+   * If authUser is not provided and allowUnauthenticated is false, private projects return undefined.
    */
   async getProjectById(
     id: string,
-    authUser?: { id?: string; email?: string; milestoneOSId?: string; isDemo?: boolean }
+    authUser?: { id?: string; email?: string; milestoneOSId?: string; isDemo?: boolean },
+    allowUnauthenticated = false
   ): Promise<ProjectContract | undefined> {
     const all = await getLiveProjects();
     const project = all.find((p) => p.id === id);
@@ -319,7 +317,16 @@ export const db = {
       return undefined;
     }
 
-    return project;
+    if (allowUnauthenticated) {
+      return project;
+    }
+
+    // By default, unauthenticated callers can only view active public invitations
+    if (project.isPublicInvitation && project.invitationStatus === "active") {
+      return project;
+    }
+
+    return undefined;
   },
 
   findUserByBaseCode(codeOrId: string): MilestoneOSUser | null {
@@ -969,10 +976,6 @@ export const db = {
       );
       if (projectId) userTxs = userTxs.filter((t) => t.projectId === projectId);
       return userTxs;
-    }
-
-    if (!filter) {
-      return all;
     }
 
     return [];
