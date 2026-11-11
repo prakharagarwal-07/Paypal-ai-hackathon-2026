@@ -67,6 +67,7 @@ function loadDatabase(): DatabaseState {
         memoryState = {
           ...parsed,
           projects: [...parsed.projects, ...missingDemos],
+          users: [...MILESTONEOS_DIRECTORY],
         };
         return memoryState;
       }

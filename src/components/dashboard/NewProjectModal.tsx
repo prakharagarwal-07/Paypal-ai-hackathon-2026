@@ -137,16 +137,16 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         : initialProject.client.milestoneOSId;
 
       if (counterpartyId) {
-        const found = lookupMilestoneOSUser(counterpartyId);
+        const found = lookupMilestoneOSUser(counterpartyId, isClient ? "freelancer" : "client");
         if (found) setSelectedUser(found);
       }
     } else {
       if (isDemoMode) {
         // Default initial partner for convenience in demo mode:
         const defaultPartner = isClient
-          ? FREELANCER_OPTIONS[0] // Rohan Verma MSO-2W8L41
-          : CLIENT_OPTIONS[0]; // Sarah Chen MSO-7K4P92
-        const matched = lookupMilestoneOSUser(defaultPartner.milestoneOSId);
+          ? FREELANCER_OPTIONS[0] // Rohan Verma FL-2W8L41
+          : CLIENT_OPTIONS[0]; // Sarah Chen CL-7K4P92
+        const matched = lookupMilestoneOSUser(defaultPartner.milestoneOSId, isClient ? "freelancer" : "client");
         if (matched) setSelectedUser(matched);
       } else {
         setSelectedUser(null);
@@ -226,18 +226,21 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         return;
       }
 
+      const targetRole: "client" | "freelancer" = isClient ? "freelancer" : "client";
       const found: MilestoneOSUser = {
         id: data.user.id,
         baseCode: data.user.baseCode || baseCode,
         clientId: data.user.clientId || formatClientId(baseCode),
         freelancerId: data.user.freelancerId || formatFreelancerId(baseCode),
-        milestoneOSId: isClient ? (data.user.freelancerId || formatFreelancerId(baseCode)) : (data.user.clientId || formatClientId(baseCode)),
+        milestoneOSId: isClient
+          ? (data.user.freelancerId || formatFreelancerId(baseCode))
+          : (data.user.clientId || formatClientId(baseCode)),
         name: data.user.name,
         email: data.user.email || `${baseCode.toLowerCase()}@milestoneos.link`,
         avatar: data.user.avatar || data.user.name.slice(0, 2).toUpperCase(),
-        role: data.user.role || (isClient ? "freelancer" : "client"),
-        company: data.user.company || undefined,
-        title: data.user.title || (isClient ? "Specialist Freelancer" : "Client Organization"),
+        role: targetRole,
+        company: data.user.company || "Client Organization",
+        title: data.user.title || (isClient ? "Specialist Freelancer" : "Client Representative"),
         rating: data.user.rating || 5.0,
       };
 
@@ -387,7 +390,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
           avatar: selectedUser?.avatar || "FS",
           title: selectedUser?.title || "Specialist Freelancer",
           rating: selectedUser?.rating || 5.0,
-          milestoneOSId: selectedUser?.milestoneOSId || "",
+          milestoneOSId: selectedUser?.freelancerId || selectedUser?.milestoneOSId || "",
         };
       }
     } else {
@@ -416,7 +419,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
           email: selectedUser?.email || "client@milestoneos.link",
           avatar: selectedUser?.avatar || "CL",
           company: selectedUser?.company || "Client Organization",
-          milestoneOSId: selectedUser?.milestoneOSId || "",
+          milestoneOSId: selectedUser?.clientId || selectedUser?.milestoneOSId || "",
         };
       }
     }
@@ -686,34 +689,34 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                               <>
                                 <button
                                   type="button"
-                                  onClick={() => handleLookupUserId("MSO-2W8L41")}
+                                  onClick={() => handleLookupUserId("FL-2W8L41")}
                                   className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
                                 >
-                                  + Rohan Verma (<span className="font-mono font-bold text-[#0070BA]">MSO-2W8L41</span>)
+                                  + Rohan Verma (<span className="font-mono font-bold text-[#0070BA]">FL-2W8L41</span>)
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => handleLookupUserId("MSO-9B4T72")}
+                                  onClick={() => handleLookupUserId("FL-9B4T72")}
                                   className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
                                 >
-                                  + Elena Rostova (<span className="font-mono font-bold text-[#0070BA]">MSO-9B4T72</span>)
+                                  + Elena Rostova (<span className="font-mono font-bold text-[#0070BA]">FL-9B4T72</span>)
                                 </button>
                               </>
                             ) : (
                               <>
                                 <button
                                   type="button"
-                                  onClick={() => handleLookupUserId("MSO-7K4P92")}
+                                  onClick={() => handleLookupUserId("CL-7K4P92")}
                                   className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
                                 >
-                                  + Sarah Chen (<span className="font-mono font-bold text-[#0070BA]">MSO-7K4P92</span>)
+                                  + Sarah Chen (<span className="font-mono font-bold text-[#0070BA]">CL-7K4P92</span>)
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => handleLookupUserId("MSO-3X9M55")}
+                                  onClick={() => handleLookupUserId("CL-3X9M55")}
                                   className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
                                 >
-                                  + David Kim (<span className="font-mono font-bold text-[#0070BA]">MSO-3X9M55</span>)
+                                  + David Kim (<span className="font-mono font-bold text-[#0070BA]">CL-3X9M55</span>)
                                 </button>
                               </>
                             )}
@@ -735,12 +738,18 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                             </h4>
                             <span className="px-2 py-0.2 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
                               <CheckCircle2 className="h-2.5 w-2.5" />
-                              <span>{selectedUser.role === "client" ? "Verified Client" : "Verified Freelancer"}</span>
+                              <span>{isClient ? "Verified Freelancer" : "Verified Client"}</span>
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                            {selectedUser.role === "client" ? selectedUser.company : selectedUser.title} • {isClient ? "Freelancer ID: " : "Client ID: "}
-                            <strong className="font-mono text-slate-900 dark:text-white font-bold">{selectedUser.milestoneOSId}</strong>
+                            {isClient
+                              ? (selectedUser.title || "Specialist Freelancer")
+                              : (selectedUser.company || "Client Organization")} • {isClient ? "Freelancer ID: " : "Client ID: "}
+                            <strong className="font-mono text-slate-900 dark:text-white font-bold">
+                              {isClient
+                                ? (selectedUser.freelancerId || selectedUser.milestoneOSId)
+                                : (selectedUser.clientId || selectedUser.milestoneOSId)}
+                            </strong>
                             {selectedUser.baseCode && (
                               <span className="text-slate-400 font-mono text-[10px] ml-1.5">(Base: {selectedUser.baseCode})</span>
                             )}

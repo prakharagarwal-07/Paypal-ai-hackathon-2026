@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
 
     let user: any = null;
     const serverSupabase = getServerSupabase();
+    const targetRole: "client" | "freelancer" =
+      expectedRole || (cleanId.startsWith("FL-") ? "freelancer" : "client");
 
     if (serverSupabase) {
       // 1. First attempt lookup using the base_code column if migration has been executed
@@ -78,12 +80,12 @@ export async function GET(req: NextRequest) {
             baseCode: resolvedBase,
             clientId: formatClientId(resolvedBase),
             freelancerId: formatFreelancerId(resolvedBase),
-            milestoneOSId: expectedRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
+            milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
             name: displayName,
             avatar: bData.avatar || displayName.slice(0, 2).toUpperCase(),
-            role: bData.role || "both",
-            company: bData.company,
-            title: bData.title,
+            role: targetRole,
+            company: bData.company || "Client Organization",
+            title: bData.title || (targetRole === "freelancer" ? "Independent Specialist & Consultant" : "Client Representative"),
             rating: bData.rating ? Number(bData.rating) : 5.0,
           };
         }
@@ -106,12 +108,12 @@ export async function GET(req: NextRequest) {
               baseCode: resolvedBase,
               clientId: formatClientId(resolvedBase),
               freelancerId: formatFreelancerId(resolvedBase),
-              milestoneOSId: expectedRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
+              milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
               name: displayName,
               avatar: mData.avatar || displayName.slice(0, 2).toUpperCase(),
-              role: mData.role || "both",
-              company: mData.company,
-              title: mData.title,
+              role: targetRole,
+              company: mData.company || "Client Organization",
+              title: mData.title || (targetRole === "freelancer" ? "Independent Specialist & Consultant" : "Client Representative"),
               rating: mData.rating ? Number(mData.rating) : 5.0,
             };
           }
@@ -131,12 +133,12 @@ export async function GET(req: NextRequest) {
           baseCode: demoBase,
           clientId: formatClientId(demoBase),
           freelancerId: formatFreelancerId(demoBase),
-          milestoneOSId: expectedRole === "freelancer" ? formatFreelancerId(demoBase) : formatClientId(demoBase),
+          milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(demoBase) : formatClientId(demoBase),
           name: demoUser.name,
           avatar: demoUser.avatar,
-          role: demoUser.role,
-          company: demoUser.company,
-          title: demoUser.title,
+          role: targetRole,
+          company: demoUser.company || "Client Organization",
+          title: demoUser.title || (targetRole === "freelancer" ? "Senior Specialist & Consultant" : "Client Representative"),
           rating: demoUser.rating || 5.0,
         };
       }

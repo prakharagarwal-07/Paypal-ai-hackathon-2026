@@ -416,8 +416,9 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
     name: "Sarah Chen",
     email: "sarah.chen@apexcommerce.com",
     avatar: "SC",
-    role: "client",
+    role: "both",
     company: "Apex Commerce",
+    title: "Senior Product Architect & Consultant",
   },
   {
     id: "usr_client_david",
@@ -428,8 +429,9 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
     name: "David Kim",
     email: "david.kim@nextgenlabs.io",
     avatar: "DK",
-    role: "client",
+    role: "both",
     company: "NextGen Labs",
+    title: "FinTech Engineering Specialist",
   },
   {
     id: "usr_client_amara",
@@ -440,8 +442,9 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
     name: "Amara Patel",
     email: "amara.patel@luminabrands.com",
     avatar: "AP",
-    role: "client",
+    role: "both",
     company: "Lumina Brands",
+    title: "E-Commerce Systems Architect",
   },
   {
     id: "usr_dev_rohan",
@@ -452,7 +455,8 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
     name: "Rohan Verma",
     email: "rohan.verma@craftdev.io",
     avatar: "RV",
-    role: "freelancer",
+    role: "both",
+    company: "CraftDev Engineering",
     title: "Senior Full-Stack Engineer",
     rating: 4.98,
   },
@@ -465,7 +469,8 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
     name: "Elena Rostova",
     email: "elena.rostova@devcraft.org",
     avatar: "ER",
-    role: "freelancer",
+    role: "both",
+    company: "Rostova AI Systems",
     title: "Software Engineer & AI Architect",
     rating: 4.95,
   },
@@ -478,71 +483,100 @@ export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
     name: "Marcus Thorne",
     email: "marcus.t@designstudio.io",
     avatar: "MT",
-    role: "freelancer",
+    role: "both",
+    company: "Thorne Visual Studio",
     title: "Lead UI/UX & Visual Artist",
     rating: 4.92,
   },
 ];
 
-export function lookupMilestoneOSUser(queryId: string): MilestoneOSUser | null {
+export function lookupMilestoneOSUser(queryId: string, expectedRole?: "client" | "freelancer"): MilestoneOSUser | null {
   if (!queryId) return null;
   const clean = queryId.trim().toUpperCase();
-  return MILESTONEOS_DIRECTORY.find((u) => u.milestoneOSId.toUpperCase() === clean) || null;
+  const baseCode = extractBaseCode(clean);
+  const user = MILESTONEOS_DIRECTORY.find((u) => 
+    u.milestoneOSId.toUpperCase() === clean || 
+    (baseCode && u.baseCode === baseCode) ||
+    u.clientId === clean ||
+    u.freelancerId === clean
+  );
+  if (!user) return null;
+
+  const targetRole = expectedRole || (clean.startsWith("FL-") ? "freelancer" : clean.startsWith("CL-") ? "client" : (user.role === "both" ? "client" : user.role));
+  return {
+    ...user,
+    role: targetRole as "client" | "freelancer" | "both",
+    milestoneOSId:
+      (targetRole === "freelancer" ? user.freelancerId : user.clientId) ||
+      user.milestoneOSId,
+  };
 }
 
 export const CLIENT_OPTIONS = [
   {
     id: "usr_client_sarah",
-    milestoneOSId: "MSO-7K4P92",
+    milestoneOSId: "CL-7K4P92",
+    baseCode: "7K4P92",
     name: "Sarah Chen",
-    email: "sarah.chen@client.demo",
+    email: "sarah.chen@apexcommerce.com",
     avatar: "SC",
     company: "Apex Commerce",
+    title: "Senior Product Architect & Consultant",
   },
   {
     id: "usr_client_david",
-    milestoneOSId: "MSO-3X9M55",
+    milestoneOSId: "CL-3X9M55",
+    baseCode: "3X9M55",
     name: "David Kim",
-    email: "david.kim@fintech.demo",
+    email: "david.kim@nextgenlabs.io",
     avatar: "DK",
     company: "NextGen Labs",
+    title: "FinTech Engineering Specialist",
   },
   {
     id: "usr_client_amara",
-    milestoneOSId: "MSO-6V1Q88",
+    milestoneOSId: "CL-6V1Q88",
+    baseCode: "6V1Q88",
     name: "Amara Patel",
-    email: "amara.patel@retail.demo",
+    email: "amara.patel@luminabrands.com",
     avatar: "AP",
     company: "Lumina Brands",
+    title: "E-Commerce Systems Architect",
   },
 ];
 
 export const FREELANCER_OPTIONS = [
   {
     id: "usr_dev_rohan",
-    milestoneOSId: "MSO-2W8L41",
+    milestoneOSId: "FL-2W8L41",
+    baseCode: "2W8L41",
     name: "Rohan Verma",
-    email: "rohan.verma@dev.demo",
+    email: "rohan.verma@craftdev.io",
     avatar: "RV",
-    title: "Web Developer",
+    company: "CraftDev Engineering",
+    title: "Senior Full-Stack Engineer",
     rating: 4.98,
   },
   {
     id: "usr_dev_elena",
-    milestoneOSId: "MSO-9B4T72",
+    milestoneOSId: "FL-9B4T72",
+    baseCode: "9B4T72",
     name: "Elena Rostova",
-    email: "elena.rostova@dev.demo",
+    email: "elena.rostova@devcraft.org",
     avatar: "ER",
-    title: "Software Engineer",
+    company: "Rostova AI Systems",
+    title: "Software Engineer & AI Architect",
     rating: 4.95,
   },
   {
     id: "usr_dev_marcus",
-    milestoneOSId: "MSO-5R7J23",
+    milestoneOSId: "FL-5R7J23",
+    baseCode: "5R7J23",
     name: "Marcus Thorne",
-    email: "marcus.t@dev.demo",
+    email: "marcus.t@designstudio.io",
     avatar: "MT",
-    title: "Frontend Designer",
+    company: "Thorne Visual Studio",
+    title: "Lead UI/UX & Visual Artist",
     rating: 4.92,
   },
 ];
@@ -558,7 +592,7 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     category: "Web Development",
     client: {
       id: "usr_client_sarah",
-      milestoneOSId: "MSO-7K4P92",
+      milestoneOSId: "CL-7K4P92",
       name: "Sarah Chen",
       email: "sarah.chen@client.demo",
       avatar: "SC",
@@ -566,11 +600,11 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     },
     freelancer: {
       id: "usr_dev_rohan",
-      milestoneOSId: "MSO-2W8L41",
+      milestoneOSId: "FL-2W8L41",
       name: "Rohan Verma",
       email: "rohan.verma@dev.demo",
       avatar: "RV",
-      title: "Web Developer",
+      title: "Senior Full-Stack Engineer",
       rating: 4.98,
     },
     totalBudget: 4800,
@@ -851,7 +885,7 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     category: "Features & Add-ons",
     client: {
       id: "usr_client_sarah",
-      milestoneOSId: "MSO-7K4P92",
+      milestoneOSId: "CL-7K4P92",
       name: "Sarah Chen",
       email: "sarah.chen@client.demo",
       avatar: "SC",
@@ -859,11 +893,11 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     },
     freelancer: {
       id: "usr_dev_elena",
-      milestoneOSId: "MSO-5T1N88",
+      milestoneOSId: "FL-9B4T72",
       name: "Elena Rostova",
       email: "elena.rostova@dev.demo",
       avatar: "ER",
-      title: "Software Engineer",
+      title: "Software Engineer & AI Architect",
       rating: 4.95,
     },
     totalBudget: 4400,
@@ -1023,7 +1057,7 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     category: "AI & Full-Stack",
     client: {
       id: "usr_client_sarah",
-      milestoneOSId: "MSO-7K4P92",
+      milestoneOSId: "CL-7K4P92",
       name: "Sarah Chen",
       email: "sarah.chen@client.demo",
       avatar: "SC",
@@ -1031,11 +1065,11 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     },
     freelancer: {
       id: "usr_dev_rohan",
-      milestoneOSId: "MSO-2W8L41",
+      milestoneOSId: "FL-2W8L41",
       name: "Rohan Verma",
       email: "rohan.verma@dev.demo",
       avatar: "RV",
-      title: "Web Developer",
+      title: "Senior Full-Stack Engineer",
       rating: 4.98,
     },
     totalBudget: 3600,
@@ -1121,7 +1155,7 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     category: "FinTech & Mobile Development",
     client: {
       id: "usr_client_sarah",
-      milestoneOSId: "MSO-7K4P92",
+      milestoneOSId: "CL-7K4P92",
       name: "Sarah Chen",
       email: "sarah.chen@client.demo",
       avatar: "SC",
@@ -1129,11 +1163,11 @@ export const INITIAL_PROJECTS: ProjectContract[] = [
     },
     freelancer: {
       id: "usr_dev_rohan",
-      milestoneOSId: "MSO-2W8L41",
+      milestoneOSId: "FL-2W8L41",
       name: "Rohan Verma",
       email: "rohan.verma@dev.demo",
       avatar: "RV",
-      title: "Web Developer",
+      title: "Senior Full-Stack Engineer",
       rating: 4.98,
     },
     totalBudget: 3200,
