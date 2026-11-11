@@ -372,47 +372,99 @@ export default function Sidebar({
               <ThemeToggle />
             </div>
 
-            {/* Permanent Role IDs (Shared Base Code) */}
+            {/* Permanent Role IDs (Shared Base Code for the Current Account) */}
             <div className="space-y-1.5 pt-0.5">
-              {/* Client ID */}
-              <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[11px]">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Client:</span>
-                  <span className="font-mono font-bold text-slate-800 dark:text-sky-300 truncate">{clientFormattedId}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => handleCopyId(e, clientFormattedId, "client")}
-                  className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
-                  title="Copy Client ID"
-                >
-                  {copiedType === "client" ? (
-                    <Check className="h-3 w-3 text-emerald-500" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </button>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold px-0.5">
+                <span>My Account IDs (Base: {baseCode})</span>
               </div>
 
-              {/* Freelancer ID */}
-              <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[11px]">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Freelancer:</span>
-                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 truncate">{freelancerFormattedId}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={(e) => handleCopyId(e, freelancerFormattedId, "freelancer")}
-                  className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
-                  title="Copy Freelancer ID"
-                >
-                  {copiedType === "freelancer" ? (
-                    <Check className="h-3 w-3 text-emerald-500" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </button>
-              </div>
+              {role === "freelancer" ? (
+                <>
+                  {/* Primary Active ID: Freelancer */}
+                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 text-[11px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[9px] uppercase font-bold text-emerald-700 dark:text-emerald-300 tracking-wider">Freelancer:</span>
+                      <span className="font-mono font-bold text-emerald-700 dark:text-emerald-300 truncate">{freelancerFormattedId}</span>
+                      <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-emerald-200/60 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">Active</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyId(e, freelancerFormattedId, "freelancer")}
+                      className="p-1 rounded text-emerald-600 hover:text-emerald-800 dark:text-emerald-400 dark:hover:text-emerald-200 cursor-pointer transition-colors"
+                      title="Copy My Freelancer ID"
+                    >
+                      {copiedType === "freelancer" ? (
+                        <Check className="h-3 w-3 text-emerald-600" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Secondary ID: Client (For when this user wants to hire someone) */}
+                  <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[10px] text-slate-500">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Client (When hiring):</span>
+                      <span className="font-mono font-medium text-slate-700 dark:text-slate-300 truncate">{clientFormattedId}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyId(e, clientFormattedId, "client")}
+                      className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
+                      title="Copy My Client ID"
+                    >
+                      {copiedType === "client" ? (
+                        <Check className="h-3 w-3 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Primary Active ID: Client */}
+                  <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/40 text-[11px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[9px] uppercase font-bold text-[#0070BA] dark:text-sky-300 tracking-wider">Client:</span>
+                      <span className="font-mono font-bold text-[#0070BA] dark:text-sky-300 truncate">{clientFormattedId}</span>
+                      <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-blue-200/60 dark:bg-blue-900/60 text-blue-800 dark:text-sky-200">Active</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyId(e, clientFormattedId, "client")}
+                      className="p-1 rounded text-[#0070BA] hover:text-[#005a96] dark:text-sky-400 dark:hover:text-sky-200 cursor-pointer transition-colors"
+                      title="Copy My Client ID"
+                    >
+                      {copiedType === "client" ? (
+                        <Check className="h-3 w-3 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Secondary ID: Freelancer (For when this user works as freelancer) */}
+                  <div className="flex items-center justify-between px-2 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 text-[10px] text-slate-500">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider">Freelancer (When working):</span>
+                      <span className="font-mono font-medium text-slate-700 dark:text-slate-300 truncate">{freelancerFormattedId}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyId(e, freelancerFormattedId, "freelancer")}
+                      className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer transition-colors"
+                      title="Copy My Freelancer ID"
+                    >
+                      {copiedType === "freelancer" ? (
+                        <Check className="h-3 w-3 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 

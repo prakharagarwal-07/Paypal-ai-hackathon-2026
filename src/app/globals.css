@@ -77,12 +77,77 @@
 }
 
 @media print {
-  /* Suppress all background animations, web threads canvases, and dashboard chrome in print */
+  /* 1. Global Suppressions: Never print canvases, web threads, background animations, or chrome */
   canvas,
+  #webthreads-canvas,
   .web-threads-container,
   .web-threads-canvas,
-  .btn-gradient-glow::after {
+  .btn-gradient-glow::after,
+  nav,
+  header,
+  aside,
+  button,
+  .no-print {
     display: none !important;
     visibility: hidden !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 10mm 15mm;
+  }
+
+  html, body {
+    background: #FFFFFF !important;
+    color: #0F172A !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 2. When the invoice modal is open, suppress everything else and print strictly the clean invoice */
+  body:has(#printable-invoice-card) > *:not(:has(#printable-invoice-card)) {
+    display: none !important;
+  }
+
+  #invoice-modal-overlay {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  #invoice-modal-shell {
+    position: static !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: #FFFFFF !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  #invoice-modal-header,
+  #invoice-modal-actions {
+    display: none !important;
+  }
+
+  #printable-invoice-card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 }

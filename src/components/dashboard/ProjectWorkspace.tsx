@@ -346,7 +346,14 @@ export default function ProjectWorkspace({
             <span className="font-bold text-slate-900 dark:text-white block mt-0.5">
               {activeProject.client.name}
             </span>
-            <span className="text-slate-500 text-[11px]">{activeProject.client.company}</span>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className="text-slate-500 text-[11px]">{activeProject.client.company}</span>
+              {activeProject.client.milestoneOSId && (
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/5 text-[#0070BA] dark:text-sky-300 border border-slate-200 dark:border-white/10">
+                  {activeProject.client.milestoneOSId}
+                </span>
+              )}
+            </div>
           </div>
 
           <div>
@@ -354,7 +361,14 @@ export default function ProjectWorkspace({
             <span className="font-bold text-slate-900 dark:text-white block mt-0.5">
               {activeProject.freelancer.name}
             </span>
-            <span className="text-slate-500 text-[11px]">{activeProject.freelancer.title}</span>
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <span className="text-slate-500 text-[11px]">{activeProject.freelancer.title}</span>
+              {activeProject.freelancer.milestoneOSId && (
+                <span className="font-mono text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-white/5 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-white/10">
+                  {activeProject.freelancer.milestoneOSId}
+                </span>
+              )}
+            </div>
           </div>
 
           <div>

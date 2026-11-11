@@ -112,6 +112,9 @@ function buildCleanInvoiceHtml(invoice: InvoiceData): string {
         margin: 0 !important;
         background: #FFFFFF !important;
       }
+      .no-print {
+        display: none !important;
+      }
       .invoice-card {
         border: none !important;
         box-shadow: none !important;
@@ -333,6 +336,14 @@ function buildCleanInvoiceHtml(invoice: InvoiceData): string {
   </style>
 </head>
 <body>
+  <div class="no-print" style="max-width: 720px; margin: 0 auto 12px auto; display: flex; justify-content: flex-end; gap: 8px;">
+    <button onclick="window.print()" style="padding: 7px 16px; background: #0070BA; color: #FFFFFF; font-weight: 700; font-size: 12px; border: none; border-radius: 6px; cursor: pointer;">
+      Print / Save as PDF
+    </button>
+    <button onclick="window.close()" style="padding: 7px 14px; background: #F1F5F9; color: #475569; font-weight: 600; font-size: 12px; border: 1px solid #CBD5E1; border-radius: 6px; cursor: pointer;">
+      Close
+    </button>
+  </div>
   <div class="invoice-card">
     <div class="header">
       <div>
@@ -619,44 +630,36 @@ export default function InvoiceModal({
 
   /**
    * Triggers printing of ONLY the isolated plain white invoice document.
-   * Completely bypasses the main dashboard DOM, WebThreads canvas, and page layout.
+   * Uses an isolated popup window to guarantee 100% clean, strict 1-page output
+   * with zero canvas, zero WebThreads, and zero dashboard bleed.
    */
   const handlePrint = () => {
     if (!invoice) return;
     const html = buildCleanInvoiceHtml(invoice);
 
-    const existingFrame = document.getElementById("invoice-print-frame");
-    if (existingFrame) {
-      existingFrame.remove();
+    // 1. Primary: Open dedicated clean window (guarantees zero canvas/DOM bleed)
+    try {
+      const printWin = window.open("", "_blank", "width=850,height=1100");
+      if (printWin) {
+        printWin.document.open();
+        printWin.document.write(html);
+        printWin.document.close();
+        printWin.focus();
+        setTimeout(() => {
+          try {
+            printWin.print();
+          } catch (e) {
+            console.warn("Print window error:", e);
+          }
+        }, 350);
+        return;
+      }
+    } catch (e) {
+      console.warn("Popup blocked or failed, falling back to in-page print:", e);
     }
 
-    const printFrame = document.createElement("iframe");
-    printFrame.id = "invoice-print-frame";
-    printFrame.style.position = "fixed";
-    printFrame.style.top = "-9999px";
-    printFrame.style.left = "-9999px";
-    printFrame.style.width = "1024px";
-    printFrame.style.height = "1400px";
-    printFrame.style.border = "none";
-    printFrame.style.zIndex = "-1000";
-    document.body.appendChild(printFrame);
-
-    const frameDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
-    if (!frameDoc) return;
-
-    frameDoc.open();
-    frameDoc.write(html);
-    frameDoc.close();
-
-    // Focus and print strictly the isolated iframe
-    setTimeout(() => {
-      try {
-        printFrame.contentWindow?.focus();
-        printFrame.contentWindow?.print();
-      } catch (err) {
-        console.error("Iframe print error:", err);
-      }
-    }, 300);
+    // 2. Fallback: native window.print using CSS rules in globals.css that isolate #printable-invoice-card
+    window.print();
   };
 
   const handleCopyTxId = (id: string) => {
@@ -705,26 +708,10 @@ Settled securely via MilestoneOS Mutual Escrow.`;
 
   return (
     <>
-      {/* Global Fallback Print Rule: Ensures zero dashboard bleed if native print is fired */}
-      <style jsx global>{`
-        @media print {
-          /* Hide all application background canvas and chrome */
-          canvas,
-          .web-threads-container,
-          .web-threads-canvas,
-          nav,
-          header,
-          aside {
-            display: none !important;
-            visibility: hidden !important;
-          }
-        }
-      `}</style>
-
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
-        <div className="relative w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0D1527] overflow-hidden my-4 max-h-[92vh] flex flex-col">
+      <div id="invoice-modal-overlay" className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+        <div id="invoice-modal-shell" className="relative w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0D1527] overflow-hidden my-4 max-h-[92vh] flex flex-col">
           {/* Top Modal Controls */}
-          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-slate-50/80 dark:bg-white/[0.02]">
+          <div id="invoice-modal-header" className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-slate-50/80 dark:bg-white/[0.02]">
             <div className="flex items-center gap-2.5">
               <div className="h-9 w-9 rounded-xl bg-sky-50 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 flex items-center justify-center shadow-2xs border border-sky-100 dark:border-sky-800">
                 <Receipt className="h-4.5 w-4.5" />
@@ -798,6 +785,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
               /* Completely Plain White Corporate Sheet (No Web Threads, No Transparency) */
               <div
                 ref={invoiceRef}
+                id="printable-invoice-card"
                 className="bg-white text-slate-900 rounded-xl border border-slate-300 p-6 sm:p-8 space-y-5 shadow-xs max-w-[720px] mx-auto"
                 style={{ backgroundColor: "#FFFFFF", color: "#0F172A" }}
               >
