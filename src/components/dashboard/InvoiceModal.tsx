@@ -16,7 +16,6 @@ import {
   Check,
   CheckCircle2,
   Receipt,
-  ShieldCheck,
 } from "lucide-react";
 
 export interface InvoiceModalProps {
@@ -66,6 +65,360 @@ interface InvoiceData {
   disclaimer: string;
 }
 
+/**
+ * Builds a pristine, 100% plain white corporate invoice HTML document.
+ * Strictly 1 Page layout, no backgrounds, no web threads, no canvases, no gradients.
+ */
+function buildCleanInvoiceHtml(invoice: InvoiceData): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice - ${invoice.invoiceNumber} - MilestoneOS</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    html, body {
+      background: #FFFFFF !important;
+      color: #0F172A !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+      margin: 0;
+      padding: 16px;
+    }
+    .invoice-card {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #FFFFFF !important;
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      padding: 28px 32px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    @media print {
+      html, body {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #FFFFFF !important;
+      }
+      .invoice-card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+    }
+    /* Brand Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 2px solid #0F172A;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+    .brand {
+      font-size: 24px;
+      font-weight: 900;
+      color: #0070BA;
+      letter-spacing: -0.02em;
+    }
+    .brand-sub {
+      font-size: 11px;
+      color: #64748B;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+    .title-box {
+      text-align: right;
+    }
+    .title {
+      font-size: 26px;
+      font-weight: 900;
+      color: #0F172A;
+      letter-spacing: 0.05em;
+      line-height: 1;
+    }
+    .paid-badge {
+      display: inline-block;
+      margin-top: 5px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: #DCFCE7 !important;
+      color: #166534 !important;
+      border: 1px solid #86EFAC;
+    }
+    .meta-line {
+      font-size: 11px;
+      color: #64748B;
+      margin-top: 4px;
+    }
+    .meta-bold {
+      font-weight: 700;
+      color: #0F172A;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    /* Parties Section */
+    .parties {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #E2E8F0;
+    }
+    .party-title {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748B;
+      margin-bottom: 5px;
+    }
+    .party-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+    .party-sub {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 1px;
+    }
+    .party-id-tag {
+      display: inline-block;
+      margin-top: 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 700;
+      background: #F1F5F9 !important;
+      color: #0F172A !important;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid #CBD5E1;
+    }
+
+    /* Project Banner */
+    .project-banner {
+      background: #F8FAFC !important;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .proj-title {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0F172A;
+    }
+    .proj-sub {
+      font-size: 11px;
+      color: #64748B;
+      margin-top: 2px;
+    }
+    .escrow-pill {
+      font-size: 10px;
+      font-weight: 700;
+      color: #166534 !important;
+      background: #DCFCE7 !important;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #86EFAC;
+    }
+
+    /* Table */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+    }
+    th {
+      text-align: left;
+      padding: 7px 10px;
+      background: #F8FAFC !important;
+      border-top: 1px solid #CBD5E1;
+      border-bottom: 2px solid #CBD5E1;
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748B;
+    }
+    td {
+      padding: 8px 10px;
+      border-bottom: 1px solid #E2E8F0;
+      font-size: 11px;
+    }
+    .td-num {
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-weight: 700;
+      color: #0F172A;
+      white-space: nowrap;
+    }
+
+    /* Settlement & Totals Grid */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 20px;
+      margin-bottom: 18px;
+      padding-top: 4px;
+    }
+    .settlement-info {
+      font-size: 11px;
+      color: #475569;
+      line-height: 1.65;
+    }
+    .settlement-label {
+      color: #64748B;
+      font-weight: 600;
+    }
+    .settlement-val {
+      color: #0F172A;
+      font-weight: 700;
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .totals-box {
+      border-top: 2px solid #0F172A;
+      padding-top: 8px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 5px;
+      color: #475569;
+    }
+    .total-final {
+      font-size: 16px;
+      font-weight: 900;
+      color: #0F172A;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #CBD5E1;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid #CBD5E1;
+      padding-top: 10px;
+      text-align: center;
+      font-size: 10px;
+      color: #64748B;
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-card">
+    <div class="header">
+      <div>
+        <div class="brand">MilestoneOS</div>
+        <div class="brand-sub">Contract Escrow & Milestone Settlement</div>
+      </div>
+      <div class="title-box">
+        <div class="title">INVOICE</div>
+        <div><span class="paid-badge">PAID • SETTLED</span></div>
+        <div class="meta-line">Invoice #: <span class="meta-bold">${invoice.invoiceNumber}</span></div>
+        <div class="meta-line">Payment Date: <span class="meta-bold">${invoice.paymentDate}</span></div>
+      </div>
+    </div>
+
+    <div class="parties">
+      <div>
+        <div class="party-title">Billed To (Client)</div>
+        <div class="party-name">${invoice.client.name}</div>
+        <div class="party-sub">${invoice.client.company}</div>
+        <div class="party-sub">${invoice.client.email}</div>
+        ${invoice.client.clientId ? `<div class="party-id-tag">Client ID: ${invoice.client.clientId}</div>` : ""}
+      </div>
+      <div>
+        <div class="party-title">Issued By (Freelancer)</div>
+        <div class="party-name">${invoice.freelancer.name}</div>
+        <div class="party-sub">${invoice.freelancer.title}</div>
+        <div class="party-sub">${invoice.freelancer.email}</div>
+        ${invoice.freelancer.freelancerId ? `<div class="party-id-tag">Freelancer ID: ${invoice.freelancer.freelancerId}</div>` : ""}
+      </div>
+    </div>
+
+    <div class="project-banner">
+      <div>
+        <div class="proj-title">${invoice.projectTitle}</div>
+        <div class="proj-sub">Stage 0${invoice.stageNumber} — ${invoice.milestoneTitle}</div>
+      </div>
+      <div>
+        <span class="escrow-pill">100% Escrow Released</span>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 55%;">Deliverable Specification</th>
+          <th style="width: 25%;">Category</th>
+          <th style="width: 20%; text-align: right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${invoice.lineItems
+          .map(
+            (item) => `<tr>
+          <td><strong>${item.description}</strong></td>
+          <td style="color: #64748B;">${item.category}</td>
+          <td class="td-num">$${item.amount.toLocaleString()}.00 ${invoice.currency}</td>
+        </tr>`
+          )
+          .join("")}
+      </tbody>
+    </table>
+
+    <div class="bottom-grid">
+      <div class="settlement-info">
+        <div><span class="settlement-label">Payment Method:</span> <span class="settlement-val">${invoice.paymentMethod}</span></div>
+        <div><span class="settlement-label">PayPal Transaction ID:</span> <span class="mono settlement-val">${invoice.paypalTransactionId}</span></div>
+        <div><span class="settlement-label">Escrow Settlement:</span> <span class="settlement-val">Direct Mutual Release via PayPal Sandbox</span></div>
+        <div><span class="settlement-label">Ledger Verification Hash:</span> <span class="mono" style="font-size: 10px;">${invoice.cryptographicHash}</span></div>
+      </div>
+
+      <div class="totals-box">
+        <div class="total-row"><span>Milestone Subtotal:</span> <span class="mono">$${invoice.subtotal.toLocaleString()}.00</span></div>
+        <div class="total-row"><span>Escrow Released:</span> <span class="mono">-$${invoice.escrowReleased.toLocaleString()}.00</span></div>
+        <div class="total-row"><span>Platform Fee:</span> <span class="mono">$0.00</span></div>
+        <div class="total-row total-final"><span>Total Paid:</span> <span class="mono">$${invoice.total.toLocaleString()}.00 ${invoice.currency}</span></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Official settlement invoice generated via MilestoneOS Mutual Escrow • Strictly 1 Page Document • Page 1 of 1
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 export default function InvoiceModal({
   isOpen,
   onClose,
@@ -98,9 +451,7 @@ export default function InvoiceModal({
     const freelancerBase = extractBaseCode(
       project.freelancer.milestoneOSId || project.freelancerId || "Q7EWTG"
     );
-    const resolvedFreelancerId = project.freelancer.milestoneOSId?.startsWith(
-      "FL-"
-    )
+    const resolvedFreelancerId = project.freelancer.milestoneOSId?.startsWith("FL-")
       ? project.freelancer.milestoneOSId
       : formatFreelancerId(freelancerBase);
 
@@ -266,8 +617,46 @@ export default function InvoiceModal({
 
   if (!isOpen || !project || !milestone) return null;
 
+  /**
+   * Triggers printing of ONLY the isolated plain white invoice document.
+   * Completely bypasses the main dashboard DOM, WebThreads canvas, and page layout.
+   */
   const handlePrint = () => {
-    window.print();
+    if (!invoice) return;
+    const html = buildCleanInvoiceHtml(invoice);
+
+    const existingFrame = document.getElementById("invoice-print-frame");
+    if (existingFrame) {
+      existingFrame.remove();
+    }
+
+    const printFrame = document.createElement("iframe");
+    printFrame.id = "invoice-print-frame";
+    printFrame.style.position = "fixed";
+    printFrame.style.top = "-9999px";
+    printFrame.style.left = "-9999px";
+    printFrame.style.width = "1024px";
+    printFrame.style.height = "1400px";
+    printFrame.style.border = "none";
+    printFrame.style.zIndex = "-1000";
+    document.body.appendChild(printFrame);
+
+    const frameDoc = printFrame.contentDocument || printFrame.contentWindow?.document;
+    if (!frameDoc) return;
+
+    frameDoc.open();
+    frameDoc.write(html);
+    frameDoc.close();
+
+    // Focus and print strictly the isolated iframe
+    setTimeout(() => {
+      try {
+        printFrame.contentWindow?.focus();
+        printFrame.contentWindow?.print();
+      } catch (err) {
+        console.error("Iframe print error:", err);
+      }
+    }, 300);
   };
 
   const handleCopyTxId = (id: string) => {
@@ -302,329 +691,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
   const handleDownloadHtml = () => {
     if (!invoice) return;
 
-    const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Invoice - ${invoice.invoiceNumber} - MilestoneOS</title>
-  <style>
-    @page {
-      size: A4 portrait;
-      margin: 10mm 12mm;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 24px;
-      color: #0F172A;
-      background: #F8FAFC;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .invoice-card {
-      max-width: 760px;
-      margin: 0 auto;
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
-      border-radius: 12px;
-      padding: 32px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.03);
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-    @media print {
-      body {
-        background: #FFFFFF;
-        padding: 0;
-        margin: 0;
-      }
-      .invoice-card {
-        border: none;
-        box-shadow: none;
-        padding: 0;
-        max-width: 100%;
-        page-break-inside: avoid;
-        break-inside: avoid;
-      }
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 2px solid #E2E8F0;
-      padding-bottom: 16px;
-      margin-bottom: 20px;
-    }
-    .brand {
-      font-size: 22px;
-      font-weight: 900;
-      color: #0070BA;
-      letter-spacing: -0.02em;
-    }
-    .brand-sub {
-      font-size: 11px;
-      color: #64748B;
-      margin-top: 3px;
-    }
-    .title-box {
-      text-align: right;
-    }
-    .title {
-      font-size: 24px;
-      font-weight: 900;
-      color: #0F172A;
-      letter-spacing: 0.04em;
-      line-height: 1;
-    }
-    .badge {
-      display: inline-block;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      background: #DCFCE7;
-      color: #166534;
-      border: 1px solid #BBF7D0;
-      margin-top: 6px;
-    }
-    .meta-line {
-      font-size: 11px;
-      color: #64748B;
-      margin-top: 4px;
-    }
-    .meta-num {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-weight: 700;
-      color: #0F172A;
-    }
-
-    .parties {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      margin-bottom: 20px;
-    }
-    .party-title {
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      color: #64748B;
-      margin-bottom: 6px;
-      letter-spacing: 0.05em;
-    }
-    .party-name {
-      font-size: 14px;
-      font-weight: 800;
-      color: #0F172A;
-    }
-    .party-sub {
-      font-size: 12px;
-      color: #475569;
-      margin-top: 2px;
-    }
-    .party-id {
-      display: inline-block;
-      margin-top: 6px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 11px;
-      font-weight: 700;
-      background: #F1F5F9;
-      color: #1E293B;
-      padding: 3px 8px;
-      border-radius: 4px;
-      border: 1px solid #E2E8F0;
-    }
-
-    .project-banner {
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .project-title {
-      font-size: 13px;
-      font-weight: 800;
-      color: #0F172A;
-    }
-    .project-sub {
-      font-size: 11px;
-      color: #64748B;
-      margin-top: 2px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-      font-size: 12px;
-    }
-    th {
-      text-align: left;
-      padding: 8px 12px;
-      background: #F8FAFC;
-      border-bottom: 2px solid #E2E8F0;
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #64748B;
-    }
-    td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #F1F5F9;
-    }
-    .mono {
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    }
-
-    .bottom-section {
-      display: grid;
-      grid-template-columns: 1.2fr 1fr;
-      gap: 24px;
-      padding-top: 4px;
-      margin-bottom: 20px;
-    }
-    .settlement-details {
-      font-size: 11px;
-      color: #475569;
-      line-height: 1.7;
-    }
-    .settlement-label {
-      color: #64748B;
-      font-weight: 600;
-    }
-    .settlement-val {
-      color: #0F172A;
-      font-weight: 700;
-    }
-
-    .totals {
-      border-top: 2px solid #0F172A;
-      padding-top: 10px;
-    }
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      margin-bottom: 6px;
-      color: #475569;
-    }
-    .total-final {
-      font-size: 16px;
-      font-weight: 900;
-      color: #0F172A;
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid #E2E8F0;
-    }
-
-    .footer {
-      border-top: 1px solid #E2E8F0;
-      padding-top: 12px;
-      text-align: center;
-      font-size: 10px;
-      color: #94A3B8;
-    }
-  </style>
-</head>
-<body>
-  <div class="invoice-card">
-    <div class="header">
-      <div>
-        <div class="brand">MilestoneOS</div>
-        <div class="brand-sub">Contract Escrow & Milestone Settlement</div>
-      </div>
-      <div class="title-box">
-        <div class="title">INVOICE</div>
-        <div><span class="badge">PAID • SETTLED</span></div>
-        <div class="meta-line">Invoice #: <span class="meta-num">${invoice.invoiceNumber}</span></div>
-        <div class="meta-line">Payment Date: ${invoice.paymentDate}</div>
-      </div>
-    </div>
-
-    <div class="parties">
-      <div>
-        <div class="party-title">Billed To (Client)</div>
-        <div class="party-name">${invoice.client.name}</div>
-        <div class="party-sub">${invoice.client.company}</div>
-        <div class="party-sub">${invoice.client.email}</div>
-        ${invoice.client.clientId ? `<div class="party-id">Client ID: ${invoice.client.clientId}</div>` : ""}
-      </div>
-      <div>
-        <div class="party-title">Issued By (Freelancer)</div>
-        <div class="party-name">${invoice.freelancer.name}</div>
-        <div class="party-sub">${invoice.freelancer.title}</div>
-        <div class="party-sub">${invoice.freelancer.email}</div>
-        ${invoice.freelancer.freelancerId ? `<div class="party-id">Freelancer ID: ${invoice.freelancer.freelancerId}</div>` : ""}
-      </div>
-    </div>
-
-    <div class="project-banner">
-      <div>
-        <div class="project-title">${invoice.projectTitle}</div>
-        <div class="project-sub">Stage 0${invoice.stageNumber} — ${invoice.milestoneTitle}</div>
-      </div>
-      <div style="font-size: 11px; font-weight: 700; color: #166534; background: #DCFCE7; padding: 4px 8px; border-radius: 6px;">
-        100% Escrow Released
-      </div>
-    </div>
-
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 55%;">Deliverable Specification</th>
-          <th style="width: 25%;">Category</th>
-          <th style="width: 20%; text-align: right;">Amount</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${invoice.lineItems
-          .map(
-            (item) => `<tr>
-          <td>
-            <strong>${item.description}</strong>
-          </td>
-          <td style="color: #64748B;">${item.category}</td>
-          <td style="text-align: right; font-family: monospace; font-weight: bold;">$${item.amount.toLocaleString()}.00 ${invoice.currency}</td>
-        </tr>`
-          )
-          .join("")}
-      </tbody>
-    </table>
-
-    <div class="bottom-section">
-      <div class="settlement-details">
-        <div><span class="settlement-label">Payment Method:</span> <span class="settlement-val">${invoice.paymentMethod}</span></div>
-        <div><span class="settlement-label">PayPal Transaction ID:</span> <span class="mono settlement-val">${invoice.paypalTransactionId}</span></div>
-        <div><span class="settlement-label">Escrow Settlement:</span> <span class="settlement-val">Direct Release via PayPal Sandbox</span></div>
-        <div><span class="settlement-label">Ledger Verification Hash:</span> <span class="mono" style="font-size: 10px;">${invoice.cryptographicHash}</span></div>
-      </div>
-
-      <div class="totals">
-        <div class="total-row"><span>Milestone Subtotal:</span> <span class="mono">$${invoice.subtotal.toLocaleString()}.00</span></div>
-        <div class="total-row"><span>Escrow Release:</span> <span class="mono">-$${invoice.escrowReleased.toLocaleString()}.00</span></div>
-        <div class="total-row"><span>Platform Fee:</span> <span class="mono">$0.00</span></div>
-        <div class="total-row total-final"><span>Total Paid:</span> <span class="mono">$${invoice.total.toLocaleString()}.00 ${invoice.currency}</span></div>
-      </div>
-    </div>
-
-    <div class="footer">
-      Official settlement invoice generated via MilestoneOS Mutual Escrow • Strictly 1 Page Document • Page 1 of 1
-    </div>
-  </div>
-</body>
-</html>`;
-
+    const htmlContent = buildCleanInvoiceHtml(invoice);
     const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -638,57 +705,26 @@ Settled securely via MilestoneOS Mutual Escrow.`;
 
   return (
     <>
-      {/* Global Print Style: Guarantees Strictly 1 Page Layout */}
+      {/* Global Fallback Print Rule: Ensures zero dashboard bleed if native print is fired */}
       <style jsx global>{`
         @media print {
-          @page {
-            size: A4 portrait;
-            margin: 10mm 12mm;
-          }
-          body {
-            background: #ffffff !important;
-            color: #0f172a !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            overflow: hidden !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          /* Hide all application dashboard elements */
+          /* Hide all application background canvas and chrome */
+          canvas,
+          .web-threads-container,
+          .web-threads-canvas,
           nav,
           header,
-          aside,
-          .print-hide {
+          aside {
             display: none !important;
-          }
-          /* Reset modal backdrop for print */
-          .invoice-modal-root {
-            position: static !important;
-            background: transparent !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100% !important;
-            height: auto !important;
-          }
-          .invoice-paper-sheet {
-            max-width: 100% !important;
-            width: 100% !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            background: #ffffff !important;
-            color: #0f172a !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
+            visibility: hidden !important;
           }
         }
       `}</style>
 
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 invoice-modal-root">
-        <div className="relative w-full max-w-3xl rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0D1527] overflow-hidden my-4 max-h-[92vh] flex flex-col print:border-none print:shadow-none print:max-h-none print:w-full print:rounded-none">
-          {/* Top Modal Controls (Hidden in Print) */}
-          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-slate-50/80 dark:bg-white/[0.02] print-hide">
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5">
+        <div className="relative w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-white/10 dark:bg-[#0D1527] overflow-hidden my-4 max-h-[92vh] flex flex-col">
+          {/* Top Modal Controls */}
+          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 shrink-0 bg-slate-50/80 dark:bg-white/[0.02]">
             <div className="flex items-center gap-2.5">
               <div className="h-9 w-9 rounded-xl bg-sky-50 text-[#0070BA] dark:bg-sky-950/60 dark:text-sky-300 flex items-center justify-center shadow-2xs border border-sky-100 dark:border-sky-800">
                 <Receipt className="h-4.5 w-4.5" />
@@ -739,7 +775,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
           </div>
 
           {/* Scrollable Document Container */}
-          <div className="p-4 sm:p-6 overflow-y-auto flex-1 text-xs text-slate-700 dark:text-slate-300 print:p-0 print:overflow-visible">
+          <div className="p-4 sm:p-6 overflow-y-auto flex-1 text-xs text-slate-700 dark:text-slate-300">
             {loading ? (
               <div className="py-20 text-center space-y-3">
                 <div className="h-10 w-10 mx-auto rounded-xl bg-sky-50 dark:bg-sky-950/60 text-[#0070BA] dark:text-sky-300 flex items-center justify-center animate-pulse">
@@ -759,12 +795,14 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                 Could not load invoice. Please try again.
               </div>
             ) : (
+              /* Completely Plain White Corporate Sheet (No Web Threads, No Transparency) */
               <div
                 ref={invoiceRef}
-                className="invoice-paper-sheet bg-white text-slate-900 dark:bg-white dark:text-slate-900 rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-5 shadow-sm max-w-[720px] mx-auto"
+                className="bg-white text-slate-900 rounded-xl border border-slate-300 p-6 sm:p-8 space-y-5 shadow-xs max-w-[720px] mx-auto"
+                style={{ backgroundColor: "#FFFFFF", color: "#0F172A" }}
               >
                 {/* 1. Header: Brand, Title, Status */}
-                <div className="flex items-start justify-between border-b-2 border-slate-200 pb-4">
+                <div className="flex items-start justify-between border-b-2 border-slate-900 pb-3.5">
                   <div>
                     <div className="text-xl font-black text-[#0070BA] tracking-tight">
                       MilestoneOS
@@ -779,9 +817,9 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                       INVOICE
                     </div>
                     <div>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-300">
                         <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                        <span>PAID & SETTLED</span>
+                        <span>PAID • SETTLED</span>
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500">
@@ -797,7 +835,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                 </div>
 
                 {/* 2. Parties Grid: Billed To (Client) & Issued By (Freelancer) */}
-                <div className="grid grid-cols-2 gap-6 pt-1">
+                <div className="grid grid-cols-2 gap-6 pt-1 pb-3 border-b border-slate-200">
                   <div>
                     <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                       Billed To (Client)
@@ -812,7 +850,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                       {invoice.client.email}
                     </div>
                     {invoice.client.clientId && (
-                      <div className="mt-1.5 inline-block font-mono text-[11px] font-bold bg-slate-100 text-slate-800 px-2 py-0.5 rounded border border-slate-200">
+                      <div className="mt-1.5 inline-block font-mono text-[11px] font-bold bg-slate-100 text-slate-800 px-2 py-0.5 rounded border border-slate-300">
                         Client ID: {invoice.client.clientId}
                       </div>
                     )}
@@ -832,7 +870,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                       {invoice.freelancer.email}
                     </div>
                     {invoice.freelancer.freelancerId && (
-                      <div className="mt-1.5 inline-block font-mono text-[11px] font-bold bg-slate-100 text-slate-800 px-2 py-0.5 rounded border border-slate-200">
+                      <div className="mt-1.5 inline-block font-mono text-[11px] font-bold bg-slate-100 text-slate-800 px-2 py-0.5 rounded border border-slate-300">
                         Freelancer ID: {invoice.freelancer.freelancerId}
                       </div>
                     )}
@@ -840,7 +878,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                 </div>
 
                 {/* 3. Project Banner */}
-                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-50 border border-slate-200">
+                <div className="flex items-center justify-between p-3 rounded bg-slate-50 border border-slate-200">
                   <div>
                     <div className="font-bold text-xs text-slate-900">
                       {invoice.projectTitle}
@@ -850,16 +888,16 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded border border-emerald-200">
+                    <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/90 px-2 py-0.5 rounded border border-emerald-300">
                       100% Escrow Released
                     </span>
                   </div>
                 </div>
 
                 {/* 4. Line Items Table */}
-                <div className="rounded-lg border border-slate-200 overflow-hidden">
+                <div className="rounded border border-slate-200 overflow-hidden">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[10px] uppercase tracking-wider">
+                    <thead className="bg-slate-50 border-b-2 border-slate-200 text-slate-600 font-bold text-[10px] uppercase tracking-wider">
                       <tr>
                         <th className="py-2 px-3">Deliverable Specification</th>
                         <th className="py-2 px-3 hidden sm:table-cell">Category</th>
@@ -904,7 +942,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                         {copiedId ? (
                           <Check className="h-3 w-3 text-emerald-600" />
                         ) : (
-                          <Copy className="h-3 w-3 text-slate-400 print-hide" />
+                          <Copy className="h-3 w-3 text-slate-400" />
                         )}
                       </button>
                     </div>
@@ -951,9 +989,9 @@ Settled securely via MilestoneOS Mutual Escrow.`;
             )}
           </div>
 
-          {/* Bottom Actions Bar (Hidden in Print) */}
+          {/* Bottom Actions Bar */}
           {invoice && (
-            <div className="p-4 border-t border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 bg-slate-50/80 dark:bg-white/[0.02] print-hide">
+            <div className="p-4 border-t border-slate-100 dark:border-white/5 flex flex-wrap items-center justify-between gap-3 bg-slate-50/80 dark:bg-white/[0.02]">
               <button
                 type="button"
                 onClick={handleCopySummary}

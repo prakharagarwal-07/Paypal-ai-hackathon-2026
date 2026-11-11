@@ -75,3 +75,14 @@
 .btn-gradient-glow:hover::after {
   left: 140%;
 }
+
+@media print {
+  /* Suppress all background animations, web threads canvases, and dashboard chrome in print */
+  canvas,
+  .web-threads-container,
+  .web-threads-canvas,
+  .btn-gradient-glow::after {
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
