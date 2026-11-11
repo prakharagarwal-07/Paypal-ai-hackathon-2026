@@ -276,6 +276,18 @@ export default function PayPalPaymentModal({
             {/* Live PayPal SDK Buttons Container */}
             {paymentState === "idle" && (
               <div className="space-y-3 pt-1">
+                {isINR && (
+                  <div className="p-3 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/40 text-sky-900 dark:text-sky-200 text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-bold">
+                      <Info className="h-4 w-4 text-[#0070BA] dark:text-sky-400 shrink-0" />
+                      <span>Currency Conversion Notice</span>
+                    </div>
+                    <p className="text-[11px] text-sky-800 dark:text-sky-300 leading-relaxed">
+                      Agreed contract price is <strong className="font-semibold text-slate-900 dark:text-white">₹{inrContractAmount.toLocaleString()} INR</strong>. PayPal Sandbox settles in USD: converted to approximately <strong className="font-mono font-semibold text-slate-900 dark:text-white">${usdAuthEquivalent.toFixed(2)} USD</strong> (exchange rate: 1 USD ≈ ₹85 INR). The seller/freelancer receives funds in USD.
+                    </p>
+                  </div>
+                )}
+
                 {isConfigured ? (
                   <PayPalScriptProvider
                     options={{

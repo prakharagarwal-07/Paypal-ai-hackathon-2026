@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
       milestoneId: milestone.id,
       milestoneTitle:
         contractCurrency === "INR"
-          ? `${milestone.title} (₹${contractAmount.toLocaleString()} INR)`
+          ? `${milestone.title} (INR ${contractAmount.toLocaleString()} - USD ${orderAmount.toFixed(2)})`
           : milestone.title,
       amount: orderAmount,
       currency: orderCurrency,

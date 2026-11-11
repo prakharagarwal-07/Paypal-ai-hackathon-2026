@@ -103,13 +103,27 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
   const token = await getPayPalAccessToken();
   const baseUrl = getPayPalBaseUrl();
 
+  // Ensure ASCII-only string values for PayPal Hosted Checkout UI compatibility
+  const cleanTitle = (milestoneTitle || "Milestone Payment")
+    .replace(/[^\x20-\x7E]/g, "")
+    .trim()
+    .slice(0, 90);
+  const cleanDescription = `MilestoneOS: ${cleanTitle}`
+    .replace(/[^\x20-\x7E]/g, "")
+    .trim()
+    .slice(0, 127);
+  const cleanCustomId = `${projectId}:${milestoneId}`
+    .replace(/[^\x20-\x7E]/g, "")
+    .trim()
+    .slice(0, 127);
+
   const payload = {
     intent: "CAPTURE",
     purchase_units: [
       {
         reference_id: milestoneId,
-        description: `MilestoneOS: ${milestoneTitle}`.slice(0, 127),
-        custom_id: `${projectId}:${milestoneId}`.slice(0, 127),
+        description: cleanDescription,
+        custom_id: cleanCustomId,
         amount: {
           currency_code: currency,
           value: amount.toFixed(2),
@@ -142,6 +156,9 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
   }
 
   const data = await response.json();
+  console.log(
+    `[PayPal Orders v2] Created order ${data.id} (${data.status}) for ${amount.toFixed(2)} ${currency} - ref: ${milestoneId}`
+  );
   const approveLink = data.links?.find((l: { rel: string; href: string }) => l.rel === "approve");
 
   return {
