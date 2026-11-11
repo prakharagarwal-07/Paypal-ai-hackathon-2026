@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = db.addMilestone(projectId, {
+    const result = await db.addMilestone(projectId, {
       title,
       description: description || "Agreed deliverables milestone.",
       amount: numericAmount,

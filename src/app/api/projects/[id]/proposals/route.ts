@@ -10,13 +10,13 @@ export async function POST(
     const body = await req.json();
     const { action, feedback, updatedData } = body;
 
-    const project = db.getProjectById(id);
+    const project = await db.getProjectById(id);
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
     if (action === "accept") {
-      const updated = db.updateProjectStatus(id, "active");
+      const updated = await db.updateProjectStatus(id, "active");
       return NextResponse.json({
         success: true,
         message: "Proposal accepted. Mutually agreed contract is now active.",
@@ -31,7 +31,7 @@ export async function POST(
           { status: 400 }
         );
       }
-      const updated = db.updateProjectStatus(id, "changes_requested", feedback);
+      const updated = await db.updateProjectStatus(id, "changes_requested", feedback);
       return NextResponse.json({
         success: true,
         message: "Change request submitted to proposer.",
@@ -40,7 +40,7 @@ export async function POST(
     }
 
     if (action === "reject") {
-      const updated = db.updateProjectStatus(id, "rejected", feedback);
+      const updated = await db.updateProjectStatus(id, "rejected", feedback);
       return NextResponse.json({
         success: true,
         message: "Proposal declined.",
@@ -54,7 +54,7 @@ export async function POST(
         status: "awaiting_acceptance",
         proposalFeedback: undefined,
       };
-      const updated = db.updateProject(id, updates);
+      const updated = await db.updateProject(id, updates);
       return NextResponse.json({
         success: true,
         message: "Proposal revised and resubmitted for mutual agreement.",

@@ -16,7 +16,7 @@ export async function POST(
       return NextResponse.json({ error: "projectId is required" }, { status: 400 });
     }
 
-    const project = db.getProjectById(projectId);
+    const project = await db.getProjectById(projectId);
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
@@ -70,7 +70,7 @@ export async function POST(
 
     submission.aiAssessment = audit;
 
-    const result = db.submitMilestoneWork(projectId, milestoneId, submission, audit);
+    const result = await db.submitMilestoneWork(projectId, milestoneId, submission, audit);
 
     return NextResponse.json({
       success: true,

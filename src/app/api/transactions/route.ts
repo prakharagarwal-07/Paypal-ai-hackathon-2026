@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const transactions = db.getTransactions({
+    const transactions = await db.getTransactions({
       userId,
       userEmail,
       isDemo,

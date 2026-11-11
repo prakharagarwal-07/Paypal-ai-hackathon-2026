@@ -12,7 +12,7 @@ export async function GET(
       return NextResponse.json({ error: "Token is required" }, { status: 400 });
     }
 
-    const project = db.getProjectByInvitationToken(token);
+    const project = await db.getProjectByInvitationToken(token);
 
     if (!project) {
       return NextResponse.json(
@@ -99,14 +99,14 @@ export async function POST(
     const action = body.action || (claimingUser ? "accept" : undefined);
     const feedback = body.feedback;
 
-    const project = db.getProjectByInvitationToken(token);
+    const project = await db.getProjectByInvitationToken(token);
 
     if (!project) {
       return NextResponse.json({ error: "Invitation not found." }, { status: 404 });
     }
 
     if (action === "revoke") {
-      db.revokeInvitation(token);
+      await db.revokeInvitation(token);
       return NextResponse.json({ success: true, message: "Invitation link revoked." });
     }
 
@@ -139,7 +139,7 @@ export async function POST(
         );
       }
 
-      const updated = db.claimInvitation(token, claimingUser);
+      const updated = await db.claimInvitation(token, claimingUser);
       return NextResponse.json({
         success: true,
         message: "Invitation accepted. Project contract is now active.",

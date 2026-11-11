@@ -34,7 +34,7 @@ export async function GET(
       ? { id: userId, email: userEmail, milestoneOSId, isDemo }
       : undefined;
 
-    const project = db.getProjectById(id, authUser);
+    const project = await db.getProjectById(id, authUser);
 
     if (!project) {
       return NextResponse.json(
@@ -60,7 +60,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
 
-    const updated = db.updateProject(id, body);
+    const updated = await db.updateProject(id, body);
     if (!updated) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }

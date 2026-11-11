@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const projects = db.getProjects({
+    const projects = await db.getProjects({
       userId,
       userEmail,
       milestoneOSId,
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
       activityLog: [activity],
     };
 
-    const saved = db.createProject(newProject, effectiveCreatorId);
+    const saved = await db.createProject(newProject, effectiveCreatorId);
 
     return NextResponse.json({
       success: true,

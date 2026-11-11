@@ -23,7 +23,7 @@ export async function PATCH(
     }
     if (dueDate !== undefined) updates.dueDate = dueDate;
 
-    const result = db.editMilestone(projectId, milestoneId, updates);
+    const result = await db.editMilestone(projectId, milestoneId, updates);
     if (!result) {
       return NextResponse.json(
         { error: "Milestone cannot be edited (may be approved/paid or not found)" },

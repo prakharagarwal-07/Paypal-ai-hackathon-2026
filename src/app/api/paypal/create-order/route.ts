@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const project = db.getProjectById(projectId);
+    const project = await db.getProjectById(projectId);
     if (!project) {
       return NextResponse.json({ error: "Project not found in contract database" }, { status: 404 });
     }

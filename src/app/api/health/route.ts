@@ -4,8 +4,8 @@ import { hasGeminiKey } from "@/server/gemini";
 import { db } from "@/server/db";
 
 export async function GET() {
-  const projects = db.getProjects();
-  const transactions = db.getTransactions();
+  const projects = await db.getProjects();
+  const transactions = await db.getTransactions();
 
   return NextResponse.json({
     status: "healthy",

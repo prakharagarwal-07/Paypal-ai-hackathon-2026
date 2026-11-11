@@ -24,7 +24,7 @@ export async function POST(
       );
     }
 
-    const project = db.getProjectById(projectId);
+    const project = await db.getProjectById(projectId);
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
@@ -34,7 +34,7 @@ export async function POST(
       return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
     }
 
-    const result = db.reviewMilestone(projectId, milestoneId, action, feedback);
+    const result = await db.reviewMilestone(projectId, milestoneId, action, feedback);
 
     return NextResponse.json({
       success: true,

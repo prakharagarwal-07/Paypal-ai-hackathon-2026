@@ -260,9 +260,11 @@ const STORAGE_KEYS = {
 export function DashboardProvider({
   children,
   initialRole = "client",
+  isDemoFromUrl = false,
 }: {
   children: ReactNode;
   initialRole?: "client" | "freelancer";
+  isDemoFromUrl?: boolean;
 }) {
   const [role, setRoleState] = useState<"client" | "freelancer">(initialRole);
   const [activeTab, setActiveTabState] = useState<DashboardTab>("dashboard");
@@ -471,45 +473,52 @@ export function DashboardProvider({
   };
 
   // Enter demo sandbox for hackathon testing
-  const enterDemoMode = (demoRole: "client" | "freelancer" = "client") => {
+  const enterDemoMode = async (demoRole: "client" | "freelancer" = "client") => {
     try {
       localStorage.setItem(STORAGE_KEYS.DEMO_MODE, "true");
     } catch (_) {}
     setIsDemoModeState(true);
     setRoleState(demoRole);
 
-    let demoProjectsToLoad = INITIAL_PROJECTS;
     try {
-      const savedDemoStr = localStorage.getItem("milestoneos_demo_projects_v2");
-      if (savedDemoStr) {
-        const parsed = JSON.parse(savedDemoStr);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          demoProjectsToLoad = parsed;
-        }
+      const [pRes, tRes] = await Promise.all([
+        fetch("/api/projects?isDemo=true"),
+        fetch("/api/transactions?isDemo=true"),
+      ]);
+      const pData = await pRes.json();
+      const tData = await tRes.json();
+      if (pData.success && Array.isArray(pData.projects) && pData.projects.length > 0) {
+        setRawProjects(pData.projects);
+        setActiveProjectIdState(pData.projects[0]?.id || "proj_customer_reviews_2026");
       }
-    } catch (_) {}
-
-    setRawProjects(demoProjectsToLoad);
-    setTransactions(INITIAL_TRANSACTIONS);
-    setNotifications(INITIAL_NOTIFICATIONS);
-    setActiveProjectIdState(demoProjectsToLoad[0]?.id || "proj_online_store_2026");
+      if (tData.success && Array.isArray(tData.transactions)) {
+        setTransactions(tData.transactions);
+      }
+    } catch (err) {
+      console.warn("Could not fetch demo data from Supabase:", err);
+    }
     showToast(`Entered Demo Sandbox as ${demoRole === "client" ? "Sarah Chen (Client)" : "Rohan Verma (Freelancer)"}`, "info");
   };
 
-  // Fetch projects from server scoped to current authenticated user
+  // Fetch projects from server scoped to current authenticated user or demo mode
   const refreshProjects = async () => {
-    const isDemo = typeof window !== "undefined" && localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true";
+    const isDemo = isDemoMode || (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true");
     if (isDemo) {
       try {
-        const pRes = await fetch("/api/projects?isDemo=true");
+        const [pRes, tRes] = await Promise.all([
+          fetch("/api/projects?isDemo=true"),
+          fetch("/api/transactions?isDemo=true"),
+        ]);
         const pData = await pRes.json();
+        const tData = await tRes.json();
         if (pData.success && Array.isArray(pData.projects)) {
           setRawProjects(pData.projects);
-        } else {
-          setRawProjects(INITIAL_PROJECTS);
         }
-      } catch (_) {
-        setRawProjects(INITIAL_PROJECTS);
+        if (tData.success && Array.isArray(tData.transactions)) {
+          setTransactions(tData.transactions);
+        }
+      } catch (err) {
+        console.warn("Could not fetch demo data from Supabase:", err);
       }
       return;
     }
@@ -605,7 +614,7 @@ export function DashboardProvider({
     let mounted = true;
 
     try {
-      const isDemo = localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true";
+      const isDemo = isDemoFromUrl || localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true";
       setIsDemoModeState(isDemo);
 
       const savedRole = localStorage.getItem(STORAGE_KEYS.ROLE);
@@ -634,24 +643,22 @@ export function DashboardProvider({
         } catch (_) {}
       }
 
-      // If demo mode is active on load, load demo fixtures
+      // If demo mode is active on load, load real records from Supabase
       if (isDemo) {
-        let demoProjectsToLoad = INITIAL_PROJECTS;
-        try {
-          const savedDemoStr = localStorage.getItem("milestoneos_demo_projects_v2");
-          if (savedDemoStr) {
-            const parsed = JSON.parse(savedDemoStr);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              demoProjectsToLoad = parsed;
-            }
+        Promise.all([
+          fetch("/api/projects?isDemo=true").then((r) => r.json()).catch(() => ({})),
+          fetch("/api/transactions?isDemo=true").then((r) => r.json()).catch(() => ({})),
+        ]).then(([pData, tData]) => {
+          if (!mounted) return;
+          if (pData?.success && Array.isArray(pData.projects) && pData.projects.length > 0) {
+            setRawProjects(pData.projects);
+            if (!savedActiveProj) setActiveProjectIdState(pData.projects[0]?.id || "proj_customer_reviews_2026");
           }
-        } catch (_) {}
-
-        setRawProjects(demoProjectsToLoad);
-        setTransactions(INITIAL_TRANSACTIONS);
-        setNotifications(INITIAL_NOTIFICATIONS);
-        if (!savedActiveProj) setActiveProjectIdState(demoProjectsToLoad[0]?.id || "proj_online_store_2026");
-        setIsLoaded(true);
+          if (tData?.success && Array.isArray(tData.transactions)) {
+            setTransactions(tData.transactions);
+          }
+          setIsLoaded(true);
+        });
         return;
       }
 
@@ -1305,6 +1312,21 @@ export function DashboardProvider({
         };
       })
     );
+
+    // Sync to backend API
+    fetch("/api/milestones", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId,
+        title: data.title,
+        description: data.description,
+        amount: data.amount,
+        dueDate: data.dueDate,
+        acceptanceCriteria: data.acceptanceCriteria,
+      }),
+    }).catch((err) => console.warn("Could not sync milestone to API:", err));
+
     const curr = data.currency || "USD";
     const currSym = curr.toUpperCase() === "INR" ? "₹" : "$";
     showToast(`Added Stage "${data.title}" (${currSym}${data.amount.toLocaleString()} ${curr}).`, "success");
@@ -1362,6 +1384,20 @@ export function DashboardProvider({
         };
       })
     );
+
+    // Sync to backend API
+    fetch(`/api/milestones/${milestoneId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId,
+        title: updates.title,
+        description: updates.description,
+        amount: updates.amount,
+        dueDate: updates.dueDate,
+      }),
+    }).catch((err) => console.warn("Could not sync milestone edit to API:", err));
+
     showToast("Milestone updated.", "success");
   };
 
@@ -1537,6 +1573,17 @@ export function DashboardProvider({
       })
     );
 
+    // Sync to backend API
+    fetch(`/api/milestones/${milestoneId}/review`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId,
+        action: "request_changes",
+        feedback: reason,
+      }),
+    }).catch((err) => console.warn("Could not sync change request to API:", err));
+
     showToast(`Changes requested for "${milestoneTitle}". Feedback sent.`, "warning");
   };
 
@@ -1575,6 +1622,16 @@ export function DashboardProvider({
         };
       })
     );
+
+    // Sync to backend API
+    fetch(`/api/milestones/${milestoneId}/review`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        projectId,
+        action: "approve",
+      }),
+    }).catch((err) => console.warn("Could not sync milestone approval to API:", err));
 
     showToast(`"${milestoneTitle}" approved! You can now release payment via PayPal.`, "success");
   };

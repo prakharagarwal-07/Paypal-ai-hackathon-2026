@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Verify project and milestone exist in server contract database
-    const project = db.getProjectById(projectId);
+    const project = await db.getProjectById(projectId);
     if (!project) {
       return NextResponse.json({ error: "Project not found in contract database" }, { status: 404 });
     }
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 7. Update server database with verified genuine capture
-    const updated = db.recordPayment(projectId, milestoneId, captureResult);
+    const updated = await db.recordPayment(projectId, milestoneId, captureResult);
 
     if (!updated) {
       return NextResponse.json(

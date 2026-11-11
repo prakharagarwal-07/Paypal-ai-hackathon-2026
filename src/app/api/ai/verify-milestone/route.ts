@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const project = db.getProjectById(projectId);
+    const project = await db.getProjectById(projectId);
     if (!project) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
           assessment.submissionFingerprint = fingerprint;
 
           // Save to server database
-          db.setMilestoneAudit(projectId, milestone.id, assessment);
+          await db.setMilestoneAudit(projectId, milestone.id, assessment);
 
           // Save to memory cache
           auditCache.set(cacheKey, assessment);
