@@ -477,10 +477,22 @@ export function DashboardProvider({
     } catch (_) {}
     setIsDemoModeState(true);
     setRoleState(demoRole);
-    setRawProjects(INITIAL_PROJECTS);
+
+    let demoProjectsToLoad = INITIAL_PROJECTS;
+    try {
+      const savedDemoStr = localStorage.getItem("milestoneos_demo_projects_v2");
+      if (savedDemoStr) {
+        const parsed = JSON.parse(savedDemoStr);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          demoProjectsToLoad = parsed;
+        }
+      }
+    } catch (_) {}
+
+    setRawProjects(demoProjectsToLoad);
     setTransactions(INITIAL_TRANSACTIONS);
     setNotifications(INITIAL_NOTIFICATIONS);
-    setActiveProjectIdState("proj_online_store_2026");
+    setActiveProjectIdState(demoProjectsToLoad[0]?.id || "proj_online_store_2026");
     showToast(`Entered Demo Sandbox as ${demoRole === "client" ? "Sarah Chen (Client)" : "Rohan Verma (Freelancer)"}`, "info");
   };
 
@@ -624,10 +636,21 @@ export function DashboardProvider({
 
       // If demo mode is active on load, load demo fixtures
       if (isDemo) {
-        setRawProjects(INITIAL_PROJECTS);
+        let demoProjectsToLoad = INITIAL_PROJECTS;
+        try {
+          const savedDemoStr = localStorage.getItem("milestoneos_demo_projects_v2");
+          if (savedDemoStr) {
+            const parsed = JSON.parse(savedDemoStr);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              demoProjectsToLoad = parsed;
+            }
+          }
+        } catch (_) {}
+
+        setRawProjects(demoProjectsToLoad);
         setTransactions(INITIAL_TRANSACTIONS);
         setNotifications(INITIAL_NOTIFICATIONS);
-        if (!savedActiveProj) setActiveProjectIdState("proj_online_store_2026");
+        if (!savedActiveProj) setActiveProjectIdState(demoProjectsToLoad[0]?.id || "proj_online_store_2026");
         setIsLoaded(true);
         return;
       }
@@ -744,12 +767,18 @@ export function DashboardProvider({
     };
   }, []);
 
-  // Save non-demo user projects to scoped cache
+  // Save projects to scoped cache
   useEffect(() => {
-    if (!isLoaded || isDemoMode || !authUser?.id) return;
-    try {
-      localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(rawProjects));
-    } catch (_) {}
+    if (!isLoaded) return;
+    if (isDemoMode) {
+      try {
+        localStorage.setItem("milestoneos_demo_projects_v2", JSON.stringify(rawProjects));
+      } catch (_) {}
+    } else if (authUser?.id) {
+      try {
+        localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(rawProjects));
+      } catch (_) {}
+    }
   }, [rawProjects, isLoaded, isDemoMode, authUser]);
 
   // Action: Create Project / Propose Project
@@ -827,30 +856,50 @@ export function DashboardProvider({
         creatorId: authUser?.id,
         clientId: newProject.clientId,
         freelancerId: newProject.freelancerId,
+        isDemo: Boolean(isDemoMode || newProject.isDemo),
       }),
     })
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.project) {
           setRawProjects((prev) =>
-            prev.map((p) => (p.id === id ? data.project : p))
+            prev.map((p) =>
+              p.id === id
+                ? { ...data.project, isDemo: isDemoMode || Boolean(data.project.isDemo) }
+                : p
+            )
           );
         }
       })
       .catch((err) => console.warn("Failed to sync project creation to API:", err));
 
     if (!asDraft) {
-      const notif: NotificationItem = {
+      const curr = newProject.currency || "USD";
+      const currSym = curr.toUpperCase() === "INR" ? "₹" : "$";
+      const senderNotif: NotificationItem = {
         id: `notif_${Date.now()}`,
         timestamp: "Just now",
         title: isClientInitiator ? "Proposal Dispatched" : "Proposal Submitted",
-        message: `Proposal for "${newProject.title}" ($${newProject.totalBudget.toLocaleString()} USD) submitted to ${recipientName}. Awaiting counterparty review.`,
+        message: `Proposal for "${newProject.title}" (${currSym}${newProject.totalBudget.toLocaleString()} ${curr}) submitted to ${recipientName}. Awaiting counterparty review.`,
         type: "system",
         unread: false,
         projectId: id,
         userId: authUser?.id,
+        isDemo: Boolean(isDemoMode),
       };
-      setNotifications((prev) => [notif, ...prev]);
+
+      const recipientNotif: NotificationItem = {
+        id: `notif_${Date.now()}_recip`,
+        timestamp: "Just now",
+        title: isClientInitiator ? "Project Assignment Received" : "Incoming Project Proposal",
+        message: `${senderName} sent you a project proposal: "${newProject.title}" (${currSym}${newProject.totalBudget.toLocaleString()} ${curr}). Review to accept.`,
+        type: "proposal",
+        unread: true,
+        projectId: id,
+        isDemo: Boolean(isDemoMode),
+      };
+
+      setNotifications((prev) => [recipientNotif, senderNotif, ...prev]);
     }
 
     showToast(

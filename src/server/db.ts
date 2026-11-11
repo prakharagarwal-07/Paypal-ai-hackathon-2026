@@ -304,8 +304,8 @@ export const db = {
   },
 
   createProject(project: ProjectContract, creatorId?: string): ProjectContract {
-    // Explicitly flag as non-demo real project
-    project.isDemo = false;
+    // Preserve demo flag if created in demo mode
+    project.isDemo = Boolean(project.isDemo);
 
     let cid = project.clientId || project.client?.id;
     let fid = project.freelancerId || project.freelancer?.id;

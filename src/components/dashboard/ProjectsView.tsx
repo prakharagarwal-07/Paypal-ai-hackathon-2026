@@ -20,6 +20,7 @@ import {
   FolderGit2,
 } from "lucide-react";
 import CompletedProjectModal from "./CompletedProjectModal";
+import ProposalReviewModal from "./ProposalReviewModal";
 
 interface ProjectsViewProps {
   onOpenNewProject: () => void;
@@ -33,15 +34,17 @@ export default function ProjectsView({
   onOpenInvoice,
 }: ProjectsViewProps) {
   const { projects, role, searchQuery, setActiveTab } = useDashboard();
-  const [filterTab, setFilterTab] = useState<"all" | "active" | "completed">("all");
+  const [filterTab, setFilterTab] = useState<"all" | "active" | "incoming" | "completed">("all");
   const [selectedCompletedProject, setSelectedCompletedProject] = useState<ProjectContract | null>(null);
+  const [selectedReviewProject, setSelectedReviewProject] = useState<ProjectContract | null>(null);
 
-  // Count incoming proposals awaiting action
-  const incomingPendingCount = projects.filter(
+  // Incoming proposals awaiting action from current role
+  const incomingProjects = projects.filter(
     (p) =>
       (p.status === "awaiting_acceptance" || p.status === "changes_requested") &&
       p.initiatedBy !== role
-  ).length;
+  );
+  const incomingPendingCount = incomingProjects.length;
 
   // Strictly filter to accepted projects only. Pending proposals/requests belong in Project Requests.
   const acceptedProjects = projects.filter(isProjectAccepted);
@@ -145,14 +148,117 @@ export default function ProjectsView({
           }`}
         >
           <span>Completed</span>
-          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-200/50 dark:bg-emerald-900/50">
+          <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-200/50 dark:bg-emerald-950/60 dark:text-emerald-300">
             {completedProjects.length}
           </span>
         </button>
+
+        {incomingProjects.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setFilterTab("incoming")}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              filterTab === "incoming"
+                ? "bg-amber-600 text-white shadow-2xs"
+                : "bg-amber-100/70 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 border border-amber-300/80 dark:border-amber-800/60"
+            }`}
+          >
+            <span>Incoming Requests</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500 text-white font-bold">
+              {incomingProjects.length}
+            </span>
+          </button>
+        )}
       </div>
 
+      {/* DEDICATED INCOMING REQUESTS CARDS */}
+      {incomingProjects.length > 0 && (filterTab === "all" || filterTab === "incoming") && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500" />
+              </span>
+              <span>Incoming Project Proposals</span>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                {incomingProjects.length} Action Required
+              </span>
+            </h2>
+            <button
+              type="button"
+              onClick={() => setActiveTab("project-requests")}
+              className="text-xs font-semibold text-[#0070BA] dark:text-sky-400 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>Manage in Project Requests</span>
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {incomingProjects.map((project) => {
+              const proposer = project.initiatedBy === "client" ? project.client : project.freelancer;
+              return (
+                <div
+                  key={project.id}
+                  className="p-5 rounded-2xl border-2 border-amber-300 dark:border-amber-700/80 bg-gradient-to-r from-amber-50/70 via-white to-amber-50/30 dark:from-amber-950/20 dark:via-[#0D1527] dark:to-amber-950/10 shadow-md space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-amber-200/60 dark:border-white/10">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-amber-500 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                        {proposer.avatar || proposer.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-slate-900 dark:text-white text-base">
+                            {project.title}
+                          </h3>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                            Awaiting Your Acceptance
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          From: <strong>{proposer.name}</strong> ({proposer.milestoneOSId || "Client"})
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Proposed Budget</span>
+                      <span className="font-mono font-black text-base text-slate-900 dark:text-white">
+                        {formatCurrency(project.totalBudget, project.currency)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {project.description}
+                  </p>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
+                    <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400">
+                      <span>Milestones: <strong>{project.milestones.length}</strong></span>
+                      <span>Target Deadline: <strong>{project.targetDeadline}</strong></span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedReviewProject(project)}
+                      className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs cursor-pointer transition-all shadow-xs flex items-center gap-1.5"
+                    >
+                      <span>Review & Accept Proposal</span>
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Empty State for Zero Accepted Projects */}
-      {filteredProjects.length === 0 && (
+      {filteredProjects.length === 0 && incomingProjects.length === 0 && (
         <div className="p-10 rounded-3xl border-2 border-dashed border-slate-200 dark:border-white/10 bg-white/70 dark:bg-[#0D1527]/70 text-center space-y-4">
           <div className="h-12 w-12 mx-auto rounded-2xl bg-blue-50 dark:bg-sky-950/40 text-[#0070BA] dark:text-sky-300 flex items-center justify-center font-bold">
             <FolderGit2 className="h-6 w-6" />
@@ -408,6 +514,13 @@ export default function ProjectsView({
           )}
         </div>
       )}
+
+      {/* PROPOSAL REVIEW MODAL */}
+      <ProposalReviewModal
+        project={selectedReviewProject}
+        isOpen={!!selectedReviewProject}
+        onClose={() => setSelectedReviewProject(null)}
+      />
 
       {/* COMPLETED PROJECT DETAILS MODAL */}
       <CompletedProjectModal

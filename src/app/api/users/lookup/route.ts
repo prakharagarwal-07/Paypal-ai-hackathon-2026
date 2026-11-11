@@ -125,8 +125,8 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Demo directory fallback is ONLY permitted when explicitly in demo mode
-    if (!user && isDemo) {
+    // Directory fallback for built-in accounts (e.g. Rohan FL-2W8L41, Sarah CL-7K4P92)
+    if (!user) {
       const demoUser = db.findUserByBaseCode(baseCode) || db.findUserByMilestoneOSId(cleanId);
       if (demoUser) {
         const demoBase = extractBaseCode(demoUser.milestoneOSId) || baseCode;
