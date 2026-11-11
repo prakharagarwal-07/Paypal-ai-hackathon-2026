@@ -14,21 +14,77 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const captureResult = await capturePayPalOrder(orderId);
+    // 1. Verify project and milestone exist in server contract database
+    const project = db.getProjectById(projectId);
+    if (!project) {
+      return NextResponse.json({ error: "Project not found in contract database" }, { status: 404 });
+    }
 
-    if (captureResult.status !== "COMPLETED") {
+    const milestone = project.milestones.find((m) => m.id === milestoneId);
+    if (!milestone) {
+      return NextResponse.json({ error: "Milestone not found in project" }, { status: 404 });
+    }
+
+    // 2. Prevent duplicate capture if milestone already settled
+    if (milestone.status === "paid") {
       return NextResponse.json(
-        { error: "PayPal payment capture did not complete", details: captureResult },
+        { error: "Milestone has already been paid and settled." },
         { status: 400 }
       );
     }
 
-    // Record payment in database and advance contract milestones
+    // 3. Capture PayPal Order via server-to-server PayPal API call
+    const captureResult = await capturePayPalOrder(orderId);
+
+    // 4. Strict status verification: must be COMPLETED
+    if (captureResult.status !== "COMPLETED") {
+      return NextResponse.json(
+        {
+          error: `PayPal payment capture did not complete. Status: ${captureResult.status}`,
+          details: captureResult,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 5. Security check: Verify captured order belongs to this exact project and milestone
+    if (captureResult.customId && captureResult.customId !== `${projectId}:${milestoneId}`) {
+      console.warn(
+        `Mismatch in captured customId: expected ${projectId}:${milestoneId}, got ${captureResult.customId}`
+      );
+      return NextResponse.json(
+        { error: "Captured order does not match the requested milestone contract." },
+        { status: 403 }
+      );
+    }
+
+    if (captureResult.referenceId && captureResult.referenceId !== milestoneId) {
+      console.warn(
+        `Mismatch in captured referenceId: expected ${milestoneId}, got ${captureResult.referenceId}`
+      );
+      return NextResponse.json(
+        { error: "Captured order reference ID does not match this milestone." },
+        { status: 403 }
+      );
+    }
+
+    // 6. Security check: Verify captured amount matches agreed milestone contract price
+    if (Math.abs(captureResult.amount - milestone.amount) > 0.01) {
+      console.warn(
+        `Captured amount mismatch: expected ${milestone.amount}, captured ${captureResult.amount}`
+      );
+      return NextResponse.json(
+        { error: "Captured payment amount does not match milestone agreed contract price." },
+        { status: 400 }
+      );
+    }
+
+    // 7. Update server database with verified genuine capture
     const updated = db.recordPayment(projectId, milestoneId, captureResult);
 
     if (!updated) {
       return NextResponse.json(
-        { error: "Failed to record payment in contract store" },
+        { error: "Failed to record verified payment in contract database" },
         { status: 500 }
       );
     }

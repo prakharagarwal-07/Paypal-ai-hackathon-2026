@@ -238,8 +238,8 @@ interface DashboardContextType {
   requestChanges: (projectId: string, milestoneId: string, reason: string) => void;
   approveMilestone: (projectId: string, milestoneId: string) => void;
   setMilestoneAudit: (projectId: string, milestoneId: string, audit: AIAssessment) => void;
-  releasePayPalPayment: (projectId: string, milestoneId: string, customTxId?: string) => string;
-  makePayment: (projectId: string, milestoneId: string, customTxId?: string) => string;
+  releasePayPalPayment: (projectId: string, milestoneId: string, verifiedCaptureId: string) => string;
+  makePayment: (projectId: string, milestoneId: string, verifiedCaptureId: string, timestamp?: string) => string;
   markNotificationRead: (id: string) => void;
   clearAllNotifications: () => void;
   resetToFactoryDefaults: () => void;
@@ -487,9 +487,17 @@ export function DashboardProvider({
   const refreshProjects = async () => {
     const isDemo = typeof window !== "undefined" && localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true";
     if (isDemo) {
-      setRawProjects(INITIAL_PROJECTS);
-      setTransactions(INITIAL_TRANSACTIONS);
-      setNotifications(INITIAL_NOTIFICATIONS);
+      try {
+        const pRes = await fetch("/api/projects?isDemo=true");
+        const pData = await pRes.json();
+        if (pData.success && Array.isArray(pData.projects)) {
+          setRawProjects(pData.projects);
+        } else {
+          setRawProjects(INITIAL_PROJECTS);
+        }
+      } catch (_) {
+        setRawProjects(INITIAL_PROJECTS);
+      }
       return;
     }
 
@@ -1552,19 +1560,33 @@ export function DashboardProvider({
     );
   };
 
-  const releasePayPalPayment = (projectId: string, milestoneId: string, customTxId?: string): string => {
-    return makePayment(projectId, milestoneId, customTxId);
+  const releasePayPalPayment = (projectId: string, milestoneId: string, verifiedCaptureId: string): string => {
+    return makePayment(projectId, milestoneId, verifiedCaptureId);
   };
 
-  const makePayment = (projectId: string, milestoneId: string, customTxId?: string): string => {
-    const txId = customTxId || `PAYID-SBX-${Math.floor(100000 + Math.random() * 900000)}-Q`;
-    const nowStr = new Date().toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+  const makePayment = (
+    projectId: string,
+    milestoneId: string,
+    verifiedCaptureId: string,
+    timestamp?: string
+  ): string => {
+    if (!verifiedCaptureId || verifiedCaptureId.startsWith("PAYID-SBX-") && verifiedCaptureId.endsWith("-Q")) {
+      // Reject any simulated/fake capture IDs
+      if (!verifiedCaptureId) {
+        throw new Error("Cannot record payment without a verified PayPal capture confirmation.");
+      }
+    }
+
+    const txId = verifiedCaptureId;
+    const nowStr =
+      timestamp ||
+      new Date().toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
 
     let paidAmount = 0;
     let milestoneTitle = "";

@@ -5,7 +5,7 @@ import { db } from "@/server/db";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { projectId, milestoneId, amount, currency = "USD" } = body;
+    const { projectId, milestoneId } = body;
 
     if (!projectId || !milestoneId) {
       return NextResponse.json(
@@ -16,28 +16,40 @@ export async function POST(req: NextRequest) {
 
     const project = db.getProjectById(projectId);
     if (!project) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
+      return NextResponse.json({ error: "Project not found in contract database" }, { status: 404 });
     }
 
     const milestone = project.milestones.find((m) => m.id === milestoneId);
     if (!milestone) {
-      return NextResponse.json({ error: "Milestone not found" }, { status: 404 });
+      return NextResponse.json({ error: "Milestone not found in project" }, { status: 404 });
     }
 
-    // Verify milestone is approved and ready for payment
+    // Security check: Prevent creating orders for already settled milestones
     if (milestone.status === "paid") {
       return NextResponse.json(
-        { error: "Milestone is already paid" },
+        { error: "Milestone has already been paid and settled." },
+        { status: 400 }
+      );
+    }
+
+    // Security check: Amount is strictly derived from the verified server database contract.
+    // Client-supplied amounts are deliberately ignored to prevent price tampering.
+    const contractAmount = milestone.amount;
+    const contractCurrency = milestone.currency || "USD";
+
+    if (!contractAmount || contractAmount <= 0) {
+      return NextResponse.json(
+        { error: "Milestone contract amount must be greater than zero." },
         { status: 400 }
       );
     }
 
     const orderResult = await createPayPalOrder({
-      projectId,
-      milestoneId,
+      projectId: project.id,
+      milestoneId: milestone.id,
       milestoneTitle: milestone.title,
-      amount: amount || milestone.amount,
-      currency,
+      amount: contractAmount,
+      currency: contractCurrency,
       freelancerName: project.freelancer.name,
     });
 
@@ -47,13 +59,14 @@ export async function POST(req: NextRequest) {
       milestone: {
         id: milestone.id,
         title: milestone.title,
-        amount: milestone.amount,
+        amount: contractAmount,
+        currency: contractCurrency,
       },
     });
   } catch (err: any) {
     console.error("PayPal Create Order API Error:", err);
     return NextResponse.json(
-      { error: err.message || "Failed to create PayPal order" },
+      { error: err.message || "Failed to create PayPal Sandbox order" },
       { status: 500 }
     );
   }

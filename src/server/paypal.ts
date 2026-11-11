@@ -95,14 +95,9 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
   const { projectId, milestoneId, milestoneTitle, amount, currency = "USD" } = params;
 
   if (!hasPayPalCredentials()) {
-    // Graceful fallback for local development before credentials are inserted into .env.local
-    const simulatedOrderId = `ORDER-MOCK-${Date.now().toString(36).toUpperCase()}`;
-    return {
-      orderId: simulatedOrderId,
-      status: "CREATED",
-      approvalUrl: `https://www.sandbox.paypal.com/checkoutnow?token=${simulatedOrderId}`,
-      isSimulated: true,
-    };
+    throw new Error(
+      "PayPal API credentials missing. Please configure PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in .env.local."
+    );
   }
 
   const token = await getPayPalAccessToken();
@@ -136,6 +131,7 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       Prefer: "return=representation",
+      "PayPal-Request-Id": `order_${projectId}_${milestoneId}_${Date.now()}`,
     },
     body: JSON.stringify(payload),
   });
@@ -164,6 +160,9 @@ export interface CaptureOrderResult {
   currency: string;
   payerEmail?: string;
   payerName?: string;
+  payerId?: string;
+  customId?: string;
+  referenceId?: string;
   timestamp: string;
   isSimulated?: boolean;
 }
@@ -172,19 +171,10 @@ export interface CaptureOrderResult {
  * Captures funds from an approved PayPal Order
  */
 export async function capturePayPalOrder(orderId: string): Promise<CaptureOrderResult> {
-  if (!hasPayPalCredentials() || orderId.startsWith("ORDER-MOCK-")) {
-    const mockCaptureId = `CAP-SIM-${Date.now().toString(36).toUpperCase()}`;
-    return {
-      captureId: mockCaptureId,
-      orderId,
-      status: "COMPLETED",
-      amount: 1200,
-      currency: "USD",
-      payerEmail: "sarah.chen@client.com",
-      payerName: "Sarah Chen",
-      timestamp: new Date().toISOString(),
-      isSimulated: true,
-    };
+  if (!hasPayPalCredentials()) {
+    throw new Error(
+      "PayPal API credentials missing. Please configure PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in .env.local."
+    );
   }
 
   const token = await getPayPalAccessToken();
@@ -196,6 +186,7 @@ export async function capturePayPalOrder(orderId: string): Promise<CaptureOrderR
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       Prefer: "return=representation",
+      "PayPal-Request-Id": `capture_${orderId}`,
     },
   });
 
@@ -205,16 +196,25 @@ export async function capturePayPalOrder(orderId: string): Promise<CaptureOrderR
   }
 
   const data = await response.json();
-  const capture = data.purchase_units?.[0]?.payments?.captures?.[0];
+  const purchaseUnit = data.purchase_units?.[0];
+  const capture = purchaseUnit?.payments?.captures?.[0];
+
+  const isCompleted =
+    data.status === "COMPLETED" && (capture?.status === "COMPLETED" || !capture?.status);
 
   return {
-    captureId: capture?.id || `CAP-${Date.now()}`,
+    captureId: capture?.id || data.id,
     orderId: data.id,
-    status: data.status === "COMPLETED" ? "COMPLETED" : "FAILED",
-    amount: parseFloat(capture?.amount?.value || "0"),
-    currency: capture?.amount?.currency_code || "USD",
+    status: isCompleted ? "COMPLETED" : (capture?.status || "FAILED"),
+    amount: parseFloat(capture?.amount?.value || purchaseUnit?.amount?.value || "0"),
+    currency: capture?.amount?.currency_code || purchaseUnit?.amount?.currency_code || "USD",
     payerEmail: data.payer?.email_address,
-    payerName: data.payer?.name ? `${data.payer.name.given_name} ${data.payer.name.surname}` : undefined,
+    payerName: data.payer?.name
+      ? `${data.payer.name.given_name || ""} ${data.payer.name.surname || ""}`.trim()
+      : undefined,
+    payerId: data.payer?.payer_id,
+    customId: purchaseUnit?.custom_id,
+    referenceId: purchaseUnit?.reference_id,
     timestamp: capture?.create_time || new Date().toISOString(),
     isSimulated: false,
   };
