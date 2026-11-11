@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
       try {
         const { data: bData } = await serverSupabase
           .from("profiles")
-          .select("id, milestone_os_id, base_code, full_name, role, avatar, company, title, rating")
+          .select("id, milestone_os_id, base_code, full_name, email, role, avatar, company, title, rating")
           .eq("base_code", baseCode)
           .maybeSingle();
 
@@ -82,6 +82,7 @@ export async function GET(req: NextRequest) {
             freelancerId: formatFreelancerId(resolvedBase),
             milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
             name: displayName,
+            email: bData.email || undefined,
             avatar: bData.avatar || displayName.slice(0, 2).toUpperCase(),
             role: targetRole,
             company: bData.company || "Client Organization",
@@ -96,7 +97,7 @@ export async function GET(req: NextRequest) {
         try {
           const { data: mData } = await serverSupabase
             .from("profiles")
-            .select("id, milestone_os_id, full_name, role, avatar, company, title, rating")
+            .select("id, milestone_os_id, full_name, email, role, avatar, company, title, rating")
             .ilike("milestone_os_id", `%${baseCode}%`)
             .maybeSingle();
 
@@ -110,6 +111,7 @@ export async function GET(req: NextRequest) {
               freelancerId: formatFreelancerId(resolvedBase),
               milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
               name: displayName,
+              email: mData.email || undefined,
               avatar: mData.avatar || displayName.slice(0, 2).toUpperCase(),
               role: targetRole,
               company: mData.company || "Client Organization",
@@ -165,6 +167,7 @@ export async function GET(req: NextRequest) {
         freelancerId: user.freelancerId,
         milestoneOSId: user.milestoneOSId,
         name: user.name,
+        email: user.email,
         avatar: user.avatar,
         role: user.role,
         company: user.company,

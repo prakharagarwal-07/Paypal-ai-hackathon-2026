@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
       timestamp: "Just now",
     };
 
-    const effectiveCreatorId = creatorId || body.clientId || (initiatedBy === "client" ? client.id : freelancer.id);
+    const effectiveCreatorId = creatorId || (initiatedBy === "client" ? (body.clientId || client?.id) : (body.freelancerId || freelancer?.id));
 
     let resolvedClientId = body.clientId || client?.id;
     let resolvedFreelancerId = body.freelancerId || freelancer?.id;
@@ -103,13 +103,17 @@ export async function POST(req: NextRequest) {
       if (!resolvedFreelancerId && freelancer?.milestoneOSId) {
         const fBase = extractBaseCode(freelancer.milestoneOSId);
         try {
-          // Try base_code first, then ilike on milestone_os_id
           const { data: fProfile } = await supabase
             .from("profiles")
-            .select("id")
+            .select("id, email, full_name")
             .ilike("milestone_os_id", `%${fBase}%`)
             .maybeSingle();
-          if (fProfile?.id) resolvedFreelancerId = fProfile.id;
+          if (fProfile?.id) {
+            resolvedFreelancerId = fProfile.id;
+            if (fProfile.email && (!freelancer.email || freelancer.email.includes("@milestoneos.link"))) {
+              freelancer.email = fProfile.email;
+            }
+          }
         } catch (_) {}
       }
       if (!resolvedClientId && client?.milestoneOSId) {
@@ -117,10 +121,15 @@ export async function POST(req: NextRequest) {
         try {
           const { data: cProfile } = await supabase
             .from("profiles")
-            .select("id")
+            .select("id, email, full_name")
             .ilike("milestone_os_id", `%${cBase}%`)
             .maybeSingle();
-          if (cProfile?.id) resolvedClientId = cProfile.id;
+          if (cProfile?.id) {
+            resolvedClientId = cProfile.id;
+            if (cProfile.email && (!client.email || client.email.includes("@milestoneos.link"))) {
+              client.email = cProfile.email;
+            }
+          }
         } catch (_) {}
       }
     }

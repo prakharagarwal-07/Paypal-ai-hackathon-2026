@@ -305,8 +305,15 @@ export const db = {
   createProject(project: ProjectContract, creatorId?: string): ProjectContract {
     // Explicitly flag as non-demo real project
     project.isDemo = false;
-    const cid = creatorId || project.clientId || (project.initiatedBy === "client" ? project.client?.id : undefined);
-    const fid = project.freelancerId || (project.initiatedBy === "freelancer" ? project.freelancer?.id : undefined);
+
+    let cid = project.clientId || project.client?.id;
+    let fid = project.freelancerId || project.freelancer?.id;
+
+    if (project.initiatedBy === "client") {
+      if (creatorId) cid = creatorId;
+    } else if (project.initiatedBy === "freelancer") {
+      if (creatorId) fid = creatorId;
+    }
 
     if (cid) {
       project.clientId = cid;

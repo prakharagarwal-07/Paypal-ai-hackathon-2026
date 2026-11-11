@@ -325,18 +325,27 @@ export function DashboardProvider({
 
     const uId = authUser?.id;
     const uEmail = authUser?.email?.trim().toLowerCase();
+    const uMsoId = authUser?.milestoneOSId?.trim().toUpperCase();
+    const uBase = extractBaseCode(uMsoId) || authUser?.baseCode?.trim().toUpperCase();
 
     return rawProjects.filter((p) => {
       // Real registered users NEVER see demo projects
       if (p.isDemo) return false;
 
+      const clientBase = extractBaseCode(p.client?.milestoneOSId);
+      const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
+
       const isClient =
-        (uId && (p.clientId === uId || p.client.id === uId)) ||
-        (uEmail && p.client.email?.trim().toLowerCase() === uEmail);
+        (uId && (p.clientId === uId || p.client?.id === uId)) ||
+        (uEmail && p.client?.email?.trim().toLowerCase() === uEmail) ||
+        (uMsoId && p.client?.milestoneOSId?.trim().toUpperCase() === uMsoId) ||
+        (uBase && clientBase === uBase);
 
       const isFreelancer =
-        (uId && (p.freelancerId === uId || p.freelancer.id === uId)) ||
-        (uEmail && p.freelancer.email?.trim().toLowerCase() === uEmail);
+        (uId && (p.freelancerId === uId || p.freelancer?.id === uId)) ||
+        (uEmail && p.freelancer?.email?.trim().toLowerCase() === uEmail) ||
+        (uMsoId && p.freelancer?.milestoneOSId?.trim().toUpperCase() === uMsoId) ||
+        (uBase && freelancerBase === uBase);
 
       if (role === "client") return isClient;
       if (role === "freelancer") return isFreelancer;
@@ -767,8 +776,12 @@ export function DashboardProvider({
       invitationExpiresAt: newProjectData.isPublicInvitation
         ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
         : undefined,
-      clientId: newProjectData.clientId || (isClientInitiator ? (authUser?.id || newProjectData.client.id) : newProjectData.client.id),
-      freelancerId: newProjectData.freelancerId || (!isClientInitiator ? (authUser?.id || newProjectData.freelancer.id) : newProjectData.freelancer.id),
+      clientId: isClientInitiator
+        ? (authUser?.id || newProjectData.clientId || newProjectData.client.id)
+        : (newProjectData.clientId || newProjectData.client.id),
+      freelancerId: !isClientInitiator
+        ? (authUser?.id || newProjectData.freelancerId || newProjectData.freelancer.id)
+        : (newProjectData.freelancerId || newProjectData.freelancer.id),
       isDemo: Boolean(isDemoMode),
       activityLog: [
         {
@@ -798,16 +811,25 @@ export function DashboardProvider({
         clientId: newProject.clientId,
         freelancerId: newProject.freelancerId,
       }),
-    }).catch((err) => console.warn("Failed to sync project creation to API:", err));
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.project) {
+          setRawProjects((prev) =>
+            prev.map((p) => (p.id === id ? data.project : p))
+          );
+        }
+      })
+      .catch((err) => console.warn("Failed to sync project creation to API:", err));
 
     if (!asDraft) {
       const notif: NotificationItem = {
         id: `notif_${Date.now()}`,
         timestamp: "Just now",
-        title: isClientInitiator ? "New Project Initiated" : "New Project Proposal",
-        message: `${senderName} sent a project proposal for "${newProject.title}" ($${newProject.totalBudget.toLocaleString()} USD).`,
-        type: "proposal",
-        unread: true,
+        title: isClientInitiator ? "Proposal Dispatched" : "Proposal Submitted",
+        message: `Proposal for "${newProject.title}" ($${newProject.totalBudget.toLocaleString()} USD) submitted to ${recipientName}. Awaiting counterparty review.`,
+        type: "system",
+        unread: false,
         projectId: id,
         userId: authUser?.id,
       };
