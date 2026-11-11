@@ -234,7 +234,7 @@ export const db = {
         name: claimingUser.name,
         email: claimingUser.email,
         avatar: claimingUser.avatar,
-        title: claimingUser.companyOrTitle || "Specialist Freelancer",
+        title: claimingUser.companyOrTitle || "Freelancer",
         rating: 5.0,
         milestoneOSId: claimingUser.milestoneOSId,
       };
@@ -596,7 +596,7 @@ export const db = {
       milestoneId: milestone.id,
       milestoneTitle: milestone.title,
       amount: milestone.amount,
-      currency: "USD",
+      currency: milestone.currency || project.currency || "USD",
       status: "completed",
       payer: project.client.name,
       payee: project.freelancer.name,
@@ -616,9 +616,11 @@ export const db = {
 
     memoryState.transactions.unshift(newTx);
 
+    const curr = milestone.currency || project.currency || "USD";
+    const currSym = curr.toUpperCase() === "INR" ? "₹" : "$";
     const activity: ActivityItem = {
       id: `act_${Date.now()}`,
-      action: `Released payment ($${milestone.amount.toLocaleString()} USD) for Stage 0${milestone.stageNumber}: ${milestone.title} via PayPal Capture ${capture.captureId}`,
+      action: `Released payment (${currSym}${milestone.amount.toLocaleString()} ${curr}) for Stage 0${milestone.stageNumber}: ${milestone.title} via PayPal Capture ${capture.captureId}`,
       actor: project.client.name,
       actorRole: "client",
       timestamp: "Just now",

@@ -70,6 +70,7 @@ interface InvoiceData {
  * Strictly 1 Page layout, no backgrounds, no web threads, no canvases, no gradients.
  */
 function buildCleanInvoiceHtml(invoice: InvoiceData): string {
+  const sym = (invoice.currency || "USD").toUpperCase() === "INR" ? "₹" : "$";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -399,7 +400,7 @@ function buildCleanInvoiceHtml(invoice: InvoiceData): string {
             (item) => `<tr>
           <td><strong>${item.description}</strong></td>
           <td style="color: #64748B;">${item.category}</td>
-          <td class="td-num">$${item.amount.toLocaleString()}.00 ${invoice.currency}</td>
+          <td class="td-num">${sym}${item.amount.toLocaleString()}.00 ${invoice.currency}</td>
         </tr>`
           )
           .join("")}
@@ -415,10 +416,10 @@ function buildCleanInvoiceHtml(invoice: InvoiceData): string {
       </div>
 
       <div class="totals-box">
-        <div class="total-row"><span>Milestone Subtotal:</span> <span class="mono">$${invoice.subtotal.toLocaleString()}.00</span></div>
-        <div class="total-row"><span>Escrow Released:</span> <span class="mono">-$${invoice.escrowReleased.toLocaleString()}.00</span></div>
-        <div class="total-row"><span>Platform Fee:</span> <span class="mono">$0.00</span></div>
-        <div class="total-row total-final"><span>Total Paid:</span> <span class="mono">$${invoice.total.toLocaleString()}.00 ${invoice.currency}</span></div>
+        <div class="total-row"><span>Milestone Subtotal:</span> <span class="mono">${sym}${invoice.subtotal.toLocaleString()}.00</span></div>
+        <div class="total-row"><span>Escrow Released:</span> <span class="mono">-${sym}${invoice.escrowReleased.toLocaleString()}.00</span></div>
+        <div class="total-row"><span>Platform Fee:</span> <span class="mono">${sym}0.00</span></div>
+        <div class="total-row total-final"><span>Total Paid:</span> <span class="mono">${sym}${invoice.total.toLocaleString()}.00 ${invoice.currency}</span></div>
       </div>
     </div>
 
@@ -670,6 +671,7 @@ export default function InvoiceModal({
 
   const handleCopySummary = () => {
     if (!invoice) return;
+    const sym = (invoice.currency || "USD").toUpperCase() === "INR" ? "₹" : "$";
     const summary = `MilestoneOS Official Invoice
 Invoice Number: ${invoice.invoiceNumber}
 Status: ${invoice.status} via PayPal
@@ -678,7 +680,7 @@ Payment Date: ${invoice.paymentDate}
 
 Project: ${invoice.projectTitle}
 Milestone: Stage 0${invoice.stageNumber} — ${invoice.milestoneTitle}
-Total Paid: $${invoice.total.toLocaleString()}.00 ${invoice.currency}
+Total Paid: ${sym}${invoice.total.toLocaleString()}.00 ${invoice.currency}
 
 Billed To (Client): ${invoice.client.name} (${invoice.client.company}) | ID: ${invoice.client.clientId || "N/A"}
 Issued By (Freelancer): ${invoice.freelancer.name} (${invoice.freelancer.title}) | ID: ${invoice.freelancer.freelancerId || "N/A"}
@@ -904,7 +906,7 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                             {item.category}
                           </td>
                           <td className="py-2.5 px-3 font-mono font-bold text-slate-900 text-right whitespace-nowrap">
-                            ${item.amount.toLocaleString()}.00 {invoice.currency}
+                            {((invoice.currency || "USD").toUpperCase() === "INR" ? "₹" : "$")}{item.amount.toLocaleString()}.00 {invoice.currency}
                           </td>
                         </tr>
                       ))}
@@ -947,23 +949,23 @@ Settled securely via MilestoneOS Mutual Escrow.`;
                     <div className="flex justify-between text-slate-600">
                       <span>Milestone Subtotal:</span>
                       <span className="font-mono font-semibold text-slate-900">
-                        ${invoice.subtotal.toLocaleString()}.00 {invoice.currency}
+                        {((invoice.currency || "USD").toUpperCase() === "INR" ? "₹" : "$")}{invoice.subtotal.toLocaleString()}.00 {invoice.currency}
                       </span>
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>Escrow Released:</span>
                       <span className="font-mono font-semibold text-emerald-700">
-                        -${invoice.escrowReleased.toLocaleString()}.00
+                        -{((invoice.currency || "USD").toUpperCase() === "INR" ? "₹" : "$")}{invoice.escrowReleased.toLocaleString()}.00
                       </span>
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>Platform Fee:</span>
-                      <span className="font-mono font-semibold text-slate-900">$0.00</span>
+                      <span className="font-mono font-semibold text-slate-900">{((invoice.currency || "USD").toUpperCase() === "INR" ? "₹" : "$")}0.00</span>
                     </div>
                     <div className="pt-2 border-t border-slate-200 flex justify-between items-center text-sm font-black text-slate-900">
                       <span>Total Paid:</span>
                       <span className="font-mono font-black text-emerald-700">
-                        ${invoice.total.toLocaleString()}.00 {invoice.currency}
+                        {((invoice.currency || "USD").toUpperCase() === "INR" ? "₹" : "$")}{invoice.total.toLocaleString()}.00 {invoice.currency}
                       </span>
                     </div>
                   </div>

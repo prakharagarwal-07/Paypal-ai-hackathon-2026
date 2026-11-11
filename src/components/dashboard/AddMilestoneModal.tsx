@@ -56,8 +56,10 @@ export default function AddMilestoneModal({
     }
 
     const numAmount = Number(amount);
+    const curr = project.currency || "USD";
+    const currSym = curr.toUpperCase() === "INR" ? "₹" : "$";
     if (isNaN(numAmount) || numAmount <= 0) {
-      setFormError("Please enter a valid payment amount greater than $0.");
+      setFormError(`Please enter a valid payment amount greater than ${currSym}0.`);
       return;
     }
 
@@ -65,6 +67,7 @@ export default function AddMilestoneModal({
       title: title.trim(),
       description: description.trim(),
       amount: numAmount,
+      currency: curr,
       dueDate: dueDate.trim() || undefined,
       acceptanceCriteria: criteria.filter((c) => c.trim().length > 0),
     });
@@ -147,11 +150,11 @@ export default function AddMilestoneModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-                Agreed Payment Amount ($ USD) *
+                Agreed Payment Amount ({((project.currency || "USD").toUpperCase() === "INR" ? "₹" : "$")} {project.currency || "USD"}) *
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <DollarSign className="h-4 w-4" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+                  {((project.currency || "USD").toUpperCase() === "INR" ? "₹" : "$")}
                 </div>
                 <input
                   type="number"

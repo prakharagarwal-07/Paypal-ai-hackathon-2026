@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted, isProjectAccepted } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted, isProjectAccepted, formatCurrency } from "@/lib/dashboard-data";
 import {
   ArrowLeft,
   Calendar,
@@ -129,7 +129,7 @@ export default function ProjectWorkspace({
                 </span>
               </div>
               <p className="text-slate-600 dark:text-slate-300 text-xs mt-0.5">
-                All {activeProject.milestones.length} milestones were delivered, verified, and settled on {activeProject.targetDeadline}. Total paid: <strong className="font-mono font-bold text-emerald-700 dark:text-emerald-400">${activeProject.totalPaid.toLocaleString()} USD</strong>.
+                All {activeProject.milestones.length} milestones were delivered, verified, and settled on {activeProject.targetDeadline}. Total paid: <strong className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(activeProject.totalPaid, activeProject.currency)}</strong>.
               </p>
             </div>
           </div>
@@ -174,7 +174,7 @@ export default function ProjectWorkspace({
                     <p className="text-slate-600 dark:text-slate-300 text-xs leading-relaxed max-w-3xl">
                       <strong>{senderName}</strong> has proposed this project for a total budget of{" "}
                       <strong className="font-mono text-slate-900 dark:text-white font-bold">
-                        ${activeProject.totalBudget.toLocaleString()} USD
+                        {formatCurrency(activeProject.totalBudget, activeProject.currency)}
                       </strong>{" "}
                       across {activeProject.milestones.length} milestones. Please inspect the agreed deliverables and acceptance criteria below before activating this contract.
                     </p>
@@ -374,10 +374,10 @@ export default function ProjectWorkspace({
           <div>
             <span className="text-[11px] text-slate-400 block font-medium">Total Budget</span>
             <span className="font-bold font-mono text-slate-900 dark:text-white block mt-0.5">
-              ${activeProject.totalBudget.toLocaleString()} USD
+              {formatCurrency(activeProject.totalBudget, activeProject.currency)}
             </span>
             <span className="text-slate-500 text-[11px]">
-              ${activeProject.totalPaid.toLocaleString()} paid so far
+              {formatCurrency(activeProject.totalPaid, activeProject.currency)} paid so far
             </span>
           </div>
 
@@ -630,7 +630,7 @@ export default function ProjectWorkspace({
                       <div className="text-left sm:text-right">
                         <span className="text-[10px] text-slate-400 block font-medium">Milestone Amount</span>
                         <span className="font-mono font-bold text-sm sm:text-base text-slate-900 dark:text-white">
-                          ${milestone.amount.toLocaleString()} USD
+                          {formatCurrency(milestone.amount, milestone.currency || activeProject.currency)}
                         </span>
                       </div>
 
@@ -680,7 +680,7 @@ export default function ProjectWorkspace({
                                 className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
                               >
                                 <PayPalIcon className="h-3.5 w-3.5" />
-                                <span>Pay Now (${milestone.amount.toLocaleString()})</span>
+                                <span>Pay Now ({formatCurrency(milestone.amount, milestone.currency || activeProject.currency)})</span>
                               </button>
                             )}
 

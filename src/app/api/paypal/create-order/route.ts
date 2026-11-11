@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     // Security check: Amount is strictly derived from the verified server database contract.
     // Client-supplied amounts are deliberately ignored to prevent price tampering.
     const contractAmount = milestone.amount;
-    const contractCurrency = milestone.currency || "USD";
+    const contractCurrency = (milestone.currency || project.currency || "USD").toUpperCase();
 
     if (!contractAmount || contractAmount <= 0) {
       return NextResponse.json(
@@ -44,12 +44,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // PayPal REST API does not support INR directly for checkout.
+    // When milestone is in INR, convert to USD for PayPal authorization (1 USD = ~85 INR)
+    // while keeping contract tracking in Rupees.
+    let orderAmount = contractAmount;
+    let orderCurrency = contractCurrency;
+
+    if (contractCurrency === "INR") {
+      orderAmount = Math.max(1, Math.round((contractAmount / 85) * 100) / 100);
+      orderCurrency = "USD";
+    }
+
     const orderResult = await createPayPalOrder({
       projectId: project.id,
       milestoneId: milestone.id,
-      milestoneTitle: milestone.title,
-      amount: contractAmount,
-      currency: contractCurrency,
+      milestoneTitle:
+        contractCurrency === "INR"
+          ? `${milestone.title} (₹${contractAmount.toLocaleString()} INR)`
+          : milestone.title,
+      amount: orderAmount,
+      currency: orderCurrency,
       freelancerName: project.freelancer.name,
     });
 
@@ -61,6 +75,8 @@ export async function POST(req: NextRequest) {
         title: milestone.title,
         amount: contractAmount,
         currency: contractCurrency,
+        orderAmount,
+        orderCurrency,
       },
     });
   } catch (err: any) {

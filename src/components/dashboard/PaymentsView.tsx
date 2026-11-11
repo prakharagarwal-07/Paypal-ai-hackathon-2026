@@ -1,7 +1,7 @@
 "use client";
 
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, TransactionRecord, isProjectAccepted } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, TransactionRecord, isProjectAccepted, formatCurrency } from "@/lib/dashboard-data";
 import { CheckCircle2, Clock, Copy, Check, X, FolderGit2, Sparkles, Download, Receipt } from "lucide-react";
 import { PayPalIcon } from "./icons";
 import { useState } from "react";
@@ -107,7 +107,7 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                   <div className="text-left sm:text-right">
                     <span className="text-[10px] text-slate-400 block font-medium">Amount Due</span>
                     <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
-                      ${milestone.amount.toLocaleString()} USD
+                      {formatCurrency(milestone.amount, milestone.currency || project.currency)}
                     </span>
                   </div>
 
@@ -183,7 +183,7 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
                       </span>
                     </td>
                     <td className="p-3.5 font-mono font-bold text-slate-900 dark:text-white">
-                      ${tx.amount.toLocaleString()} USD
+                      {formatCurrency(tx.amount, tx.currency)}
                     </td>
                     <td className="p-3.5">
                       <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300 font-medium">
@@ -263,7 +263,7 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
               <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-white/5 text-sm">
                 <span className="font-bold text-slate-900 dark:text-white">Amount Paid:</span>
                 <span className="font-mono font-black text-slate-900 dark:text-white">
-                  ${selectedTx.amount.toLocaleString()} USD
+                  {formatCurrency(selectedTx.amount, selectedTx.currency)}
                 </span>
               </div>
             </div>

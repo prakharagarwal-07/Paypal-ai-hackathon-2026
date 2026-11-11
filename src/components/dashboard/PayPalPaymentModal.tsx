@@ -58,6 +58,11 @@ export default function PayPalPaymentModal({
     clientId && clientId !== "your_paypal_sandbox_client_id_here"
   );
 
+  const rawCurrency = (milestone.currency || project.currency || "USD").toUpperCase();
+  const isINR = rawCurrency === "INR";
+  const inrContractAmount = milestone.amount;
+  const usdAuthEquivalent = Math.max(1, Math.round((inrContractAmount / 85) * 100) / 100);
+
   const resetToIdle = () => {
     setPaymentState("idle");
     setErrorMessage(null);
@@ -99,8 +104,13 @@ export default function PayPalPaymentModal({
                 Verified PayPal Capture Completed
               </span>
               <h4 className="text-2xl font-black text-slate-900 dark:text-white mt-2 font-mono">
-                ${verifiedReceipt.amount.toLocaleString()}.00 {verifiedReceipt.currency}
+                {isINR ? `₹${inrContractAmount.toLocaleString()} INR` : `$${verifiedReceipt.amount.toLocaleString()}.00 ${verifiedReceipt.currency}`}
               </h4>
+              {isINR && (
+                <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 block font-semibold mt-0.5">
+                  PayPal Settled: ${verifiedReceipt.amount.toFixed(2)} USD (at ₹85/USD)
+                </span>
+              )}
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                 Settled to {project.freelancer.name} via PayPal Sandbox Escrow
               </p>
@@ -205,11 +215,19 @@ export default function PayPalPaymentModal({
                   {project.freelancer.name}
                 </span>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-white/10">
-                <span className="font-bold text-slate-900 dark:text-white">Milestone Contract Amount:</span>
-                <span className="font-mono font-black text-base text-slate-900 dark:text-white">
-                  ${milestone.amount.toLocaleString()}.00 USD
-                </span>
+              <div className="pt-2 border-t border-slate-200 dark:border-white/10 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white">Milestone Contract Amount:</span>
+                  <span className="font-mono font-black text-base text-slate-900 dark:text-white">
+                    {isINR ? `₹${inrContractAmount.toLocaleString()} INR` : `$${milestone.amount.toLocaleString()}.00 USD`}
+                  </span>
+                </div>
+                {isINR && (
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                    <span>PayPal Sandbox Authorization:</span>
+                    <span className="font-mono font-medium">~${usdAuthEquivalent.toFixed(2)} USD (at ₹85/USD)</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -262,7 +280,7 @@ export default function PayPalPaymentModal({
                   <PayPalScriptProvider
                     options={{
                       clientId,
-                      currency: milestone.currency || "USD",
+                      currency: isINR ? "USD" : (milestone.currency || "USD"),
                       intent: "capture",
                     }}
                   >

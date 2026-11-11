@@ -219,6 +219,47 @@ export function isProjectCompleted(project: ProjectContract | null | undefined):
   return project.milestones.every((m) => m.status === "paid");
 }
 
+export const INR_TO_USD_RATE = 85;
+
+export function getCurrencySymbol(currency?: string): string {
+  if (!currency) return "$";
+  const c = currency.toUpperCase().trim();
+  if (c === "INR" || c === "RUPEE" || c === "RUPEES" || c === "₹") return "₹";
+  return "$";
+}
+
+export function formatCurrency(
+  amount: number | undefined | null,
+  currency: string = "USD",
+  options?: { showCode?: boolean }
+): string {
+  const safeAmount = Number(amount) || 0;
+  const isINR = (currency || "").toUpperCase().trim() === "INR";
+  const symbol = isINR ? "₹" : "$";
+  const formattedNum = isINR
+    ? safeAmount.toLocaleString("en-IN")
+    : safeAmount.toLocaleString("en-US");
+  const code = options?.showCode !== false ? ` ${currency.toUpperCase()}` : "";
+  return `${symbol}${formattedNum}${code}`;
+}
+
+export function convertAmount(
+  amount: number,
+  fromCurrency: string,
+  toCurrency: string
+): number {
+  const from = (fromCurrency || "USD").toUpperCase();
+  const to = (toCurrency || "USD").toUpperCase();
+  if (from === to) return amount;
+  if (from === "INR" && to === "USD") {
+    return Math.round((amount / INR_TO_USD_RATE) * 100) / 100;
+  }
+  if (from === "USD" && to === "INR") {
+    return Math.round(amount * INR_TO_USD_RATE);
+  }
+  return amount;
+}
+
 export function isProjectAccepted(project: ProjectContract | null | undefined): boolean {
   if (!project) return false;
   if (

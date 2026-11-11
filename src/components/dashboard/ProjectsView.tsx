@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { ProjectContract, Milestone, getFriendlyProjectStatus, isProjectCompleted, isProjectAccepted } from "@/lib/dashboard-data";
+import { ProjectContract, Milestone, getFriendlyProjectStatus, isProjectCompleted, isProjectAccepted, formatCurrency } from "@/lib/dashboard-data";
 import {
   Plus,
   ArrowRight,
@@ -247,7 +247,7 @@ export default function ProjectsView({
                       <div className="text-right shrink-0">
                         <span className="text-[10px] text-slate-400 block font-medium">Total Amount</span>
                         <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
-                          ${project.totalBudget.toLocaleString()} USD
+                          {formatCurrency(project.totalBudget, project.currency)}
                         </span>
                       </div>
                     </div>
@@ -360,7 +360,7 @@ export default function ProjectsView({
                         <div className="text-right shrink-0">
                           <span className="text-[10px] text-slate-400 block font-medium">Total Paid</span>
                           <span className="font-mono font-black text-base text-emerald-600 dark:text-emerald-400">
-                            ${totalSettled.toLocaleString()} USD
+                            {formatCurrency(totalSettled, project.currency)}
                           </span>
                         </div>
                       </div>

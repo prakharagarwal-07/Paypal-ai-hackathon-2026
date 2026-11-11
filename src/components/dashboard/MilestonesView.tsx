@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted, isProjectAccepted } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted, isProjectAccepted, formatCurrency } from "@/lib/dashboard-data";
 import {
   FolderGit2,
   ArrowRight,
@@ -249,7 +249,7 @@ export default function MilestonesView({
                     </div>
 
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      With <strong className="text-slate-700 dark:text-slate-300">{otherParty}</strong> • Total Budget: <span className="font-mono font-bold">${project.totalBudget.toLocaleString()} USD</span> • {completedCount} of {project.milestones.length} stages completed ({progress}%)
+                      With <strong className="text-slate-700 dark:text-slate-300">{otherParty}</strong> • Total Budget: <span className="font-mono font-bold">{formatCurrency(project.totalBudget, project.currency)}</span> • {completedCount} of {project.milestones.length} stages completed ({progress}%)
                     </p>
                   </div>
 
@@ -332,7 +332,7 @@ export default function MilestonesView({
                           <div className="text-left sm:text-right">
                             <span className="text-[10px] text-slate-400 block font-medium">Milestone Amount</span>
                             <span className="font-mono font-bold text-sm text-slate-900 dark:text-white">
-                              ${milestone.amount.toLocaleString()} USD
+                              {formatCurrency(milestone.amount, milestone.currency || project.currency)}
                             </span>
                           </div>
 

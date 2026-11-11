@@ -28,7 +28,7 @@ import {
   ChevronRight,
   AlertOctagon,
 } from "lucide-react";
-import { Milestone, ProjectContract, getFriendlyCriterionStatus, AIAssessment } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyCriterionStatus, AIAssessment, formatCurrency } from "@/lib/dashboard-data";
 import { GitHubIcon, PayPalIcon } from "./icons";
 import { useDashboard } from "@/lib/dashboard-store";
 
@@ -643,7 +643,7 @@ export default function AuditModal({
           <div className="text-slate-500 dark:text-slate-400">
             Escrow Payment:{" "}
             <strong className="text-slate-900 dark:text-white font-mono">
-              ${milestone.amount.toLocaleString()} USD
+              {formatCurrency(milestone.amount, milestone.currency || project.currency)}
             </strong>
           </div>
 
@@ -695,7 +695,7 @@ export default function AuditModal({
                       className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-500 cursor-pointer flex items-center gap-1.5 transition-colors shadow-xs"
                     >
                       <PayPalIcon className="h-4 w-4" />
-                      <span>Pay ${milestone.amount.toLocaleString()} with PayPal Sandbox</span>
+                      <span>Pay {formatCurrency(milestone.amount, milestone.currency || project.currency)} with PayPal Sandbox</span>
                     </button>
                   )}
               </>

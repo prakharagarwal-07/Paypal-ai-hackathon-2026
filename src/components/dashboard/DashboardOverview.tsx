@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, ActivityItem, getFriendlyStatus, isProjectCompleted, isProjectAccepted } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, ActivityItem, getFriendlyStatus, isProjectCompleted, isProjectAccepted, formatCurrency } from "@/lib/dashboard-data";
 import {
   FolderGit2,
   Sparkles,
@@ -230,7 +230,7 @@ export default function DashboardOverview({
       actionsNeeded.push({
         type: "proposal",
         title: `Review incoming proposal from ${project.freelancer.name}`,
-        description: `${project.freelancer.name} proposed "${project.title}" ($${project.totalBudget.toLocaleString()} USD across ${project.milestones.length} milestones). Review terms to accept or request changes.`,
+        description: `${project.freelancer.name} proposed "${project.title}" (${formatCurrency(project.totalBudget, project.currency)} across ${project.milestones.length} milestones). Review terms to accept or request changes.`,
         actionLabel: "Review",
         project,
       });
@@ -252,7 +252,7 @@ export default function DashboardOverview({
     paymentsDue.forEach(({ project, milestone }) => {
       actionsNeeded.push({
         type: "payment",
-        title: `Payment ready: $${milestone.amount.toLocaleString()} USD for "${milestone.title}"`,
+        title: `Payment ready: ${formatCurrency(milestone.amount, milestone.currency || project.currency)} for "${milestone.title}"`,
         description: `Work was approved. Send payment to ${project.freelancer.name} via PayPal Sandbox.`,
         actionLabel: "Pay Now",
         project,
@@ -266,7 +266,7 @@ export default function DashboardOverview({
       actionsNeeded.push({
         type: "proposal",
         title: `Project assignment from ${project.client.name}`,
-        description: `${project.client.name} created project "${project.title}" ($${project.totalBudget.toLocaleString()} USD). Review milestones and accept to begin work.`,
+        description: `${project.client.name} created project "${project.title}" (${formatCurrency(project.totalBudget, project.currency)}). Review milestones and accept to begin work.`,
         actionLabel: "Review",
         project,
       });
@@ -506,7 +506,7 @@ export default function DashboardOverview({
                         <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                         <span className="text-slate-500 dark:text-slate-400">Total Proposed Budget:</span>
                         <span className="font-mono font-black text-slate-900 dark:text-white text-sm text-emerald-600 dark:text-emerald-400">
-                          ${proj.totalBudget.toLocaleString()} {proj.currency}
+                          {formatCurrency(proj.totalBudget, proj.currency)}
                         </span>
                       </div>
 
@@ -862,7 +862,7 @@ export default function DashboardOverview({
                         </span>
 
                         <span className="text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300">
-                          ${displayAmount.toLocaleString()} USD
+                          {formatCurrency(displayAmount, item.milestone?.currency || item.project.currency)}
                         </span>
                       </div>
 

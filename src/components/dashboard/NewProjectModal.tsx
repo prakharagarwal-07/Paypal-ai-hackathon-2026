@@ -149,6 +149,10 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
   const [description, setDescription] = useState(initialProject?.description || "");
   const [category, setCategory] = useState(initialProject?.category || "");
   const [targetDeadline, setTargetDeadline] = useState(initialProject?.targetDeadline || "");
+  const [currency, setCurrency] = useState<"USD" | "INR">(
+    initialProject?.currency === "INR" ? "INR" : "USD"
+  );
+  const currencySymbol = currency === "INR" ? "₹" : "$";
   const [proposedBudget, setProposedBudget] = useState<string>(
     initialProject ? String(initialProject.totalBudget) : ""
   );
@@ -186,6 +190,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
       setTitle(initialProject.title);
       setDescription(initialProject.description);
       setCategory(initialProject.category || "");
+      setCurrency(initialProject.currency === "INR" ? "INR" : "USD");
       setTargetDeadline(initialProject.targetDeadline || "");
       setProposedBudget(initialProject.totalBudget ? String(initialProject.totalBudget) : "");
       setMilestones(
@@ -308,8 +313,8 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         email: data.user.email || `${baseCode.toLowerCase()}@milestoneos.link`,
         avatar: data.user.avatar || data.user.name.slice(0, 2).toUpperCase(),
         role: targetRole,
-        company: data.user.company || "Client Organization",
-        title: data.user.title || (isClient ? "Specialist Freelancer" : "Client Representative"),
+        company: data.user.company || "Client",
+        title: data.user.title || (isClient ? "Freelancer" : "Client"),
         rating: data.user.rating || 5.0,
       };
 
@@ -428,7 +433,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         title: m.title.trim() || `Stage 0${idx + 1}`,
         description: m.description.trim() || "",
         amount: Number(m.amount) || 0,
-        currency: "USD",
+        currency: currency,
         dueDate: m.dueDate || targetDeadline || "TBD",
         status: "not_started",
         acceptanceCriteria,
@@ -459,17 +464,17 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
           name: "Unassigned Recipient",
           email: "pending-invitation@milestoneos.link",
           avatar: "??",
-          title: "Invited Specialist Freelancer",
+          title: "Invited Freelancer",
           rating: 5.0,
           milestoneOSId: "",
         };
       } else {
         freelancerData = {
           id: selectedUser?.id,
-          name: selectedUser?.name || "Invited Specialist",
+          name: selectedUser?.name || "Invited Freelancer",
           email: selectedUser?.email || "freelancer@milestoneos.link",
           avatar: selectedUser?.avatar || "FS",
-          title: selectedUser?.title || "Specialist Freelancer",
+          title: selectedUser?.title || "Freelancer",
           rating: selectedUser?.rating || 5.0,
           milestoneOSId: selectedUser?.freelancerId || selectedUser?.milestoneOSId || "",
         };
@@ -532,7 +537,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
           clientId: isClient ? myUserId : selectedUser?.id,
           freelancerId: isClient ? selectedUser?.id : myUserId,
           totalBudget: totalMilestonesSum,
-          currency: "USD",
+          currency: currency,
           targetDeadline,
           status: asDraft ? "draft" : "awaiting_acceptance",
           milestones: formattedMilestones,
@@ -563,7 +568,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
           totalPaid: 0,
           escrowFunded: 0,
           escrowReleased: 0,
-          currency: "USD",
+          currency: currency,
           createdAt: "Just now",
           targetDeadline,
           status: "awaiting_acceptance",
@@ -824,8 +829,8 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                           </div>
                           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                             {isClient
-                              ? (selectedUser.title || "Specialist Freelancer")
-                              : (selectedUser.company || "Client Organization")} • {isClient ? "Freelancer ID: " : "Client ID: "}
+                              ? (selectedUser.title || "Freelancer")
+                              : (selectedUser.company || "Client")} • {isClient ? "Freelancer ID: " : "Client ID: "}
                             <strong className="font-mono text-slate-900 dark:text-white font-bold">
                               {isClient
                                 ? (selectedUser.freelancerId || selectedUser.milestoneOSId)
@@ -924,21 +929,48 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Proposed Project Budget ($ USD) *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                        Proposed Project Budget ({currencySymbol} {currency}) *
+                      </label>
+                      <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-0.5 rounded-lg text-[10px]">
+                        <button
+                          type="button"
+                          onClick={() => setCurrency("USD")}
+                          className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                            currency === "USD"
+                              ? "bg-white dark:bg-slate-800 text-[#0070BA] dark:text-sky-300 shadow-2xs"
+                              : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+                          }`}
+                        >
+                          $ USD
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCurrency("INR")}
+                          className={`px-2 py-0.5 rounded font-bold transition-all cursor-pointer ${
+                            currency === "INR"
+                              ? "bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-2xs"
+                              : "text-slate-500 hover:text-slate-800 dark:text-slate-400"
+                          }`}
+                        >
+                          ₹ INR
+                        </button>
+                      </div>
+                    </div>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">{currencySymbol}</span>
                       <input
                         type="text"
                         inputMode="numeric"
                         value={proposedBudget}
                         onChange={(e) => {
-                          const sanitized = e.target.value.replace(/[^0-9]/g, "");
+                          let sanitized = e.target.value.replace(/[^0-9]/g, "");
+                          sanitized = sanitized.replace(/^0+(?=\d)/, "");
                           setProposedBudget(sanitized);
                           if (formError) setFormError(null);
                         }}
-                        placeholder="e.g. 3500"
+                        placeholder={currency === "INR" ? "e.g. 50000" : "e.g. 3500"}
                         className="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-mono font-bold text-slate-900 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
                       />
                     </div>
@@ -1020,20 +1052,21 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
 
                         <div>
                           <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-0.5">
-                            Amount ($ USD) *
+                            Amount ({currencySymbol} {currency}) *
                           </label>
                           <div className="relative">
-                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">{currencySymbol}</span>
                             <input
                               type="text"
                               inputMode="numeric"
                               required
                               value={m.amount}
                               onChange={(e) => {
-                                const sanitized = e.target.value.replace(/[^0-9]/g, "");
+                                let sanitized = e.target.value.replace(/[^0-9]/g, "");
+                                sanitized = sanitized.replace(/^0+(?=\d)/, "");
                                 handleUpdateMilestone(mIdx, "amount", sanitized);
                               }}
-                              placeholder="e.g. 1500"
+                              placeholder={currency === "INR" ? "e.g. 25000" : "e.g. 1500"}
                               className="w-full pl-6 pr-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-mono font-bold text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
                             />
                           </div>
@@ -1151,12 +1184,12 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                     ) : (
                       <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        Mismatch (${Math.abs(numProposedBudget - totalMilestonesSum).toLocaleString()} difference)
+                        Mismatch ({currencySymbol}{Math.abs(numProposedBudget - totalMilestonesSum).toLocaleString()} difference)
                       </span>
                     )}
                   </div>
                   <span className="font-mono font-black text-base text-slate-900 dark:text-white">
-                    ${totalMilestonesSum.toLocaleString()} USD
+                    {currencySymbol}{totalMilestonesSum.toLocaleString()} {currency}
                   </span>
                   <span className="text-[11px] text-slate-500 ml-2">
                     ({milestones.length} stage{milestones.length === 1 ? "" : "s"})
@@ -1169,7 +1202,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                     onClick={() => setProposedBudget(String(totalMilestonesSum))}
                     className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold cursor-pointer transition-colors shrink-0 shadow-2xs"
                   >
-                    Adjust Budget to ${totalMilestonesSum.toLocaleString()} USD
+                    Adjust Budget to {currencySymbol}{totalMilestonesSum.toLocaleString()} {currency}
                   </button>
                 )}
               </div>

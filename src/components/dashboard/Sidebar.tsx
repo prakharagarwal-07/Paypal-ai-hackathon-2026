@@ -383,7 +383,9 @@ export default function Sidebar({
                   <span className="text-[10px] text-slate-400 block truncate">
                     {role === "client"
                       ? (currentProfile as any).company || "Client"
-                      : (currentProfile as any).title || "Freelancer"}
+                      : (currentProfile as any).title && (currentProfile as any).title !== "Specialist Freelancer"
+                        ? (currentProfile as any).title
+                        : "Freelancer"}
                   </span>
                 </div>
               </button>

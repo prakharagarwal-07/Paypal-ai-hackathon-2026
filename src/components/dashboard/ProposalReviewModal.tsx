@@ -16,7 +16,7 @@ import {
   DollarSign,
   AlertCircle,
 } from "lucide-react";
-import { ProjectContract, getFriendlyProjectStatus } from "@/lib/dashboard-data";
+import { ProjectContract, getFriendlyProjectStatus, formatCurrency } from "@/lib/dashboard-data";
 import { useDashboard } from "@/lib/dashboard-store";
 
 interface ProposalReviewModalProps {
@@ -136,7 +136,7 @@ export default function ProposalReviewModal({
             <div className="text-right shrink-0">
               <span className="text-[10px] uppercase font-bold text-slate-400 block">Proposed Budget</span>
               <span className="font-mono font-black text-base text-slate-900 dark:text-white">
-                ${project.totalBudget.toLocaleString()} USD
+                {formatCurrency(project.totalBudget, project.currency)}
               </span>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function ProposalReviewModal({
                       Stage 0{m.stageNumber}: {m.title}
                     </span>
                     <span className="font-mono font-bold text-slate-900 dark:text-white text-xs">
-                      ${m.amount.toLocaleString()} USD
+                      {formatCurrency(m.amount, m.currency || project.currency)}
                     </span>
                   </div>
 

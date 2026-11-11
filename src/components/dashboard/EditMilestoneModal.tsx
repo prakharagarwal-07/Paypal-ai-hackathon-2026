@@ -30,6 +30,8 @@ export default function EditMilestoneModal({
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const isAccepted = project ? isProjectAccepted(project) : false;
+  const curr = milestone?.currency || project?.currency || "USD";
+  const currSym = curr.toUpperCase() === "INR" ? "₹" : "$";
   const otherPartyName = project
     ? role === "client"
       ? project.freelancer.name
@@ -175,7 +177,7 @@ export default function EditMilestoneModal({
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="font-semibold text-slate-700 dark:text-slate-300">
-                  Amount ($ USD)
+                  Amount ({currSym} {curr})
                 </label>
                 {isAccepted && (
                   <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded-md flex items-center gap-1">
@@ -185,8 +187,8 @@ export default function EditMilestoneModal({
                 )}
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                  <DollarSign className="h-4 w-4" />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400 font-bold text-xs">
+                  {currSym}
                 </div>
                 <input
                   type="number"

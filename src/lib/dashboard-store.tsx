@@ -205,6 +205,7 @@ interface DashboardContextType {
       title: string;
       description?: string;
       amount: number;
+      currency?: string;
       dueDate?: string;
       acceptanceCriteria?: string[];
     }
@@ -1143,7 +1144,7 @@ export function DashboardProvider({
           name: claimingUser.name,
           email: claimingUser.email,
           avatar: claimingUser.avatar,
-          title: claimingUser.companyOrTitle || "Specialist Freelancer",
+          title: claimingUser.companyOrTitle || "Freelancer",
           rating: 5.0,
           milestoneOSId: claimingUser.milestoneOSId,
         }
@@ -1206,6 +1207,7 @@ export function DashboardProvider({
       title: string;
       description?: string;
       amount: number;
+      currency?: string;
       dueDate?: string;
       acceptanceCriteria?: string[];
     }
@@ -1222,7 +1224,7 @@ export function DashboardProvider({
           title: data.title,
           description: data.description || "Milestone deliverables agreed with client.",
           amount: data.amount,
-          currency: project.currency || "USD",
+          currency: data.currency || project.currency || "USD",
           dueDate: data.dueDate || project.targetDeadline || "TBD",
           status: "not_started",
           acceptanceCriteria: (data.acceptanceCriteria || []).map((critTitle, idx) => ({
@@ -1235,12 +1237,14 @@ export function DashboardProvider({
         };
 
         const actorName = userProfiles[role].name;
+        const curr = data.currency || project.currency || "USD";
+        const currSym = curr.toUpperCase() === "INR" ? "₹" : "$";
         const newLog: ActivityItem = {
           id: `act_${Date.now()}`,
           timestamp: "Just now",
           actor: actorName,
           actorRole: role,
-          action: `${actorName} added a new milestone: Stage 0${newStageNumber}: "${data.title}" ($${data.amount.toLocaleString()} USD).`,
+          action: `${actorName} added a new milestone: Stage 0${newStageNumber}: "${data.title}" (${currSym}${data.amount.toLocaleString()} ${curr}).`,
           milestoneTitle: data.title,
         };
 
@@ -1252,7 +1256,9 @@ export function DashboardProvider({
         };
       })
     );
-    showToast(`Added Stage "${data.title}" ($${data.amount.toLocaleString()} USD).`, "success");
+    const curr = data.currency || "USD";
+    const currSym = curr.toUpperCase() === "INR" ? "₹" : "$";
+    showToast(`Added Stage "${data.title}" (${currSym}${data.amount.toLocaleString()} ${curr}).`, "success");
   };
 
   const editMilestone = (
