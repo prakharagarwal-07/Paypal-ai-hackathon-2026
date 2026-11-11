@@ -284,20 +284,17 @@ export function DashboardProvider({
 
   // Derive active perspective user profiles
   const userProfiles: UserProfiles = useMemo(() => {
-    if (isDemoMode) {
-      return DEFAULT_USER_PROFILES;
-    }
-
-    const currentName = authUser?.name || "Member";
-    const currentEmail = authUser?.email || "";
-    const currentAvatar = authUser?.avatar || "ME";
-    const baseCode = authUser?.baseCode || extractBaseCode(authUser?.milestoneOSId) || "USER01";
+    const currentName = authUser?.name || DEFAULT_USER_PROFILES.client.name;
+    const currentEmail = authUser?.email || DEFAULT_USER_PROFILES.client.email;
+    const currentAvatar = authUser?.avatar || DEFAULT_USER_PROFILES.client.avatar;
+    const baseCode = authUser?.baseCode || extractBaseCode(authUser?.milestoneOSId) || DEFAULT_USER_PROFILES.client.baseCode;
     const clientId = authUser?.clientId || formatClientId(baseCode);
     const freelancerId = authUser?.freelancerId || formatFreelancerId(baseCode);
+    const currentId = authUser?.id || DEFAULT_USER_PROFILES.client.id;
 
     return {
       client: {
-        id: authUser?.id || "",
+        id: currentId,
         baseCode,
         clientId,
         freelancerId,
@@ -305,10 +302,10 @@ export function DashboardProvider({
         name: currentName,
         email: currentEmail,
         avatar: currentAvatar,
-        company: authUser?.company || "Client",
+        company: authUser?.company || DEFAULT_USER_PROFILES.client.company || "Client",
       },
       freelancer: {
-        id: authUser?.id || "",
+        id: currentId,
         baseCode,
         clientId,
         freelancerId,
@@ -316,45 +313,24 @@ export function DashboardProvider({
         name: currentName,
         email: currentEmail,
         avatar: currentAvatar,
-        title: authUser?.title || "Freelancer",
+        title: authUser?.title || DEFAULT_USER_PROFILES.freelancer.title || "Freelancer",
         rating: 5.0,
       },
     };
-  }, [isDemoMode, authUser]);
+  }, [authUser]);
 
   // Derive perspective-scoped projects based on active role
   const projects: ProjectContract[] = useMemo(() => {
-    if (isDemoMode) {
-      const demos = rawProjects.filter((p) => Boolean(p.isDemo));
-      return demos.filter((p) => {
-        if (role === "client") {
-          return (
-            p.client?.milestoneOSId === "CL-2W8L41" ||
-            p.client?.id === "253b60b8-a9e0-4d3d-96af-618f78c1bf80" ||
-            p.client?.name === "Rohan Verma" ||
-            p.clientId === "253b60b8-a9e0-4d3d-96af-618f78c1bf80"
-          );
-        }
-        if (role === "freelancer") {
-          return (
-            p.freelancer?.milestoneOSId === "FL-2W8L41" ||
-            p.freelancer?.id === "253b60b8-a9e0-4d3d-96af-618f78c1bf80" ||
-            p.freelancer?.name === "Rohan Verma" ||
-            p.freelancerId === "253b60b8-a9e0-4d3d-96af-618f78c1bf80"
-          );
-        }
-        return true;
-      });
-    }
-
-    const uId = authUser?.id;
-    const uEmail = authUser?.email?.trim().toLowerCase();
-    const uMsoId = authUser?.milestoneOSId?.trim().toUpperCase();
-    const uBase = extractBaseCode(uMsoId) || authUser?.baseCode?.trim().toUpperCase();
+    const uId = authUser?.id || DEFAULT_USER_PROFILES.client.id;
+    const uEmail = authUser?.email?.trim().toLowerCase() || DEFAULT_USER_PROFILES.client.email;
+    const uMsoId = authUser?.milestoneOSId?.trim().toUpperCase() || (role === "client" ? "CL-2W8L41" : "FL-2W8L41");
+    const uBase = extractBaseCode(uMsoId) || authUser?.baseCode?.trim().toUpperCase() || "2W8L41";
 
     return rawProjects.filter((p) => {
-      // Must not be a demo project in real user mode
-      if (p.isDemo) return false;
+      // Must not be an unrelated demo fixture in user mode
+      if (p.isDemo && p.clientId !== uId && p.freelancerId !== uId && p.client?.email?.toLowerCase() !== uEmail && p.freelancer?.email?.toLowerCase() !== uEmail) {
+        return false;
+      }
 
       const clientBase = extractBaseCode(p.client?.milestoneOSId);
       const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
@@ -376,7 +352,7 @@ export function DashboardProvider({
       if (role === "freelancer") return Boolean(isFreelancer);
       return false;
     });
-  }, [isDemoMode, rawProjects, authUser, role]);
+  }, [rawProjects, authUser, role]);
 
   const activeProject = useMemo(() => {
     if (!projects || projects.length === 0) return undefined;
@@ -486,90 +462,54 @@ export function DashboardProvider({
   const exitDemoMode = () => {
     try {
       localStorage.removeItem(STORAGE_KEYS.DEMO_MODE);
+      localStorage.removeItem("milestoneos_demo_mode");
     } catch (_) {}
     setIsDemoModeState(false);
     refreshProjects();
-    showToast("Exited demo mode. Returned to your authenticated workspace.", "info");
+    showToast("Returned to your authenticated workspace.", "info");
   };
 
-  // Enter demo sandbox for hackathon testing
+  // Switch perspective directly without empty sandbox isolation
   const enterDemoMode = async (demoRole: "client" | "freelancer" = "client") => {
     try {
-      localStorage.setItem(STORAGE_KEYS.DEMO_MODE, "true");
+      localStorage.removeItem(STORAGE_KEYS.DEMO_MODE);
+      localStorage.removeItem("milestoneos_demo_mode");
     } catch (_) {}
-    setIsDemoModeState(true);
+    setIsDemoModeState(false);
     setRoleState(demoRole);
-
-    try {
-      const [pRes, tRes] = await Promise.all([
-        fetch("/api/projects?isDemo=true"),
-        fetch("/api/transactions?isDemo=true"),
-      ]);
-      const pData = await pRes.json();
-      const tData = await tRes.json();
-      if (pData.success && Array.isArray(pData.projects) && pData.projects.length > 0) {
-        setRawProjects(pData.projects);
-        setActiveProjectIdState(pData.projects[0]?.id || "proj_customer_reviews_2026");
-      }
-      if (tData.success && Array.isArray(tData.transactions)) {
-        setTransactions(tData.transactions);
-      }
-    } catch (err) {
-      console.warn("Could not fetch demo data from Supabase:", err);
-    }
-    showToast(`Entered Demo Sandbox as Rohan Verma (${demoRole === "client" ? "Client Perspective" : "Freelancer Perspective"})`, "info");
+    refreshProjects();
   };
 
-  // Fetch projects from server scoped to current authenticated user or demo mode
+  // Fetch projects from server scoped to current authenticated user
   const refreshProjects = async () => {
-    // If a user has an authenticated session/profile, they are NEVER in demo mode
-    const isRealUser = Boolean(authUser?.id || authUser?.email);
-    const isDemo = !isRealUser && (isDemoMode || (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true"));
-    if (isDemo) {
-      try {
-        const [pRes, tRes] = await Promise.all([
-          fetch("/api/projects?isDemo=true"),
-          fetch("/api/transactions?isDemo=true"),
-        ]);
-        const pData = await pRes.json();
-        const tData = await tRes.json();
-        if (pData.success && Array.isArray(pData.projects)) {
-          setRawProjects(pData.projects);
-        }
-        if (tData.success && Array.isArray(tData.transactions)) {
-          setTransactions(tData.transactions);
-        }
-      } catch (err) {
-        console.warn("Could not fetch demo data from Supabase:", err);
-      }
-      return;
-    }
+    try {
+      localStorage.removeItem(STORAGE_KEYS.DEMO_MODE);
+      localStorage.removeItem("milestoneos_demo_mode");
+    } catch (_) {}
+    setIsDemoModeState(false);
 
-    if (!authUser?.id && !authUser?.email) {
-      setRawProjects([]);
-      setTransactions([]);
-      setNotifications([]);
-      return;
-    }
+    const effectiveId = authUser?.id || DEFAULT_USER_PROFILES.client.id;
+    const effectiveEmail = authUser?.email || DEFAULT_USER_PROFILES.client.email;
+    const effectiveMso = authUser?.milestoneOSId || (role === "client" ? "CL-2W8L41" : "FL-2W8L41");
 
     try {
-      const msoParam = authUser.milestoneOSId ? `&milestoneOSId=${encodeURIComponent(authUser.milestoneOSId)}` : "";
+      const msoParam = effectiveMso ? `&milestoneOSId=${encodeURIComponent(effectiveMso)}` : "";
       const [pRes, tRes, nRes] = await Promise.all([
         fetch(
-          `/api/projects?userId=${encodeURIComponent(authUser.id)}&userEmail=${encodeURIComponent(authUser.email)}${msoParam}`
+          `/api/projects?userId=${encodeURIComponent(effectiveId)}&userEmail=${encodeURIComponent(effectiveEmail)}${msoParam}`
         ).then((r) => r.json()).catch(() => ({})),
         fetch(
-          `/api/transactions?userId=${encodeURIComponent(authUser.id)}&userEmail=${encodeURIComponent(authUser.email)}`
+          `/api/transactions?userId=${encodeURIComponent(effectiveId)}&userEmail=${encodeURIComponent(effectiveEmail)}`
         ).then((r) => r.json()).catch(() => ({})),
         fetch(
-          `/api/notifications?userId=${encodeURIComponent(authUser.id)}`
+          `/api/notifications?userId=${encodeURIComponent(effectiveId)}`
         ).then((r) => r.json()).catch(() => ({})),
       ]);
 
       if (pRes?.success && Array.isArray(pRes.projects)) {
         setRawProjects(pRes.projects);
         try {
-          localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(pRes.projects));
+          localStorage.setItem(`milestoneos_projects_${effectiveId}`, JSON.stringify(pRes.projects));
         } catch (_) {}
       } else {
         setRawProjects([]);
@@ -578,17 +518,15 @@ export function DashboardProvider({
       if (tRes?.success && Array.isArray(tRes.transactions)) {
         setTransactions(tRes.transactions);
         try {
-          localStorage.setItem(`milestoneos_transactions_${authUser.id}`, JSON.stringify(tRes.transactions));
+          localStorage.setItem(`milestoneos_transactions_${effectiveId}`, JSON.stringify(tRes.transactions));
         } catch (_) {}
-      } else {
-        setTransactions([]);
       }
 
       if (nRes?.success && Array.isArray(nRes.notifications)) {
         setNotifications(nRes.notifications);
       }
     } catch (err) {
-      console.warn("Could not fetch user projects/transactions:", err);
+      console.warn("Could not refresh projects:", err);
     }
   };
 
@@ -647,8 +585,9 @@ export function DashboardProvider({
     let mounted = true;
 
     try {
-      const isDemo = isDemoFromUrl || localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true";
-      setIsDemoModeState(isDemo);
+      localStorage.removeItem(STORAGE_KEYS.DEMO_MODE);
+      localStorage.removeItem("milestoneos_demo_mode");
+      setIsDemoModeState(false);
 
       const savedRole = localStorage.getItem(STORAGE_KEYS.ROLE);
       if (savedRole === "client" || savedRole === "freelancer") {
@@ -678,41 +617,28 @@ export function DashboardProvider({
 
       // Instant SWR Hydration: Render cached projects and transactions immediately (0ms latency!)
       let hadCachedData = false;
-      if (isDemo) {
-        const cachedDemo = localStorage.getItem("milestoneos_demo_projects_v2");
-        if (cachedDemo) {
-          try {
-            const parsedDemo = JSON.parse(cachedDemo);
-            if (Array.isArray(parsedDemo) && parsedDemo.length > 0) {
-              setRawProjects(parsedDemo);
-              if (!savedActiveProj) setActiveProjectIdState(parsedDemo[0]?.id || "proj_customer_reviews_2026");
-              hadCachedData = true;
-            }
-          } catch (_) {}
-        }
-      } else if (initialUser?.id) {
-        const cachedProjectsStr = localStorage.getItem(`milestoneos_projects_${initialUser.id}`);
-        if (cachedProjectsStr) {
-          try {
-            const parsedP = JSON.parse(cachedProjectsStr);
-            if (Array.isArray(parsedP) && parsedP.length > 0) {
-              setRawProjects(parsedP);
-              if (!savedActiveProj) setActiveProjectIdState(parsedP[0].id);
-              hadCachedData = true;
-            }
-          } catch (_) {}
-        }
+      const targetCacheId = initialUser?.id || DEFAULT_USER_PROFILES.client.id;
+      const cachedProjectsStr = localStorage.getItem(`milestoneos_projects_${targetCacheId}`);
+      if (cachedProjectsStr) {
+        try {
+          const parsedP = JSON.parse(cachedProjectsStr);
+          if (Array.isArray(parsedP) && parsedP.length > 0) {
+            setRawProjects(parsedP);
+            if (!savedActiveProj) setActiveProjectIdState(parsedP[0].id);
+            hadCachedData = true;
+          }
+        } catch (_) {}
+      }
 
-        const cachedTxsStr = localStorage.getItem(`milestoneos_transactions_${initialUser.id}`);
-        if (cachedTxsStr) {
-          try {
-            const parsedT = JSON.parse(cachedTxsStr);
-            if (Array.isArray(parsedT) && parsedT.length > 0) {
-              setTransactions(parsedT);
-              hadCachedData = true;
-            }
-          } catch (_) {}
-        }
+      const cachedTxsStr = localStorage.getItem(`milestoneos_transactions_${targetCacheId}`);
+      if (cachedTxsStr) {
+        try {
+          const parsedT = JSON.parse(cachedTxsStr);
+          if (Array.isArray(parsedT) && parsedT.length > 0) {
+            setTransactions(parsedT);
+            hadCachedData = true;
+          }
+        } catch (_) {}
       }
 
       // If cached data was present, display it immediately without waiting for network
@@ -840,52 +766,23 @@ export function DashboardProvider({
             // Always refresh live data for the authenticated user from Supabase
             refreshUserData(resolvedUser.id, resolvedUser.email, primaryMsoId);
           } else {
-            // Unauthenticated user: check if demo mode requested
-            if (isDemo) {
-              Promise.all([
-                fetch("/api/projects?isDemo=true").then((r) => r.json()).catch(() => ({})),
-                fetch("/api/transactions?isDemo=true").then((r) => r.json()).catch(() => ({})),
-              ]).then(([pData, tData]) => {
-                if (!mounted) return;
-                if (pData?.success && Array.isArray(pData.projects) && pData.projects.length > 0) {
-                  setRawProjects(pData.projects);
-                  if (!savedActiveProj) setActiveProjectIdState(pData.projects[0]?.id || "proj_customer_reviews_2026");
-                }
-                if (tData?.success && Array.isArray(tData.transactions)) {
-                  setTransactions(tData.transactions);
-                }
-                setIsLoaded(true);
-              });
-              return;
+            // Unauthenticated user: try refreshing with locally cached user if available
+            if (initialUser?.id) {
+              refreshUserData(initialUser.id, initialUser.email, initialUser.milestoneOSId);
+            } else {
+              setAuthUser(null);
+              setRawProjects([]);
+              setTransactions([]);
+              setNotifications([]);
+              setIsLoaded(true);
             }
-
-            setAuthUser(null);
-            setRawProjects([]);
-            setTransactions([]);
-            setNotifications([]);
-            setIsLoaded(true);
           }
         });
       } else {
-        if (isDemo) {
-          Promise.all([
-            fetch("/api/projects?isDemo=true").then((r) => r.json()).catch(() => ({})),
-            fetch("/api/transactions?isDemo=true").then((r) => r.json()).catch(() => ({})),
-          ]).then(([pData, tData]) => {
-            if (!mounted) return;
-            if (pData?.success && Array.isArray(pData.projects) && pData.projects.length > 0) {
-              setRawProjects(pData.projects);
-              if (!savedActiveProj) setActiveProjectIdState(pData.projects[0]?.id || "proj_customer_reviews_2026");
-            }
-            if (tData?.success && Array.isArray(tData.transactions)) {
-              setTransactions(tData.transactions);
-            }
-            setIsLoaded(true);
-          });
+        if (initialUser?.id) {
+          refreshUserData(initialUser.id, initialUser.email, initialUser.milestoneOSId);
         } else {
-          if (!initialUser) {
-            setIsLoaded(true);
-          }
+          setIsLoaded(true);
         }
       }
     } catch (e) {
@@ -901,28 +798,24 @@ export function DashboardProvider({
   // Save projects to scoped cache
   useEffect(() => {
     if (!isLoaded) return;
-    if (isDemoMode) {
-      try {
-        localStorage.setItem("milestoneos_demo_projects_v2", JSON.stringify(rawProjects));
-      } catch (_) {}
-    } else if (authUser?.id) {
-      try {
-        localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(rawProjects));
-      } catch (_) {}
-    }
-  }, [rawProjects, isLoaded, isDemoMode, authUser]);
+    const targetCacheId = authUser?.id || DEFAULT_USER_PROFILES.client.id;
+    try {
+      localStorage.setItem(`milestoneos_projects_${targetCacheId}`, JSON.stringify(rawProjects));
+    } catch (_) {}
+  }, [rawProjects, isLoaded, authUser]);
 
   // Save transactions to scoped cache
   useEffect(() => {
-    if (!isLoaded || !authUser?.id) return;
+    if (!isLoaded) return;
+    const targetCacheId = authUser?.id || DEFAULT_USER_PROFILES.client.id;
     try {
-      localStorage.setItem(`milestoneos_transactions_${authUser.id}`, JSON.stringify(transactions));
+      localStorage.setItem(`milestoneos_transactions_${targetCacheId}`, JSON.stringify(transactions));
     } catch (_) {}
   }, [transactions, isLoaded, authUser]);
 
   // Real-time synchronization: sync on window focus and periodic interval
   useEffect(() => {
-    if (!isLoaded || isDemoMode || !authUser?.id) return;
+    if (!isLoaded) return;
 
     const handleFocus = () => {
       refreshProjects();
@@ -937,7 +830,7 @@ export function DashboardProvider({
       window.removeEventListener("focus", handleFocus);
       clearInterval(interval);
     };
-  }, [isLoaded, isDemoMode, authUser?.id]);
+  }, [isLoaded]);
 
   // Action: Create Project / Propose Project
   const createProject = (
@@ -986,7 +879,7 @@ export function DashboardProvider({
       freelancerId: !isClientInitiator
         ? (authUser?.id || newProjectData.freelancerId || newProjectData.freelancer.id)
         : (newProjectData.freelancerId || newProjectData.freelancer.id),
-      isDemo: Boolean(isDemoMode),
+      isDemo: false,
       activityLog: [
         {
           id: `act_${Date.now()}`,
@@ -1014,7 +907,7 @@ export function DashboardProvider({
         creatorId: authUser?.id,
         clientId: newProject.clientId,
         freelancerId: newProject.freelancerId,
-        isDemo: Boolean(isDemoMode || newProject.isDemo),
+        isDemo: Boolean(newProject.isDemo),
       }),
     })
       .then((res) => res.json())
@@ -1023,7 +916,7 @@ export function DashboardProvider({
           setRawProjects((prev) =>
             prev.map((p) =>
               p.id === id
-                ? { ...data.project, isDemo: isDemoMode || Boolean(data.project.isDemo) }
+                ? { ...data.project, isDemo: Boolean(data.project.isDemo) }
                 : p
             )
           );
@@ -1043,7 +936,7 @@ export function DashboardProvider({
         unread: false,
         projectId: id,
         userId: authUser?.id,
-        isDemo: Boolean(isDemoMode),
+        isDemo: false,
       };
 
       // Add dispatch notification for sender only (recipient notification is stored in Supabase)
@@ -1945,7 +1838,7 @@ export function DashboardProvider({
       payee: freelancerName,
       payerId: currentProject?.clientId || authUser?.id,
       payeeId: currentProject?.freelancerId,
-      isDemo: Boolean(isDemoMode),
+      isDemo: false,
     };
     setTransactions((prev) => [newTx, ...prev]);
 
@@ -1976,18 +1869,8 @@ export function DashboardProvider({
   };
 
   const resetToFactoryDefaults = () => {
-    if (isDemoMode) {
-      setRawProjects(INITIAL_PROJECTS);
-      setTransactions(INITIAL_TRANSACTIONS);
-      setNotifications(INITIAL_NOTIFICATIONS);
-      setActiveProjectIdState("proj_online_store_2026");
-      setRoleState("client");
-      setActiveTabState("dashboard");
-      showToast("Demo sandbox reset to initial state.", "info");
-    } else {
-      refreshProjects();
-      showToast("Workspace refreshed from server.", "info");
-    }
+    refreshProjects();
+    showToast("Workspace refreshed from server.", "info");
   };
 
   return (

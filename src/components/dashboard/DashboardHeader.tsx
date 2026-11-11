@@ -23,9 +23,6 @@ export default function DashboardHeader({
     setSearchQuery,
     notifications,
     userProfiles,
-    isDemoMode,
-    exitDemoMode,
-    enterDemoMode,
     authUser,
   } = useDashboard();
 
@@ -103,29 +100,6 @@ export default function DashboardHeader({
               <span>Freelancer View</span>
             </button>
           </div>
-
-          {/* Demo Mode Indicator & Switcher */}
-          {isDemoMode ? (
-            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-[11px] font-bold">
-              <span>Demo Mode</span>
-              <button
-                type="button"
-                onClick={exitDemoMode}
-                className="underline hover:text-amber-900 dark:hover:text-white ml-0.5 cursor-pointer font-medium"
-              >
-                Exit
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => enterDemoMode(role)}
-              title="Launch sample demo projects for hackathon evaluation"
-              className="hidden lg:inline-flex items-center gap-1 px-2 py-1 rounded-lg border border-dashed border-slate-300 dark:border-white/10 text-[11px] text-slate-400 hover:text-[#0070BA] hover:border-[#0070BA] dark:hover:text-sky-300 dark:hover:border-sky-400 transition-colors cursor-pointer"
-            >
-              <span>Demo Sandbox</span>
-            </button>
-          )}
         </div>
 
         {/* Right: User ID badge, PayPal Sandbox status, Notifications, New Project */}

@@ -130,7 +130,7 @@ function DatePickerInput({
 type InitiationMethod = "user_id" | "share_link";
 
 export default function NewProjectModal({ isOpen, onClose, initialProject }: NewProjectModalProps) {
-  const { role, userProfiles, createProject, resubmitProposal, showAlert, projects, isDemoMode, authUser } = useDashboard();
+  const { role, userProfiles, createProject, resubmitProposal, showAlert, projects, authUser } = useDashboard();
 
   const isClient = role === "client";
   const myProfile = userProfiles[role];
@@ -215,19 +215,10 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         if (found) setSelectedUser(found);
       }
     } else {
-      if (isDemoMode) {
-        // Default initial partner for convenience in demo mode:
-        const defaultPartner = isClient
-          ? FREELANCER_OPTIONS[0] // Rohan Verma FL-2W8L41
-          : CLIENT_OPTIONS[0]; // David Kim CL-3X9M55
-        const matched = lookupMilestoneOSUser(defaultPartner.milestoneOSId, isClient ? "freelancer" : "client");
-        if (matched) setSelectedUser(matched);
-      } else {
-        setSelectedUser(null);
-        setMethod("user_id");
-      }
+      setSelectedUser(null);
+      setMethod("user_id");
     }
-  }, [initialProject, isClient, isDemoMode]);
+  }, [initialProject, isClient]);
 
   // Load registered counterparties from Supabase directory
   useEffect(() => {
@@ -319,7 +310,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
       const expectedRole = isClient ? "freelancer" : "client";
       const currentUserId = authUser?.id || myProfile?.id;
       const proposerParam = currentUserId ? `&proposerId=${encodeURIComponent(currentUserId)}` : "";
-      const res = await fetch(`/api/users/lookup?id=${encodeURIComponent(rawId)}&expectedRole=${expectedRole}${isDemoMode ? "&demo=true" : ""}${proposerParam}`);
+      const res = await fetch(`/api/users/lookup?id=${encodeURIComponent(rawId)}&expectedRole=${expectedRole}${proposerParam}`);
       const data = await res.json();
       setIsSearching(false);
 
@@ -822,52 +813,6 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                                 </button>
                               );
                             })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Quick demo helper chips (Demo mode only) */}
-                      {isDemoMode && (
-                        <div className="pt-1">
-                          <span className="text-[10px] uppercase font-bold text-amber-500 tracking-wider block mb-1">
-                            Demo Sandbox Accounts to Connect:
-                          </span>
-                          <div className="flex flex-wrap gap-1.5">
-                            {isClient ? (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleLookupUserId("FL-2W8L41")}
-                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
-                                >
-                                  + Rohan Verma (<span className="font-mono font-bold text-[#0070BA]">FL-2W8L41</span>)
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleLookupUserId("FL-9B4T72")}
-                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
-                                >
-                                  + Elena Rostova (<span className="font-mono font-bold text-[#0070BA]">FL-9B4T72</span>)
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => handleLookupUserId("CL-3X9M55")}
-                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
-                                >
-                                  + David Kim (<span className="font-mono font-bold text-[#0070BA]">CL-3X9M55</span>)
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleLookupUserId("CL-6V1Q88")}
-                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors"
-                                >
-                                  + Amara Patel (<span className="font-mono font-bold text-[#0070BA]">CL-6V1Q88</span>)
-                                </button>
-                              </>
-                            )}
                           </div>
                         </div>
                       )}

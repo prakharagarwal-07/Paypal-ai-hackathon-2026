@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { ProjectContract, getFriendlyProjectStatus } from "@/lib/dashboard-data";
+import { ProjectContract, getFriendlyProjectStatus, extractBaseCode } from "@/lib/dashboard-data";
 import {
   Send,
   Inbox,
@@ -33,15 +33,17 @@ export default function ProjectRequestsView({
   onOpenRevision,
   onSelectProject,
 }: ProjectRequestsViewProps) {
-  const { role, projects, searchQuery, revokeInvitation, showConfirm, authUser, isDemoMode } = useDashboard();
+  const { role, projects, searchQuery, revokeInvitation, showConfirm, authUser } = useDashboard();
 
   const [activeTab, setActiveTab] = useState<"incoming" | "sent">("incoming");
   const [selectedReviewProject, setSelectedReviewProject] = useState<ProjectContract | null>(null);
   const [selectedShareProject, setSelectedShareProject] = useState<ProjectContract | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
-  const myId = authUser?.id;
-  const myEmail = authUser?.email?.trim().toLowerCase();
+  const myId = authUser?.id || "253b60b8-a9e0-4d3d-96af-618f78c1bf80";
+  const myEmail = (authUser?.email || "rohan.verma@craftdev.io").trim().toLowerCase();
+  const myMsoId = (authUser?.milestoneOSId || (role === "client" ? "CL-2W8L41" : "FL-2W8L41")).trim().toUpperCase();
+  const myBase = extractBaseCode(myMsoId) || authUser?.baseCode?.trim().toUpperCase() || "2W8L41";
 
   // Incoming Requests: Strict recipient authorization
   // For Client role: proposals where client_id = authUser.id AND initiated_by = 'freelancer'
@@ -56,19 +58,22 @@ export default function ProjectRequestsView({
     // Disregard invalid self-assigned proposals
     if (p.clientId && p.freelancerId && p.clientId === p.freelancerId) return false;
 
-    if (isDemoMode) {
-      return role === "client" ? p.initiatedBy === "freelancer" : p.initiatedBy === "client";
-    }
+    const clientBase = extractBaseCode(p.client?.milestoneOSId);
+    const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
 
     if (role === "client") {
       const isTargetClient =
         (myId && (p.clientId === myId || p.client?.id === myId)) ||
-        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail);
+        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail) ||
+        (myMsoId && p.client?.milestoneOSId?.trim().toUpperCase() === myMsoId) ||
+        (myBase && clientBase === myBase);
       return Boolean(isTargetClient && p.initiatedBy === "freelancer");
     } else {
       const isTargetFreelancer =
         (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) ||
-        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail);
+        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail) ||
+        (myMsoId && p.freelancer?.milestoneOSId?.trim().toUpperCase() === myMsoId) ||
+        (myBase && freelancerBase === myBase);
       return Boolean(isTargetFreelancer && p.initiatedBy === "client");
     }
   });
@@ -86,19 +91,22 @@ export default function ProjectRequestsView({
       (p.status === "active" && p.proposalStatus === "accepted");
     if (!isProposalOrRecent) return false;
 
-    if (isDemoMode) {
-      return role === "client" ? p.initiatedBy === "client" : p.initiatedBy === "freelancer";
-    }
+    const clientBase = extractBaseCode(p.client?.milestoneOSId);
+    const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
 
     if (role === "client") {
       const isProposerClient =
         (myId && (p.clientId === myId || p.client?.id === myId)) ||
-        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail);
+        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail) ||
+        (myMsoId && p.client?.milestoneOSId?.trim().toUpperCase() === myMsoId) ||
+        (myBase && clientBase === myBase);
       return Boolean(isProposerClient && p.initiatedBy === "client");
     } else {
       const isProposerFreelancer =
         (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) ||
-        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail);
+        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail) ||
+        (myMsoId && p.freelancer?.milestoneOSId?.trim().toUpperCase() === myMsoId) ||
+        (myBase && freelancerBase === myBase);
       return Boolean(isProposerFreelancer && p.initiatedBy === "freelancer");
     }
   });

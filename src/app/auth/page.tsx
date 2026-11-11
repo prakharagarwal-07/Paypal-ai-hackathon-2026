@@ -161,25 +161,28 @@ function AuthForm() {
     }
 
     try {
-      localStorage.setItem("milestoneos_demo_mode", "true");
+      localStorage.removeItem("milestoneos_demo_mode");
       localStorage.setItem(
         "milestoneos_active_user_v8",
         JSON.stringify({
           name: demoUser.name,
           email: demoUser.email,
-          avatar: demoRole === "client" ? "SC" : "RV",
+          avatar: "RV",
+          baseCode: "2W8L41",
+          clientId: "CL-2W8L41",
+          freelancerId: "FL-2W8L41",
           milestoneOSId: demoUser.id,
           role: demoRole,
           roles: ["client", "freelancer"],
-          isDemo: true,
+          isDemo: false,
         })
       );
       localStorage.setItem("milestoneos_role_v8", demoRole);
     } catch (_) {}
 
-    setSuccessMsg(`Launching Demo Sandbox as ${demoUser.name} (${demoRole === "client" ? "Client View" : "Freelancer View"})...`);
+    setSuccessMsg(`Welcome, ${demoUser.name} (${demoRole === "client" ? "Client View" : "Freelancer View"})...`);
     setTimeout(() => {
-      router.push(`/dashboard?role=${demoRole}&demo=true`);
+      router.push(`/dashboard?role=${demoRole}`);
     }, 350);
   };
 

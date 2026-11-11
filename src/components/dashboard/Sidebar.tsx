@@ -46,7 +46,6 @@ export default function Sidebar({
     activeProjectId,
     setActiveProjectId,
     authUser,
-    isDemoMode,
   } = useDashboard();
 
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
@@ -76,26 +75,33 @@ export default function Sidebar({
     }
   };
 
-  const myId = authUser?.id;
-  const myEmail = authUser?.email?.trim().toLowerCase();
+  const myId = authUser?.id || "253b60b8-a9e0-4d3d-96af-618f78c1bf80";
+  const myEmail = (authUser?.email || "rohan.verma@craftdev.io").trim().toLowerCase();
+  const myMsoId = (authUser?.milestoneOSId || (role === "client" ? "CL-2W8L41" : "FL-2W8L41")).trim().toUpperCase();
+  const myBase = extractBaseCode(myMsoId) || authUser?.baseCode?.trim().toUpperCase() || "2W8L41";
 
   // Count incoming proposals strictly awaiting action by this recipient
   const incomingPendingCount = projects.filter((p) => {
     const isPending =
       p.status === "awaiting_acceptance" || p.status === "changes_requested";
     if (!isPending) return false;
-    if (isDemoMode) {
-      return role === "client" ? p.initiatedBy === "freelancer" : p.initiatedBy === "client";
-    }
+
+    const clientBase = extractBaseCode(p.client?.milestoneOSId);
+    const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
+
     if (role === "client") {
       const isTargetClient =
         (myId && (p.clientId === myId || p.client?.id === myId)) ||
-        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail);
+        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail) ||
+        (myMsoId && p.client?.milestoneOSId?.trim().toUpperCase() === myMsoId) ||
+        (myBase && clientBase === myBase);
       return Boolean(isTargetClient && p.initiatedBy === "freelancer");
     } else {
       const isTargetFreelancer =
         (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) ||
-        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail);
+        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail) ||
+        (myMsoId && p.freelancer?.milestoneOSId?.trim().toUpperCase() === myMsoId) ||
+        (myBase && freelancerBase === myBase);
       return Boolean(isTargetFreelancer && p.initiatedBy === "client");
     }
   }).length;

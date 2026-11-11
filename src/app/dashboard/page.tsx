@@ -472,10 +472,9 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const roleParam = searchParams.get("role");
   const initialRole = roleParam === "freelancer" ? "freelancer" : roleParam === "client" ? "client" : undefined;
-  const isDemo = searchParams.get("demo") === "true";
 
   return (
-    <DashboardProvider initialRole={initialRole} isDemoFromUrl={isDemo}>
+    <DashboardProvider initialRole={initialRole}>
       <DashboardInner />
     </DashboardProvider>
   );
