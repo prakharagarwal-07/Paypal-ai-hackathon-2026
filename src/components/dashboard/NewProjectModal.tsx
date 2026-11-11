@@ -143,6 +143,8 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
   const [selectedUser, setSelectedUser] = useState<MilestoneOSUser | null>(null);
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [registeredCounterparties, setRegisteredCounterparties] = useState<MilestoneOSUser[]>([]);
+  const [isLoadingCounterparties, setIsLoadingCounterparties] = useState(false);
 
   // Form Fields - clean defaults without hardcoded dummy content
   const [title, setTitle] = useState(initialProject?.title || "");
@@ -222,10 +224,28 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         if (matched) setSelectedUser(matched);
       } else {
         setSelectedUser(null);
-        setMethod("share_link");
+        setMethod("user_id");
       }
     }
   }, [initialProject, isClient, isDemoMode]);
+
+  // Load registered counterparties from Supabase directory
+  useEffect(() => {
+    if (!isOpen) return;
+    const targetRole = isClient ? "freelancer" : "client";
+    setIsLoadingCounterparties(true);
+    fetch(`/api/users/lookup?list=true&role=${targetRole}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && Array.isArray(d.users)) {
+          const myId = authUser?.id;
+          const filtered = d.users.filter((u: any) => u.id !== myId);
+          setRegisteredCounterparties(filtered);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingCounterparties(false));
+  }, [isOpen, isClient, authUser]);
 
   if (!isOpen && !shareModalOpen) return null;
 
@@ -447,16 +467,20 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     let clientData: ProjectContract["client"];
     let freelancerData: ProjectContract["freelancer"];
 
-    const myUserId = myProfile.id || authUser?.id;
+    const myUserId = authUser?.id || myProfile.id;
+    const myName = authUser?.name || myProfile.name;
+    const myEmail = authUser?.email || myProfile.email;
+    const myAvatar = authUser?.avatar || myProfile.avatar;
+    const myMsoId = (isClient ? authUser?.clientId : authUser?.freelancerId) || myProfile.milestoneOSId;
 
     if (isClient) {
       clientData = {
         id: myUserId,
-        name: myProfile.name,
-        email: myProfile.email,
-        avatar: myProfile.avatar,
-        company: (myProfile as any).company || "Client Company",
-        milestoneOSId: myProfile.milestoneOSId,
+        name: myName,
+        email: myEmail,
+        avatar: myAvatar,
+        company: authUser?.company || (myProfile as any).company || "Client Company",
+        milestoneOSId: myMsoId,
       };
 
       if (isPublicInvitation) {
@@ -482,12 +506,12 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     } else {
       freelancerData = {
         id: myUserId,
-        name: myProfile.name,
-        email: myProfile.email,
-        avatar: myProfile.avatar,
-        title: (myProfile as any).title || "Senior Specialist",
+        name: myName,
+        email: myEmail,
+        avatar: myAvatar,
+        title: authUser?.title || (myProfile as any).title || "Senior Specialist",
         rating: 5.0,
-        milestoneOSId: myProfile.milestoneOSId,
+        milestoneOSId: myMsoId,
       };
 
       if (isPublicInvitation) {
@@ -762,6 +786,35 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                           <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                           <span>{lookupError}</span>
                         </p>
+                      )}
+
+                      {/* Dynamic Registered Counterparties List */}
+                      {registeredCounterparties.length > 0 && (
+                        <div className="pt-2">
+                          <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider block mb-1.5">
+                            Registered {isClient ? "Freelancers" : "Clients"} on MilestoneOS:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
+                            {registeredCounterparties.map((u) => {
+                              const displayId = isClient ? (u.freelancerId || u.milestoneOSId) : (u.clientId || u.milestoneOSId);
+                              return (
+                                <button
+                                  key={u.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedUser(u);
+                                    setMilestoneIdInput(displayId);
+                                    setLookupError(null);
+                                  }}
+                                  className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-[11px] text-slate-700 dark:text-slate-200 cursor-pointer transition-colors flex items-center gap-1.5"
+                                >
+                                  <span className="font-semibold">{u.name}</span>
+                                  <span className="font-mono text-[10px] text-[#0070BA] dark:text-sky-400">({displayId})</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       )}
 
                       {/* Quick demo helper chips (Demo mode only) */}

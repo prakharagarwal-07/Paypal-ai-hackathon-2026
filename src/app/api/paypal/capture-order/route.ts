@@ -1,11 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { capturePayPalOrder } from "@/server/paypal";
 import { db } from "@/server/db";
+import { getServerSupabase } from "@/server/supabase";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { orderId, projectId, milestoneId } = body;
+    let callerId = body.userId || body.payerId;
+    let callerEmail = body.userEmail;
+
+    // Verify caller session token if provided
+    const authHeader = req.headers.get("authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.replace("Bearer ", "").trim();
+      const supabase = getServerSupabase();
+      if (supabase) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser(token);
+          if (user) {
+            callerId = user.id;
+            callerEmail = user.email;
+          }
+        } catch (_) {}
+      }
+    }
 
     if (!orderId || !projectId || !milestoneId) {
       return NextResponse.json(
@@ -18,6 +37,21 @@ export async function POST(req: NextRequest) {
     const project = await db.getProjectById(projectId);
     if (!project) {
       return NextResponse.json({ error: "Project not found in contract database" }, { status: 404 });
+    }
+
+    // Security check: Only the designated client can capture payments
+    const clientId = project.clientId || project.client?.id;
+    const clientEmail = project.client?.email?.toLowerCase();
+    const isClientCaller = Boolean(
+      (callerId && callerId === clientId) ||
+      (callerEmail && callerEmail.toLowerCase() === clientEmail)
+    );
+
+    if (callerId && !isClientCaller && !project.isDemo) {
+      return NextResponse.json(
+        { error: "Unauthorized. Only the designated client can capture payments for this project." },
+        { status: 403 }
+      );
     }
 
     const milestone = project.milestones.find((m) => m.id === milestoneId);

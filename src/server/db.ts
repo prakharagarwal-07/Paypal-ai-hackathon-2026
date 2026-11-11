@@ -94,6 +94,17 @@ function rowToProject(row: any): ProjectContract {
 function projectToRow(p: ProjectContract, creatorId?: string): any {
   const cId = p.clientId || p.client?.id;
   const fId = p.freelancerId || p.freelancer?.id;
+  const validCId = isValidUUID(cId) ? cId : null;
+  const validFId = isValidUUID(fId) ? fId : null;
+
+  if (validCId) {
+    p.clientId = validCId;
+    if (p.client) p.client.id = validCId;
+  }
+  if (validFId) {
+    p.freelancerId = validFId;
+    if (p.freelancer) p.freelancer.id = validFId;
+  }
 
   return {
     id: p.id,
@@ -109,8 +120,8 @@ function projectToRow(p: ProjectContract, creatorId?: string): any {
     status: p.status || "active",
     proposal_status: p.proposalStatus || "accepted",
     terms_agreed: Boolean(p.termsAgreed ?? true),
-    client_id: isValidUUID(cId) ? cId : null,
-    freelancer_id: isValidUUID(fId) ? fId : null,
+    client_id: validCId,
+    freelancer_id: validFId,
     client_name: p.client?.name || "Client",
     client_email: p.client?.email || "",
     client_company: p.client?.company || null,

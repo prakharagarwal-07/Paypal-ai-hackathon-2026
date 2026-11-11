@@ -82,7 +82,12 @@ function AuthForm() {
     }
   }, [searchParams]);
 
-  const syncLocalProfile = (userName: string, userEmail: string, userMsoId: string) => {
+  const syncLocalProfile = (
+    userName: string,
+    userEmail: string,
+    userMsoId: string,
+    primaryRole: "client" | "freelancer" = "client"
+  ) => {
     try {
       const cleanEmail = userEmail.trim().toLowerCase();
       const defaultName = cleanEmail.split("@")[0] || "User";
@@ -105,13 +110,13 @@ function AuthForm() {
         baseCode,
         clientId,
         freelancerId,
-        milestoneOSId: clientId,
-        role: "both",
+        milestoneOSId: primaryRole === "freelancer" ? freelancerId : clientId,
+        role: primaryRole,
         roles: ["client", "freelancer"],
       };
 
       localStorage.setItem("milestoneos_active_user_v8", JSON.stringify(activeUser));
-      localStorage.setItem("milestoneos_role_v8", "client");
+      localStorage.setItem("milestoneos_role_v8", primaryRole);
       localStorage.removeItem("milestoneos_demo_mode");
     } catch (_) {}
   };
@@ -254,10 +259,12 @@ function AuthForm() {
           const userMeta = data.user?.user_metadata || {};
           const userName = userMeta.name || cleanEmail.split("@")[0];
           const userMsoId = userMeta.milestoneOSId || generateMilestoneOSId();
+          const userRole: "client" | "freelancer" =
+            userMeta.role === "freelancer" ? "freelancer" : "client";
 
-          syncLocalProfile(userName, cleanEmail, userMsoId);
+          syncLocalProfile(userName, cleanEmail, userMsoId, userRole);
           setSuccessMsg(`Welcome back, ${userName}! Authenticated via Supabase.`);
-          setTimeout(() => router.push("/dashboard?role=client"), 500);
+          setTimeout(() => router.push(`/dashboard?role=${userRole}`), 500);
           return;
         }
       } catch (err: any) {

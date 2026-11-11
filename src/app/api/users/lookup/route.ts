@@ -11,89 +11,104 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+    const email = searchParams.get("email");
+    const query = searchParams.get("q");
+    const isList = searchParams.get("list") === "true";
     const expectedRole = searchParams.get("expectedRole") as "client" | "freelancer" | null;
-    const isDemo = searchParams.get("demo") === "true";
+    const roleParam = searchParams.get("role") as "client" | "freelancer" | null;
+    const targetRole = expectedRole || roleParam;
+    const serverSupabase = getServerSupabase();
 
-    if (!id || typeof id !== "string") {
+    // 1. Directory List Mode: Allows browsing/selecting registered counterparties
+    if (isList && serverSupabase) {
+      let dbQuery = serverSupabase
+        .from("profiles")
+        .select("id, milestone_os_id, full_name, email, role, avatar, company, title, rating")
+        .order("full_name", { ascending: true })
+        .limit(30);
+
+      if (targetRole) {
+        // Match users with the requested role or 'both'
+        dbQuery = dbQuery.or(`role.eq.${targetRole},role.eq.both`);
+      }
+
+      const { data: listData, error: listErr } = await dbQuery;
+      if (listErr) {
+        return NextResponse.json({ success: false, error: listErr.message }, { status: 500 });
+      }
+
+      const users = (listData || []).map((row) => {
+        const base = extractBaseCode(row.milestone_os_id) || row.id.slice(0, 6).toUpperCase();
+        return {
+          id: row.id,
+          baseCode: base,
+          clientId: formatClientId(base),
+          freelancerId: formatFreelancerId(base),
+          milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(base) : formatClientId(base),
+          name: row.full_name || "User",
+          email: row.email,
+          avatar: row.avatar || (row.full_name ? row.full_name.slice(0, 2).toUpperCase() : "US"),
+          role: row.role,
+          company: row.company || "Client Organization",
+          title: row.title || (targetRole === "freelancer" ? "Independent Specialist" : "Client"),
+          rating: Number(row.rating || 5.0),
+        };
+      });
+
+      return NextResponse.json({
+        success: true,
+        count: users.length,
+        users,
+      });
+    }
+
+    // 2. Direct Single User Lookup (by ID, base code, or email)
+    const lookupKey = (id || email || query || "").trim();
+    if (!lookupKey) {
       return NextResponse.json(
-        { found: false, error: "Please provide a valid account ID parameter (e.g. ?id=FL-Q7EWTG or ?id=CL-Q7EWTG)." },
+        { found: false, error: "Please provide a valid account ID, code, or email (e.g. ?id=FL-2W8L41 or ?email=user@example.com)." },
         { status: 400 }
       );
     }
 
-    const cleanId = id.trim().toUpperCase();
-    const baseCode = extractBaseCode(cleanId);
-
-    // Validate 6-character alphanumeric base code format
-    if (!baseCode || baseCode.length !== 6 || !/^[A-Z0-9]{6}$/.test(baseCode)) {
-      return NextResponse.json(
-        {
-          found: false,
-          error: "Invalid ID format. Valid MilestoneOS IDs consist of a role prefix ('CL-' or 'FL-') followed by a 6-character code (e.g. FL-Q7EWTG, CL-Q7EWTG).",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Role prefix validation:
-    // When a Client looks up a Freelancer, reject 'CL-' IDs
-    if (expectedRole === "freelancer" && cleanId.startsWith("CL-")) {
-      return NextResponse.json(
-        {
-          found: false,
-          error: `You entered a Client ID (${cleanId}). When initiating a project as a Client, you must enter the Freelancer's ID starting with 'FL-' (e.g. FL-${baseCode}).`,
-        },
-        { status: 400 }
-      );
-    }
-
-    // When a Freelancer looks up a Client, reject 'FL-' IDs
-    if (expectedRole === "client" && cleanId.startsWith("FL-")) {
-      return NextResponse.json(
-        {
-          found: false,
-          error: `You entered a Freelancer ID (${cleanId}). When proposing a project as a Freelancer, you must enter the Client's ID starting with 'CL-' (e.g. CL-${baseCode}).`,
-        },
-        { status: 400 }
-      );
-    }
+    const cleanInput = lookupKey.toUpperCase();
+    const isEmailLookup = lookupKey.includes("@");
+    const baseCode = isEmailLookup ? null : extractBaseCode(cleanInput);
 
     let user: any = null;
-    const serverSupabase = getServerSupabase();
-    const targetRole: "client" | "freelancer" =
-      expectedRole || (cleanId.startsWith("FL-") ? "freelancer" : "client");
 
     if (serverSupabase) {
-      // 1. First attempt lookup using the base_code column if migration has been executed
-      try {
-        const { data: bData } = await serverSupabase
-          .from("profiles")
-          .select("id, milestone_os_id, base_code, full_name, email, role, avatar, company, title, rating")
-          .eq("base_code", baseCode)
-          .maybeSingle();
+      // Lookup by email if email format provided
+      if (isEmailLookup) {
+        try {
+          const { data: eData } = await serverSupabase
+            .from("profiles")
+            .select("id, milestone_os_id, full_name, email, role, avatar, company, title, rating")
+            .eq("email", lookupKey.toLowerCase())
+            .maybeSingle();
 
-        if (bData) {
-          const resolvedBase = bData.base_code || baseCode;
-          const displayName = bData.full_name || (bData as any).name || "User";
-          user = {
-            id: bData.id,
-            baseCode: resolvedBase,
-            clientId: formatClientId(resolvedBase),
-            freelancerId: formatFreelancerId(resolvedBase),
-            milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
-            name: displayName,
-            email: bData.email || undefined,
-            avatar: bData.avatar || displayName.slice(0, 2).toUpperCase(),
-            role: targetRole,
-            company: bData.company || "Client Organization",
-            title: bData.title || (targetRole === "freelancer" ? "Independent Specialist & Consultant" : "Client Representative"),
-            rating: bData.rating ? Number(bData.rating) : 5.0,
-          };
-        }
-      } catch (_) {}
+          if (eData) {
+            const resolvedBase = extractBaseCode(eData.milestone_os_id) || eData.id.slice(0, 6).toUpperCase();
+            user = {
+              id: eData.id,
+              baseCode: resolvedBase,
+              clientId: formatClientId(resolvedBase),
+              freelancerId: formatFreelancerId(resolvedBase),
+              milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
+              name: eData.full_name || "User",
+              email: eData.email,
+              avatar: eData.avatar || (eData.full_name ? eData.full_name.slice(0, 2).toUpperCase() : "US"),
+              role: eData.role,
+              company: eData.company || "Client Organization",
+              title: eData.title || (targetRole === "freelancer" ? "Independent Specialist" : "Client"),
+              rating: Number(eData.rating || 5.0),
+            };
+          }
+        } catch (_) {}
+      }
 
-      // 2. Fallback lookup querying milestone_os_id for baseCode
-      if (!user) {
+      // Lookup by base code or milestone_os_id
+      if (!user && baseCode) {
         try {
           const { data: mData } = await serverSupabase
             .from("profiles")
@@ -103,46 +118,22 @@ export async function GET(req: NextRequest) {
 
           if (mData) {
             const resolvedBase = extractBaseCode(mData.milestone_os_id) || baseCode;
-            const displayName = mData.full_name || (mData as any).name || "User";
             user = {
               id: mData.id,
               baseCode: resolvedBase,
               clientId: formatClientId(resolvedBase),
               freelancerId: formatFreelancerId(resolvedBase),
               milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(resolvedBase) : formatClientId(resolvedBase),
-              name: displayName,
-              email: mData.email || undefined,
-              avatar: mData.avatar || displayName.slice(0, 2).toUpperCase(),
-              role: targetRole,
+              name: mData.full_name || "User",
+              email: mData.email,
+              avatar: mData.avatar || (mData.full_name ? mData.full_name.slice(0, 2).toUpperCase() : "US"),
+              role: mData.role,
               company: mData.company || "Client Organization",
-              title: mData.title || (targetRole === "freelancer" ? "Independent Specialist & Consultant" : "Client Representative"),
-              rating: mData.rating ? Number(mData.rating) : 5.0,
+              title: mData.title || (targetRole === "freelancer" ? "Independent Specialist" : "Client"),
+              rating: Number(mData.rating || 5.0),
             };
           }
-        } catch (e) {
-          console.warn("Supabase lookup error:", e);
-        }
-      }
-    }
-
-    // Directory fallback for built-in accounts (e.g. Rohan FL-2W8L41, Sarah CL-7K4P92)
-    if (!user) {
-      const demoUser = db.findUserByBaseCode(baseCode) || db.findUserByMilestoneOSId(cleanId);
-      if (demoUser) {
-        const demoBase = extractBaseCode(demoUser.milestoneOSId) || baseCode;
-        user = {
-          id: demoUser.id,
-          baseCode: demoBase,
-          clientId: formatClientId(demoBase),
-          freelancerId: formatFreelancerId(demoBase),
-          milestoneOSId: targetRole === "freelancer" ? formatFreelancerId(demoBase) : formatClientId(demoBase),
-          name: demoUser.name,
-          avatar: demoUser.avatar,
-          role: targetRole,
-          company: demoUser.company || "Client Organization",
-          title: demoUser.title || (targetRole === "freelancer" ? "Senior Specialist & Consultant" : "Client Representative"),
-          rating: demoUser.rating || 5.0,
-        };
+        } catch (_) {}
       }
     }
 
@@ -150,30 +141,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(
         {
           found: false,
-          error: `No registered account found with code "${baseCode}" (${cleanId}). Please verify the ID with the user.`,
+          error: `No registered account found matching "${lookupKey}". Please verify the account ID or email.`,
         },
         { status: 404 }
       );
     }
 
-    // Return public non-sensitive preview (NEVER expose passwords, private emails or tokens)
     return NextResponse.json({
       success: true,
       found: true,
-      user: {
-        id: user.id,
-        baseCode: user.baseCode,
-        clientId: user.clientId,
-        freelancerId: user.freelancerId,
-        milestoneOSId: user.milestoneOSId,
-        name: user.name,
-        email: user.email,
-        avatar: user.avatar,
-        role: user.role,
-        company: user.company,
-        title: user.title,
-        rating: user.rating,
-      },
+      user,
     });
   } catch (err: any) {
     return NextResponse.json(

@@ -93,51 +93,73 @@ export async function POST(req: NextRequest) {
       timestamp: "Just now",
     };
 
+    const isValidUUID = (str?: string | null) =>
+      Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
+
     const effectiveCreatorId = creatorId || (initiatedBy === "client" ? (body.clientId || client?.id) : (body.freelancerId || freelancer?.id));
 
-    let resolvedClientId = body.clientId || client?.id;
-    let resolvedFreelancerId = body.freelancerId || freelancer?.id;
+    let resolvedClientId = isValidUUID(body.clientId) ? body.clientId : isValidUUID(client?.id) ? client.id : null;
+    let resolvedFreelancerId = isValidUUID(body.freelancerId) ? body.freelancerId : isValidUUID(freelancer?.id) ? freelancer.id : null;
 
     const supabase = getServerSupabase();
     if (supabase) {
-      if (!resolvedFreelancerId && freelancer?.milestoneOSId) {
-        const fBase = extractBaseCode(freelancer.milestoneOSId);
-        try {
-          const { data: fProfile } = await supabase
-            .from("profiles")
-            .select("id, email, full_name")
-            .ilike("milestone_os_id", `%${fBase}%`)
-            .maybeSingle();
-          if (fProfile?.id) {
-            resolvedFreelancerId = fProfile.id;
-            if (fProfile.email && (!freelancer.email || freelancer.email.includes("@milestoneos.link"))) {
-              freelancer.email = fProfile.email;
+      // Resolve Freelancer UUID
+      if (!resolvedFreelancerId) {
+        if (freelancer?.email && !freelancer.email.includes("@milestoneos.link")) {
+          try {
+            const { data: fProfile } = await supabase.from("profiles").select("id, email, full_name").eq("email", freelancer.email.toLowerCase()).maybeSingle();
+            if (fProfile?.id) resolvedFreelancerId = fProfile.id;
+          } catch (_) {}
+        }
+        if (!resolvedFreelancerId && freelancer?.milestoneOSId) {
+          const fBase = extractBaseCode(freelancer.milestoneOSId);
+          try {
+            const { data: fProfile } = await supabase
+              .from("profiles")
+              .select("id, email, full_name")
+              .ilike("milestone_os_id", `%${fBase}%`)
+              .maybeSingle();
+            if (fProfile?.id) {
+              resolvedFreelancerId = fProfile.id;
+              if (fProfile.email && (!freelancer.email || freelancer.email.includes("@milestoneos.link"))) {
+                freelancer.email = fProfile.email;
+              }
             }
-          }
-        } catch (_) {}
+          } catch (_) {}
+        }
       }
-      if (!resolvedClientId && client?.milestoneOSId) {
-        const cBase = extractBaseCode(client.milestoneOSId);
-        try {
-          const { data: cProfile } = await supabase
-            .from("profiles")
-            .select("id, email, full_name")
-            .ilike("milestone_os_id", `%${cBase}%`)
-            .maybeSingle();
-          if (cProfile?.id) {
-            resolvedClientId = cProfile.id;
-            if (cProfile.email && (!client.email || client.email.includes("@milestoneos.link"))) {
-              client.email = cProfile.email;
+
+      // Resolve Client UUID
+      if (!resolvedClientId) {
+        if (client?.email && !client.email.includes("@milestoneos.link")) {
+          try {
+            const { data: cProfile } = await supabase.from("profiles").select("id, email, full_name").eq("email", client.email.toLowerCase()).maybeSingle();
+            if (cProfile?.id) resolvedClientId = cProfile.id;
+          } catch (_) {}
+        }
+        if (!resolvedClientId && client?.milestoneOSId) {
+          const cBase = extractBaseCode(client.milestoneOSId);
+          try {
+            const { data: cProfile } = await supabase
+              .from("profiles")
+              .select("id, email, full_name")
+              .ilike("milestone_os_id", `%${cBase}%`)
+              .maybeSingle();
+            if (cProfile?.id) {
+              resolvedClientId = cProfile.id;
+              if (cProfile.email && (!client.email || client.email.includes("@milestoneos.link"))) {
+                client.email = cProfile.email;
+              }
             }
-          }
-        } catch (_) {}
+          } catch (_) {}
+        }
       }
     }
 
     if (initiatedBy === "client") {
-      resolvedClientId = resolvedClientId || effectiveCreatorId;
+      resolvedClientId = resolvedClientId || (isValidUUID(effectiveCreatorId) ? effectiveCreatorId : null);
     } else {
-      resolvedFreelancerId = resolvedFreelancerId || effectiveCreatorId;
+      resolvedFreelancerId = resolvedFreelancerId || (isValidUUID(effectiveCreatorId) ? effectiveCreatorId : null);
     }
 
     const newProject: ProjectContract = {

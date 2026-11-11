@@ -297,7 +297,7 @@ export function DashboardProvider({
 
     return {
       client: {
-        id: authUser?.id || "usr_client",
+        id: authUser?.id || "",
         baseCode,
         clientId,
         freelancerId,
@@ -308,7 +308,7 @@ export function DashboardProvider({
         company: authUser?.company || "Client",
       },
       freelancer: {
-        id: authUser?.id || "usr_freelancer",
+        id: authUser?.id || "",
         baseCode,
         clientId,
         freelancerId,
@@ -779,6 +779,7 @@ export function DashboardProvider({
             const rolesList =
               profileRecord?.roles || (roleVal === "both" ? ["client", "freelancer"] : [roleVal]);
 
+            const primaryMsoId = roleVal === "freelancer" ? freelancerId : clientId;
             const resolvedUser: AuthenticatedUser = {
               id: user.id,
               name: actualName,
@@ -787,7 +788,7 @@ export function DashboardProvider({
               baseCode,
               clientId,
               freelancerId,
-              milestoneOSId: clientId,
+              milestoneOSId: primaryMsoId,
               company: profileRecord?.company || userMeta.company || "",
               title: profileRecord?.title || userMeta.title || "",
               role: roleVal,
@@ -799,9 +800,14 @@ export function DashboardProvider({
               localStorage.setItem(STORAGE_KEYS.ACTIVE_USER, JSON.stringify(resolvedUser));
             } catch (_) {}
 
+            // Auto-align view with user's primary registered role on fresh session
+            if (initialRole !== "client" && roleVal === "freelancer") {
+              setRoleState("freelancer");
+            }
+
             // If user was not already hydrated or has changed ID, refresh now
             if (!initialUser || initialUser.id !== resolvedUser.id) {
-              refreshUserData(resolvedUser.id, resolvedUser.email, resolvedUser.milestoneOSId);
+              refreshUserData(resolvedUser.id, resolvedUser.email, primaryMsoId);
             }
           } else {
             // Unauthenticated user: fresh empty state
