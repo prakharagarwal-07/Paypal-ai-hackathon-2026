@@ -195,7 +195,7 @@ export const db = {
     const userBaseCode = extractBaseCode(userMsoId);
 
     if (userId || userEmail || userMsoId) {
-      let query = supabase.from("projects").select("*").eq("is_demo", false).order("updated_at", { ascending: false });
+      let query = supabase.from("projects").select("*").order("updated_at", { ascending: false });
       if (status) query = query.eq("status", status);
       const { data, error } = await query;
       if (error || !data) {
@@ -898,7 +898,7 @@ export const db = {
       const userProjects = await db.getProjects({ userId, userEmail });
       const userProjectIds = new Set(userProjects.map((p) => p.id));
 
-      let query = supabase.from("transactions").select("*").eq("is_demo", false).order("paid_at", { ascending: false });
+      let query = supabase.from("transactions").select("*").order("paid_at", { ascending: false });
       if (projectId) query = query.eq("project_id", projectId);
       const { data, error } = await query;
       if (error || !data) return [];

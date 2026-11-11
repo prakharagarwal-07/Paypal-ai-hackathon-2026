@@ -334,9 +334,6 @@ export function DashboardProvider({
     const uBase = extractBaseCode(uMsoId) || authUser?.baseCode?.trim().toUpperCase();
 
     return rawProjects.filter((p) => {
-      // Real registered users NEVER see demo projects
-      if (p.isDemo) return false;
-
       const clientBase = extractBaseCode(p.client?.milestoneOSId);
       const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
 
@@ -352,9 +349,12 @@ export function DashboardProvider({
         (uMsoId && p.freelancer?.milestoneOSId?.trim().toUpperCase() === uMsoId) ||
         (uBase && freelancerBase === uBase);
 
+      // User must be a direct participant (client or freelancer) to see the project
+      if (!isClient && !isFreelancer) return false;
+
       if (role === "client") return isClient;
       if (role === "freelancer") return isFreelancer;
-      return isClient || isFreelancer;
+      return true;
     });
   }, [isDemoMode, rawProjects, authUser, role]);
 

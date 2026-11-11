@@ -170,7 +170,12 @@ export async function POST(req: NextRequest) {
       invitationToken: invitationToken || `inv_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       invitationStatus: invitationStatus || "active",
       invitationExpiresAt: invitationExpiresAt || undefined,
-      isDemo: Boolean(body.isDemo),
+      isDemo: Boolean(
+        (resolvedClientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(resolvedClientId)) ||
+        (resolvedFreelancerId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(resolvedFreelancerId))
+          ? false
+          : body.isDemo
+      ),
       milestones: milestones.map((m: any, idx: number) => ({
         id: `m_${projectId}_${idx + 1}`,
         stageNumber: idx + 1,
