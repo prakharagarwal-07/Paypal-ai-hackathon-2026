@@ -488,20 +488,32 @@ export const db = {
       const { error } = await supabase.from("projects").upsert(row, { onConflict: "id" });
       if (error) {
         console.error("Supabase createProject error:", error);
+        throw new Error(`Failed to save project to Supabase: ${error.message}`);
       }
 
-      if (creatorId && isValidUUID(creatorId)) {
+      // Automatically create persistent Supabase notification for the recipient
+      const recipientId = project.initiatedBy === "client" ? project.freelancerId : project.clientId;
+      const senderName = project.initiatedBy === "client" ? project.client?.name : project.freelancer?.name;
+      const currSym = (project.currency || "USD") === "INR" ? "₹" : "$";
+      if (recipientId && isValidUUID(recipientId)) {
         try {
-          await supabase.from("project_members").upsert(
+          await supabase.from("notifications").upsert(
             {
+              id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              user_id: recipientId,
               project_id: project.id,
-              user_id: creatorId,
-              project_role: project.initiatedBy,
-              membership_status: "owner",
+              title: project.initiatedBy === "client" ? "Project Assignment Received" : "Incoming Project Proposal",
+              message: `${senderName || "Counterparty"} sent you a project proposal: "${project.title}" (${currSym}${project.totalBudget.toLocaleString()} ${project.currency || "USD"}). Review to accept.`,
+              type: "proposal",
+              unread: true,
+              is_demo: Boolean(project.isDemo),
+              created_at: new Date().toISOString(),
             },
-            { onConflict: "project_id,user_id,project_role" }
+            { onConflict: "id" }
           );
-        } catch (_) {}
+        } catch (notifErr) {
+          console.warn("Could not insert recipient notification:", notifErr);
+        }
       }
     }
 
@@ -575,23 +587,35 @@ export const db = {
     project.activityLog.unshift(activity);
 
     const row = projectToRow(project);
-    await supabase.from("projects").upsert(row, { onConflict: "id" });
+    const { error: updateError } = await supabase.from("projects").upsert(row, { onConflict: "id" });
+    if (updateError) {
+      console.error("Supabase updateProjectStatus error:", updateError);
+      throw new Error(`Failed to update project status in Supabase: ${updateError.message}`);
+    }
+
+    // Mark previous proposal notifications for this project as read
+    try {
+      await supabase
+        .from("notifications")
+        .update({ unread: false })
+        .eq("project_id", project.id);
+    } catch (_) {}
 
     // Notify the proposer of the decision
     const proposerId = project.initiatedBy === "client" ? project.clientId : project.freelancerId;
     if (proposerId) {
       const notif: NotificationItem = {
-        id: `notif_${Date.now()}`,
+        id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         timestamp: "Just now",
         title:
           status === "active"
-            ? "Proposal Accepted!"
+            ? "Proposal Accepted & Contract Active!"
             : status === "changes_requested"
             ? "Proposal Changes Requested"
             : "Proposal Declined",
         message:
           status === "active"
-            ? `${actorName} accepted your project proposal for "${project.title}". Milestone 01 is now in progress!`
+            ? `${actorName} accepted your project proposal for "${project.title}". Milestone 01 is now active!`
             : `${actorName} responded to your proposal for "${project.title}".`,
         type: status === "active" ? "approval" : "proposal",
         unread: true,
@@ -1022,5 +1046,19 @@ export const db = {
       } catch (_) {}
     }
     return item;
+  },
+
+  async markNotificationRead(id: string): Promise<boolean> {
+    const supabase = getServerSupabase();
+    if (!supabase) return false;
+    const { error } = await supabase.from("notifications").update({ unread: false }).eq("id", id);
+    return !error;
+  },
+
+  async markAllNotificationsRead(userId: string): Promise<boolean> {
+    const supabase = getServerSupabase();
+    if (!supabase) return false;
+    const { error } = await supabase.from("notifications").update({ unread: false }).eq("user_id", userId);
+    return !error;
   },
 };

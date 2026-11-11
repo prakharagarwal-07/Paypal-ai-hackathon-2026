@@ -399,8 +399,142 @@ async function runAllTests() {
     genTx
   );
 
+  // --------------------------------------------------------------------------
+  // SCENARIO I: Client-Initiated Project Request to Freelancer (Bidirectional Workflow)
+  // --------------------------------------------------------------------------
+  console.log("\n▶ SCENARIO I: Client -> Freelancer Bidirectional Request & Acceptance");
+  const testIId = `proj_test_scen_i_${Date.now()}`;
+
+  // 1. Client Prakhar initiates request to Freelancer Rohan
+  const createIRes = await fetch(`${APP_URL}/api/projects`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id: testIId,
+      title: "Client-Initiated AI Gateway Build",
+      description: "Custom AI Gateway with load balancing and routing.",
+      category: "Full-Stack Development",
+      targetDeadline: "Jan 30, 2027",
+      initiatedBy: "client",
+      clientId: CLIENT_PRAKHAR.id,
+      freelancerId: FREELANCER_ROHAN.id,
+      client: {
+        id: CLIENT_PRAKHAR.id,
+        name: CLIENT_PRAKHAR.name,
+        email: CLIENT_PRAKHAR.email,
+        milestoneOSId: CLIENT_PRAKHAR.msoId,
+      },
+      freelancer: {
+        id: FREELANCER_ROHAN.id,
+        name: FREELANCER_ROHAN.name,
+        email: FREELANCER_ROHAN.email,
+        milestoneOSId: FREELANCER_ROHAN.msoId,
+      },
+      milestones: [
+        {
+          id: `ms_i_1_${Date.now()}`,
+          stageNumber: 1,
+          title: "Gateway Infrastructure",
+          amount: 1200,
+          currency: "USD",
+          status: "not_started",
+          acceptanceCriteria: [{ title: "Verified proxy endpoints" }],
+        },
+      ],
+    }),
+  });
+
+  const createIData = await createIRes.json();
+  const actualIId = createIData.project?.id || testIId;
+  assert(createIRes.ok && createIData.success, "19. Client successfully initiates project request to Freelancer", createIData);
+
+  // 2. Verify Supabase record has correct participant UUIDs and client initiator
+  const { data: dbProjI } = await supabase.from("projects").select("*").eq("id", actualIId).single();
+  assert(
+    dbProjI &&
+      dbProjI.status === "awaiting_acceptance" &&
+      dbProjI.initiated_by === "client" &&
+      dbProjI.client_id === CLIENT_PRAKHAR.id &&
+      dbProjI.freelancer_id === FREELANCER_ROHAN.id,
+    "20. Supabase stores client-initiated request with correct client_id, freelancer_id and initiated_by='client'"
+  );
+
+  // 3. Verify recipient Freelancer Rohan receives a persistent Supabase notification
+  const notifRes = await fetch(`${APP_URL}/api/notifications?userId=${FREELANCER_ROHAN.id}`);
+  const notifData = await notifRes.json();
+  const foundNotif = notifData.notifications?.some((n: any) => n.projectId === actualIId || n.project_id === actualIId);
+  assert(foundNotif, "21. Recipient Freelancer receives persistent notification in Supabase for the incoming request");
+
+  // 4. Freelancer Rohan queries incoming requests
+  const freelancerPendingRes = await fetch(
+    `${APP_URL}/api/projects?userId=${FREELANCER_ROHAN.id}&userEmail=${FREELANCER_ROHAN.email}`
+  );
+  const freelancerPendingData = await freelancerPendingRes.json();
+  const foundInFreelancerPending = freelancerPendingData.projects?.some((p: any) => p.id === actualIId);
+  assert(foundInFreelancerPending, "22. Recipient Freelancer sees incoming client request in dashboard query");
+
+  // 5. Client Proposer CANNOT accept own request
+  const clientSelfAcceptRes = await fetch(`${APP_URL}/api/projects/${actualIId}/proposals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "accept",
+      userId: CLIENT_PRAKHAR.id,
+      userEmail: CLIENT_PRAKHAR.email,
+    }),
+  });
+  assert(
+    clientSelfAcceptRes.status === 403,
+    `23. Server blocks Client proposer from accepting own request (status: ${clientSelfAcceptRes.status})`
+  );
+
+  // 6. Recipient Freelancer Rohan accepts the client's request
+  const acceptIRes = await fetch(`${APP_URL}/api/projects/${actualIId}/proposals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "accept",
+      userId: FREELANCER_ROHAN.id,
+      userEmail: FREELANCER_ROHAN.email,
+    }),
+  });
+  const acceptIData = await acceptIRes.json();
+  assert(acceptIRes.ok && acceptIData.success, "24. Freelancer successfully accepts client-initiated request", acceptIData);
+
+  // 7. Verify atomic update in Supabase
+  const { data: dbAcceptedI } = await supabase.from("projects").select("*").eq("id", actualIId).single();
+  assert(
+    dbAcceptedI &&
+      dbAcceptedI.status === "active" &&
+      dbAcceptedI.proposal_status === "accepted" &&
+      dbAcceptedI.terms_agreed === true,
+    "25. Supabase atomically updates client-initiated project to status='active' and proposal_status='accepted'"
+  );
+
+  // 8. Both Client and Freelancer see the accepted contract in active projects
+  const clientActiveRes = await fetch(`${APP_URL}/api/projects?userId=${CLIENT_PRAKHAR.id}`);
+  const freelancerActiveRes = await fetch(`${APP_URL}/api/projects?userId=${FREELANCER_ROHAN.id}`);
+  const clientActiveData = await clientActiveRes.json();
+  const freelancerActiveData = await freelancerActiveRes.json();
+
+  const clientSeesI = clientActiveData.projects?.some((p: any) => p.id === actualIId && p.status === "active");
+  const freelancerSeesI = freelancerActiveData.projects?.some((p: any) => p.id === actualIId && p.status === "active");
+  assert(
+    clientSeesI && freelancerSeesI,
+    "26. Both Client and Freelancer see the identical accepted contract in active projects"
+  );
+
+  // 9. Page refresh / refetch persistence check
+  const refetchRes = await fetch(`${APP_URL}/api/projects/${actualIId}`);
+  const refetchData = await refetchRes.json();
+  assert(
+    refetchData.success && refetchData.project?.status === "active" && refetchData.project?.id === actualIId,
+    "27. Refresh/refetch retains persistent project ID and active contract state"
+  );
+
   // Clean up temporary test projects
-  await supabase.from("projects").delete().in("id", [actualAId, actualBId, actualCId, actualDId]);
+  await supabase.from("projects").delete().in("id", [actualAId, actualBId, actualCId, actualDId, actualIId]);
+  await supabase.from("notifications").delete().in("project_id", [actualAId, actualBId, actualCId, actualDId, actualIId]);
 
   console.log("\n==================================================================");
   console.log(`   INTEGRATION TEST RESULTS: ${passedTests} / ${totalTests} PASSED   `);

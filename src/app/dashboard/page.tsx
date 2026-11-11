@@ -470,7 +470,8 @@ function DashboardInner() {
 
 function DashboardContent() {
   const searchParams = useSearchParams();
-  const initialRole = searchParams.get("role") === "freelancer" ? "freelancer" : "client";
+  const roleParam = searchParams.get("role");
+  const initialRole = roleParam === "freelancer" ? "freelancer" : roleParam === "client" ? "client" : undefined;
   const isDemo = searchParams.get("demo") === "true";
 
   return (

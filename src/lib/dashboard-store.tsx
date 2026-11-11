@@ -266,7 +266,7 @@ export function DashboardProvider({
   initialRole?: "client" | "freelancer";
   isDemoFromUrl?: boolean;
 }) {
-  const [role, setRoleState] = useState<"client" | "freelancer">(initialRole);
+  const [role, setRoleState] = useState<"client" | "freelancer">(initialRole || "client");
   const [activeTab, setActiveTabState] = useState<DashboardTab>("dashboard");
   const [isDemoMode, setIsDemoModeState] = useState<boolean>(false);
   const [authUser, setAuthUser] = useState<AuthenticatedUser | null>(null);
@@ -350,13 +350,9 @@ export function DashboardProvider({
         (uBase && freelancerBase === uBase);
 
       // User must be a direct participant (client or freelancer) to see the project
-      if (!isClient && !isFreelancer) return false;
-
-      if (role === "client") return isClient;
-      if (role === "freelancer") return isFreelancer;
-      return true;
+      return isClient || isFreelancer;
     });
-  }, [isDemoMode, rawProjects, authUser, role]);
+  }, [isDemoMode, rawProjects, authUser]);
 
   const activeProject = useMemo(() => {
     if (!projects || projects.length === 0) return undefined;
@@ -534,12 +530,15 @@ export function DashboardProvider({
 
     try {
       const msoParam = authUser.milestoneOSId ? `&milestoneOSId=${encodeURIComponent(authUser.milestoneOSId)}` : "";
-      const [pRes, tRes] = await Promise.all([
+      const [pRes, tRes, nRes] = await Promise.all([
         fetch(
           `/api/projects?userId=${encodeURIComponent(authUser.id)}&userEmail=${encodeURIComponent(authUser.email)}${msoParam}`
         ).then((r) => r.json()).catch(() => ({})),
         fetch(
           `/api/transactions?userId=${encodeURIComponent(authUser.id)}&userEmail=${encodeURIComponent(authUser.email)}`
+        ).then((r) => r.json()).catch(() => ({})),
+        fetch(
+          `/api/notifications?userId=${encodeURIComponent(authUser.id)}`
         ).then((r) => r.json()).catch(() => ({})),
       ]);
 
@@ -559,6 +558,10 @@ export function DashboardProvider({
         } catch (_) {}
       } else {
         setTransactions([]);
+      }
+
+      if (nRes?.success && Array.isArray(nRes.notifications)) {
+        setNotifications(nRes.notifications);
       }
     } catch (err) {
       console.warn("Could not fetch user projects/transactions:", err);
@@ -697,7 +700,7 @@ export function DashboardProvider({
       const refreshUserData = async (uId: string, uEmail: string, uMsoId?: string) => {
         try {
           const msoParam = uMsoId ? `&milestoneOSId=${encodeURIComponent(uMsoId)}` : "";
-          const [pData, tData] = await Promise.all([
+          const [pData, tData, nData] = await Promise.all([
             fetch(
               `/api/projects?userId=${encodeURIComponent(uId)}&userEmail=${encodeURIComponent(uEmail)}${msoParam}`
             )
@@ -705,6 +708,11 @@ export function DashboardProvider({
               .catch(() => ({})),
             fetch(
               `/api/transactions?userId=${encodeURIComponent(uId)}&userEmail=${encodeURIComponent(uEmail)}`
+            )
+              .then((r) => r.json())
+              .catch(() => ({})),
+            fetch(
+              `/api/notifications?userId=${encodeURIComponent(uId)}`
             )
               .then((r) => r.json())
               .catch(() => ({})),
@@ -721,6 +729,9 @@ export function DashboardProvider({
             try {
               localStorage.setItem(`milestoneos_transactions_${uId}`, JSON.stringify(tData.transactions));
             } catch (_) {}
+          }
+          if (nData?.success && Array.isArray(nData.notifications)) {
+            setNotifications(nData.notifications);
           }
         } catch (_) {}
         if (mounted) setIsLoaded(true);
@@ -784,9 +795,22 @@ export function DashboardProvider({
               localStorage.setItem(STORAGE_KEYS.ACTIVE_USER, JSON.stringify(resolvedUser));
             } catch (_) {}
 
-            // Auto-align view with user's primary registered role on fresh session
-            if (initialRole !== "client" && roleVal === "freelancer") {
-              setRoleState("freelancer");
+            // Auto-align view with user's primary registered role from Supabase
+            const urlRole = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("role") : null;
+            if (!urlRole) {
+              if (roleVal === "freelancer") {
+                setRoleState("freelancer");
+                try {
+                  localStorage.setItem(STORAGE_KEYS.ROLE, "freelancer");
+                } catch (_) {}
+              } else if (roleVal === "client") {
+                setRoleState("client");
+                try {
+                  localStorage.setItem(STORAGE_KEYS.ROLE, "client");
+                } catch (_) {}
+              }
+            } else if (urlRole === "client" || urlRole === "freelancer") {
+              setRoleState(urlRole);
             }
 
             // Always refresh live data for the authenticated user from Supabase
@@ -1114,97 +1138,76 @@ export function DashboardProvider({
         }),
       });
       const data = await res.json();
-      if (data.success && data.project) {
-        setRawProjects((prev) =>
-          prev.map((p) => (p.id === projectId ? data.project : p))
-        );
-        if (authUser?.id) {
-          try {
-            const current = JSON.parse(localStorage.getItem(`milestoneos_projects_${authUser.id}`) || "[]");
-            const updated = current.map((p: any) => (p.id === projectId ? data.project : p));
-            localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(updated));
-          } catch (_) {}
-        }
+      if (!res.ok || !data.success || !data.project) {
+        throw new Error(data.error || "Server failed to accept proposal");
       }
-    } catch (err) {
-      console.warn("Failed to sync proposal acceptance to API:", err);
+
+      setRawProjects((prev) =>
+        prev.map((p) => (p.id === projectId ? data.project : p))
+      );
+      if (authUser?.id) {
+        try {
+          const current = JSON.parse(localStorage.getItem(`milestoneos_projects_${authUser.id}`) || "[]");
+          const updated = current.map((p: any) => (p.id === projectId ? data.project : p));
+          localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(updated));
+        } catch (_) {}
+      }
+      showToast(`Proposal accepted! Contract "${data.project.title || projTitle}" is now active in My Projects.`, "success");
+      refreshProjects();
+    } catch (err: any) {
+      console.error("Proposal acceptance error:", err);
+      refreshProjects();
+      showToast(err.message || "Failed to accept proposal. Please try again.", "warning");
     }
-
-    showToast(`Proposal accepted! Contract "${projTitle}" is now active in My Projects.`, "success");
   };
 
-  const requestProposalChanges = (projectId: string, feedback: string) => {
-    setRawProjects((prev) =>
-      prev.map((p) => {
-        if (p.id !== projectId) return p;
-        const actorName = userProfiles[role].name;
-        const newLog: ActivityItem = {
-          id: `act_${Date.now()}`,
-          timestamp: "Just now",
-          actor: actorName,
-          actorRole: role,
-          action: `${actorName} requested changes to the project proposal terms.`,
-          details: feedback,
-        };
-        return {
-          ...p,
-          status: "changes_requested" as const,
-          proposalStatus: "changes_requested" as const,
-          proposalFeedback: feedback,
-          activityLog: [newLog, ...p.activityLog],
-        };
-      })
-    );
-
-    // Persist change request to server database & Supabase
-    fetch(`/api/projects/${projectId}/proposals`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "request_changes",
-        feedback,
-        userId: authUser?.id,
-        userEmail: authUser?.email,
-      }),
-    }).catch((err) => console.warn("Failed to sync change request to API:", err));
-
-    showToast("Feedback submitted to proposer.", "info");
+  const requestProposalChanges = async (projectId: string, feedback: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/proposals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "request_changes",
+          feedback,
+          userId: authUser?.id,
+          userEmail: authUser?.email,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to submit revision request");
+      }
+      showToast("Feedback submitted to proposer.", "info");
+      refreshProjects();
+    } catch (err: any) {
+      console.warn("Failed to sync change request to API:", err);
+      showToast(err.message || "Could not submit revision request.", "warning");
+      refreshProjects();
+    }
   };
 
-  const rejectProposal = (projectId: string, reason?: string) => {
-    setRawProjects((prev) =>
-      prev.map((p) => {
-        if (p.id !== projectId) return p;
-        const actorName = userProfiles[role].name;
-        const newLog: ActivityItem = {
-          id: `act_${Date.now()}`,
-          timestamp: "Just now",
-          actor: actorName,
-          actorRole: role,
-          action: `${actorName} declined the project proposal.`,
-          details: reason,
-        };
-        return {
-          ...p,
-          status: "rejected" as const,
-          proposalStatus: "rejected" as const,
-          activityLog: [newLog, ...p.activityLog],
-        };
-      })
-    );
-
-    // Persist rejection to server database & Supabase
-    fetch(`/api/projects/${projectId}/proposals`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "reject",
-        userId: authUser?.id,
-        userEmail: authUser?.email,
-      }),
-    }).catch((err) => console.warn("Failed to sync rejection to API:", err));
-
-    showToast("Project proposal declined.", "warning");
+  const rejectProposal = async (projectId: string, reason?: string) => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/proposals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "reject",
+          userId: authUser?.id,
+          userEmail: authUser?.email,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to decline proposal");
+      }
+      showToast("Project proposal declined.", "warning");
+      refreshProjects();
+    } catch (err: any) {
+      console.warn("Failed to sync rejection to API:", err);
+      showToast(err.message || "Could not decline proposal.", "warning");
+      refreshProjects();
+    }
   };
 
   const resubmitProposal = (projectId: string, updatedData: Partial<ProjectContract>) => {
@@ -1940,10 +1943,22 @@ export function DashboardProvider({
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
     );
+    fetch("/api/notifications", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    }).catch(() => {});
   };
 
   const clearAllNotifications = () => {
     setNotifications([]);
+    if (authUser?.id) {
+      fetch("/api/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true, userId: authUser.id }),
+      }).catch(() => {});
+    }
   };
 
   const resetToFactoryDefaults = () => {

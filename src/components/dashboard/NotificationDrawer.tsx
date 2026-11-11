@@ -36,19 +36,29 @@ export default function NotificationDrawer({
     setActiveProjectId,
     setActiveTab,
     projects,
+    authUser,
   } = useDashboard();
 
   if (!isOpen) return null;
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
-  const handleNotificationClick = (notif: (typeof notifications)[0]) => {
+  const handleNotificationClick = async (notif: (typeof notifications)[0]) => {
     markNotificationRead(notif.id);
     const isProposal =
       notif.type === "proposal" ||
       notif.title.toLowerCase().includes("proposal");
 
-    const project = notif.projectId ? projects.find((p) => p.id === notif.projectId) : null;
+    let project = notif.projectId ? projects.find((p) => p.id === notif.projectId) : null;
+    if (!project && notif.projectId) {
+      try {
+        const res = await fetch(`/api/projects/${notif.projectId}?userId=${encodeURIComponent(authUser?.id || "")}`);
+        const data = await res.json();
+        if (data.success && data.project) {
+          project = data.project;
+        }
+      } catch (_) {}
+    }
 
     if (isProposal && project && onOpenProposal) {
       onOpenProposal(project);

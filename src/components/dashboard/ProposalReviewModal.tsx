@@ -32,7 +32,7 @@ export default function ProposalReviewModal({
   onClose,
   onOpenRevision,
 }: ProposalReviewModalProps) {
-  const { role, userProfiles, acceptProposal, requestProposalChanges, rejectProposal, showConfirm } =
+  const { role, userProfiles, acceptProposal, requestProposalChanges, rejectProposal, showConfirm, authUser } =
     useDashboard();
 
   const [isRequestingChanges, setIsRequestingChanges] = useState(false);
@@ -41,7 +41,27 @@ export default function ProposalReviewModal({
 
   if (!isOpen || !project) return null;
 
-  const isSender = role === project.initiatedBy;
+  const myId = authUser?.id;
+  const myEmail = authUser?.email?.trim().toLowerCase();
+
+  const isClientProposer = project.initiatedBy === "client";
+  const proposerId = isClientProposer ? (project.clientId || project.client?.id) : (project.freelancerId || project.freelancer?.id);
+  const proposerEmail = (isClientProposer ? project.client?.email : project.freelancer?.email)?.trim().toLowerCase();
+  const recipientId = isClientProposer ? (project.freelancerId || project.freelancer?.id) : (project.clientId || project.client?.id);
+  const recipientEmail = (isClientProposer ? project.freelancer?.email : project.client?.email)?.trim().toLowerCase();
+
+  const isRecipient = Boolean(
+    (myId && (recipientId === myId)) ||
+    (myEmail && (recipientEmail === myEmail)) ||
+    (!myId && role !== project.initiatedBy)
+  );
+
+  const isSender = Boolean(
+    (myId && proposerId === myId) ||
+    (myEmail && proposerEmail === myEmail) ||
+    (!isRecipient && role === project.initiatedBy)
+  );
+
   const senderName = project.initiatedBy === "client" ? project.client.name : project.freelancer.name;
   const senderRole = project.initiatedBy === "client" ? "Client" : "Freelancer";
   const senderOrgOrTitle =

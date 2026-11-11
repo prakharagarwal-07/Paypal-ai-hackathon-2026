@@ -33,26 +33,40 @@ export default function ProjectRequestsView({
   onOpenRevision,
   onSelectProject,
 }: ProjectRequestsViewProps) {
-  const { role, projects, searchQuery, revokeInvitation, showConfirm } = useDashboard();
+  const { role, projects, searchQuery, revokeInvitation, showConfirm, authUser } = useDashboard();
 
   const [activeTab, setActiveTab] = useState<"incoming" | "sent">("incoming");
   const [selectedReviewProject, setSelectedReviewProject] = useState<ProjectContract | null>(null);
   const [selectedShareProject, setSelectedShareProject] = useState<ProjectContract | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
-  // Incoming Requests: proposals where current role is recipient
+  const myId = authUser?.id;
+  const myEmail = authUser?.email?.trim().toLowerCase();
+
+  // Incoming Requests: proposals where current user/role is the designated recipient
   const incomingRequests = projects.filter((p) => {
-    const isIncoming = p.initiatedBy !== role;
     const isProposalStatus =
       p.status === "awaiting_acceptance" ||
       p.status === "changes_requested" ||
       p.status === "rejected";
-    return isIncoming && isProposalStatus;
+    if (!isProposalStatus) return false;
+
+    // Direct recipient check:
+    if (p.initiatedBy === "client") {
+      // Initiated by client -> Recipient is the freelancer
+      if (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) return true;
+      if (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail) return true;
+      return role === "freelancer";
+    } else {
+      // Initiated by freelancer -> Recipient is the client
+      if (myId && (p.clientId === myId || p.client?.id === myId)) return true;
+      if (myEmail && p.client?.email?.trim().toLowerCase() === myEmail) return true;
+      return role === "client";
+    }
   });
 
-  // Sent Proposals: proposals initiated by current role
+  // Sent Proposals: proposals initiated by current user/role
   const sentProposals = projects.filter((p) => {
-    const isSent = p.initiatedBy === role;
     const isProposalOrRecent =
       p.status === "awaiting_acceptance" ||
       p.status === "changes_requested" ||
@@ -60,7 +74,18 @@ export default function ProjectRequestsView({
       p.status === "rejected" ||
       p.status === "accepted" ||
       (p.status === "active" && p.proposalStatus === "accepted");
-    return isSent && isProposalOrRecent;
+    if (!isProposalOrRecent) return false;
+
+    // Direct proposer check:
+    if (p.initiatedBy === "client") {
+      if (myId && (p.clientId === myId || p.client?.id === myId)) return true;
+      if (myEmail && p.client?.email?.trim().toLowerCase() === myEmail) return true;
+      return role === "client";
+    } else {
+      if (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) return true;
+      if (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail) return true;
+      return role === "freelancer";
+    }
   });
 
   const incomingActionCount = incomingRequests.filter((p) => p.status === "awaiting_acceptance").length;
