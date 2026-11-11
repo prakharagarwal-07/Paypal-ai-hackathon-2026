@@ -364,8 +364,8 @@ export default function Sidebar({
                   </p>
                   <span className="text-[10px] text-slate-400 block truncate">
                     {role === "client"
-                      ? (currentProfile as any).company || "Client View"
-                      : (currentProfile as any).title || "Freelancer View"}
+                      ? (currentProfile as any).company || "Client"
+                      : (currentProfile as any).title || "Freelancer"}
                   </span>
                 </div>
               </button>

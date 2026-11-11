@@ -124,7 +124,7 @@ interface DashboardContextType {
   setRole: (role: "client" | "freelancer") => void;
   userProfiles: UserProfiles;
   updateUserProfile: (
-    role: "client" | "freelancer",
+    role: "client" | "freelancer" | "both",
     data: Partial<{ name: string; email: string; company?: string; title?: string }>
   ) => void;
   activeTab: DashboardTab;
@@ -300,7 +300,7 @@ export function DashboardProvider({
         name: currentName,
         email: currentEmail,
         avatar: currentAvatar,
-        company: authUser?.company || "Client Organization",
+        company: authUser?.company || "Client",
       },
       freelancer: {
         id: authUser?.id || "usr_freelancer",
@@ -311,7 +311,7 @@ export function DashboardProvider({
         name: currentName,
         email: currentEmail,
         avatar: currentAvatar,
-        title: authUser?.title || "Specialist Freelancer",
+        title: authUser?.title || "Freelancer",
         rating: 5.0,
       },
     };
@@ -524,15 +524,17 @@ export function DashboardProvider({
   };
 
   const updateUserProfile = (
-    profileRole: "client" | "freelancer",
+    profileRole: "client" | "freelancer" | "both",
     data: Partial<{ name: string; email: string; company?: string; title?: string }>
   ) => {
     if (!authUser) return;
 
-    const newName = data.name || authUser.name;
-    const newEmail = data.email || authUser.email;
+    const newName = data.name !== undefined ? data.name : authUser.name;
+    const newEmail = data.email !== undefined ? data.email : authUser.email;
     const initials = newName
+      .trim()
       .split(" ")
+      .filter(Boolean)
       .map((n) => n[0])
       .join("")
       .toUpperCase()
@@ -543,8 +545,8 @@ export function DashboardProvider({
       name: newName,
       email: newEmail,
       avatar: initials || authUser.avatar,
-      company: profileRole === "client" ? data.company ?? authUser.company : authUser.company,
-      title: profileRole === "freelancer" ? data.title ?? authUser.title : authUser.title,
+      company: data.company !== undefined ? data.company : authUser.company,
+      title: data.title !== undefined ? data.title : authUser.title,
     };
 
     setAuthUser(updatedUser);
