@@ -115,17 +115,18 @@ function DashboardInner() {
           colors={["#0070BA", "#00457C", "#009CDE", "#38BDF8", "#00E599"]}
           coreColor="#FFFFFF"
           lightMode={false}
-          threadCount={6}
-          speed={0.09}
-          frequency={3.0}
-          spread={0.22}
+          threadCount={4}
+          speed={0.07}
+          frequency={2.8}
+          spread={0.2}
           position={0.5}
-          glow={0.012}
-          brightness={0.6}
-          thickness={0.8}
+          glow={0.01}
+          brightness={0.55}
+          thickness={0.75}
           fade={0.015}
           mouseInteraction={true}
           pulseOnClick={false}
+          dpr={1}
         />
       </div>
 

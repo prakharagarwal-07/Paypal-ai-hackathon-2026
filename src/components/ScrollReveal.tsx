@@ -85,12 +85,12 @@ export default function ScrollReveal({
       style={{
         opacity: isVisible ? 1 : 0,
         transform: getTransform(),
-        filter: isVisible ? "blur(0px)" : "blur(4px)",
+        filter: isVisible ? "none" : "blur(4px)",
         transitionProperty: "opacity, transform, filter",
         transitionDuration: `${duration}ms`,
         transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)", // smooth spring ease
         transitionDelay: `${delay}ms`,
-        willChange: "opacity, transform, filter",
+        willChange: isVisible ? "auto" : "opacity, transform",
       }}
     >
       {children}

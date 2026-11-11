@@ -12,9 +12,18 @@ export default function HeroTextFlyIn() {
       setHasEntered(true);
     }, 80);
 
-    // Scroll listener for dynamic parallax
+    // Throttled scroll listener using requestAnimationFrame for optimal FPS
+    let ticking = false;
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          if (window.scrollY < 700) {
+            setScrollY(window.scrollY);
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });

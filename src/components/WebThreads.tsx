@@ -364,7 +364,7 @@ export default function WebThreads({
   mouseStrength = 0.5,
   pulseOnClick = true,
   paused = false,
-  dpr = 2,
+  dpr = 1,
   className = '',
   style
 }: WebThreadsProps) {
@@ -411,7 +411,7 @@ export default function WebThreads({
     mouseStrength: clamp(mouseStrength, 0, 1),
     pulseOnClick,
     paused,
-    dpr: Math.max(0.5, dpr)
+    dpr: clamp(dpr, 0.5, 1.25)
   };
   const settingsRef = useRef(settings);
   settingsRef.current = settings;
@@ -521,6 +521,8 @@ export default function WebThreads({
       surges: { x: number; direction: number; at: number }[];
       quiet: number;
       seen: any;
+      cachedRect: DOMRect | null;
+      lastFrameTime: number;
     } = {
       width: 1,
       height: 1,
@@ -537,14 +539,17 @@ export default function WebThreads({
       target: -1,
       surges: [],
       quiet: 0,
-      seen: null
+      seen: null,
+      cachedRect: null,
+      lastFrameTime: 0
     };
 
     const resize = () => {
       const s = settingsRef.current;
       const ratio = Math.min(window.devicePixelRatio || 1, s.dpr);
-      const width = Math.max(1, Math.round(container.clientWidth * ratio));
-      const height = Math.max(1, Math.round(container.clientHeight * ratio));
+      state.cachedRect = container.getBoundingClientRect();
+      const width = Math.max(1, Math.round(state.cachedRect.width * ratio));
+      const height = Math.max(1, Math.round(state.cachedRect.height * ratio));
       if (width === state.width && height === state.height) return;
       state.quiet = 0;
       state.width = width;
@@ -643,8 +648,15 @@ export default function WebThreads({
         state.last = now;
         return;
       }
+
+      // Smooth frame-rate cap (~60 FPS) to prevent 120Hz/144Hz GPU overload on background ambient graphics
+      if (now - state.lastFrameTime < 16) {
+        return;
+      }
+      state.lastFrameTime = now;
+
       const s = settingsRef.current;
-      const dt = state.last ? Math.min((now - state.last) / 1000, 0.1) : 1 / 60;
+      const dt = state.last ? Math.min((now - state.last) / 1000, 0.05) : 1 / 60;
       state.last = now;
       const reduced = prefersReduced();
       state.clock += dt;
@@ -663,12 +675,12 @@ export default function WebThreads({
       state.seen = s;
       if (state.quiet > 3) return;
 
-      resize();
+      // Note: resize() is managed by ResizeObserver, NOT inside per-frame tick (prevents synchronous layout reflow)
       render(reduced);
     };
 
     const local = (event: PointerEvent) => {
-      const rect = container.getBoundingClientRect();
+      const rect = state.cachedRect || container.getBoundingClientRect();
       return {
         x: (event.clientX - rect.left) / Math.max(rect.width, 1),
         y: (event.clientY - rect.top) / Math.max(rect.height, 1),
@@ -680,7 +692,11 @@ export default function WebThreads({
       };
     };
 
+    let lastMoveTime = 0;
     const onMove = (event: PointerEvent) => {
+      const now = performance.now();
+      if (now - lastMoveTime < 16) return;
+      lastMoveTime = now;
       const point = local(event);
       state.inside = point.inside;
       if (point.inside) state.pointer = [point.x, point.y];
