@@ -480,19 +480,6 @@ export interface MilestoneOSUser {
 
 export const MILESTONEOS_DIRECTORY: MilestoneOSUser[] = [
   {
-    id: "usr_client_sarah",
-    baseCode: "7K4P92",
-    clientId: "CL-7K4P92",
-    freelancerId: "FL-7K4P92",
-    milestoneOSId: "CL-7K4P92",
-    name: "Sarah Chen",
-    email: "sarah.chen@apexcommerce.com",
-    avatar: "SC",
-    role: "both",
-    company: "Apex Commerce",
-    title: "Senior Product Architect & Consultant",
-  },
-  {
     id: "usr_client_david",
     baseCode: "3X9M55",
     clientId: "CL-3X9M55",
@@ -586,14 +573,14 @@ export function lookupMilestoneOSUser(queryId: string, expectedRole?: "client" |
 
 export const CLIENT_OPTIONS = [
   {
-    id: "usr_client_sarah",
-    milestoneOSId: "CL-7K4P92",
-    baseCode: "7K4P92",
-    name: "Sarah Chen",
-    email: "sarah.chen@apexcommerce.com",
-    avatar: "SC",
-    company: "Apex Commerce",
-    title: "Senior Product Architect & Consultant",
+    id: "253b60b8-a9e0-4d3d-96af-618f78c1bf80",
+    milestoneOSId: "CL-2W8L41",
+    baseCode: "2W8L41",
+    name: "Rohan Verma",
+    email: "rohan.verma@craftdev.io",
+    avatar: "RV",
+    company: "CraftDev Engineering",
+    title: "Senior Full-Stack Engineer",
   },
   {
     id: "usr_client_david",

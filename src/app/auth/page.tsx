@@ -127,10 +127,12 @@ function AuthForm() {
     setErrorMsg(null);
     setSuccessMsg(null);
 
-    const demoUser =
-      demoRole === "client"
-        ? { name: "Sarah Chen", email: "sarah.chen@apexcommerce.com", id: "MSO-7K4P92", password: "Password123!" }
-        : { name: "Rohan Verma", email: "rohan.verma@craftdev.io", id: "MSO-2W8L41", password: "Password123!" };
+    const demoUser = {
+      name: "Rohan Verma",
+      email: "rohan.verma@craftdev.io",
+      id: demoRole === "client" ? "CL-2W8L41" : "FL-2W8L41",
+      password: "Password123!",
+    };
 
     const supabaseClient = getSupabaseClient();
     if (supabaseClient) {
@@ -143,7 +145,7 @@ function AuthForm() {
         if (!error && data.user) {
           const userMeta = data.user.user_metadata || {};
           const userName = userMeta.name || demoUser.name;
-          const userMsoId = userMeta.milestoneOSId || demoUser.id;
+          const userMsoId = demoRole === "client" ? "CL-2W8L41" : "FL-2W8L41";
 
           localStorage.removeItem("milestoneos_demo_mode");
           syncLocalProfile(userName, demoUser.email, userMsoId, demoRole);
@@ -409,17 +411,17 @@ function AuthForm() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
                     <User className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
-                    <span>Sarah Chen</span>
+                    <span>Rohan Verma (Client)</span>
                   </span>
                   {demoPerspective === "client" && (
                     <span className="h-1.5 w-1.5 rounded-full bg-[#0070BA] dark:bg-sky-400" />
                   )}
                 </div>
                 <span className="text-[10px] font-semibold text-[#0070BA] dark:text-sky-300 mt-0.5">
-                  Client Perspective
+                  Client Perspective • CL-2W8L41
                 </span>
                 <span className="text-[9px] text-slate-500 dark:text-slate-400">
-                  Apex Commerce • $12.5k funded
+                  CraftDev Engineering • Escrow Funding
                 </span>
               </button>
 
@@ -435,17 +437,17 @@ function AuthForm() {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1">
                     <Briefcase className="h-3 w-3 text-emerald-500 dark:text-emerald-400" />
-                    <span>Rohan Verma</span>
+                    <span>Rohan Verma (Freelancer)</span>
                   </span>
                   {demoPerspective === "freelancer" && (
                     <span className="h-1.5 w-1.5 rounded-full bg-[#0070BA] dark:bg-sky-400" />
                   )}
                 </div>
                 <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                  Freelancer Perspective
+                  Freelancer Perspective • FL-2W8L41
                 </span>
                 <span className="text-[9px] text-slate-500 dark:text-slate-400">
-                  CraftDev • AI verified audits
+                  Senior Full-Stack • AI verified audits
                 </span>
               </button>
             </div>
@@ -459,7 +461,7 @@ function AuthForm() {
             className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-300/80 bg-white hover:bg-slate-50 px-4 py-2.5 text-xs font-bold text-slate-900 shadow-xs hover:shadow transition-all hover:scale-[1.005] active:scale-[0.99] dark:border-white/15 dark:bg-white/10 dark:text-white dark:hover:bg-white/15 cursor-pointer"
           >
             <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-            <span>Explore Demo Workspace</span>
+            <span>Explore Demo Workspace as Rohan Verma ({demoPerspective === "client" ? "Client" : "Freelancer"})</span>
             <ArrowRight className="h-3.5 w-3.5 text-slate-400 dark:text-slate-300" />
           </button>
         </div>

@@ -83,18 +83,18 @@ export interface AuthenticatedUser {
 
 export const DEFAULT_USER_PROFILES: UserProfiles = {
   client: {
-    id: "usr_client_sarah",
-    baseCode: "7K4P92",
-    clientId: "CL-7K4P92",
-    freelancerId: "FL-7K4P92",
-    milestoneOSId: "CL-7K4P92",
-    name: "Sarah Chen",
-    email: "sarah.chen@apexcommerce.com",
-    avatar: "SC",
-    company: "Apex Commerce",
+    id: "253b60b8-a9e0-4d3d-96af-618f78c1bf80",
+    baseCode: "2W8L41",
+    clientId: "CL-2W8L41",
+    freelancerId: "FL-2W8L41",
+    milestoneOSId: "CL-2W8L41",
+    name: "Rohan Verma",
+    email: "rohan.verma@craftdev.io",
+    avatar: "RV",
+    company: "CraftDev Engineering",
   },
   freelancer: {
-    id: "usr_dev_rohan",
+    id: "253b60b8-a9e0-4d3d-96af-618f78c1bf80",
     baseCode: "2W8L41",
     clientId: "CL-2W8L41",
     freelancerId: "FL-2W8L41",
@@ -328,10 +328,20 @@ export function DashboardProvider({
       const demos = rawProjects.filter((p) => Boolean(p.isDemo));
       return demos.filter((p) => {
         if (role === "client") {
-          return p.client?.milestoneOSId === "CL-7K4P92" || p.client?.name === "Sarah Chen";
+          return (
+            p.client?.milestoneOSId === "CL-2W8L41" ||
+            p.client?.id === "253b60b8-a9e0-4d3d-96af-618f78c1bf80" ||
+            p.client?.name === "Rohan Verma" ||
+            p.clientId === "253b60b8-a9e0-4d3d-96af-618f78c1bf80"
+          );
         }
         if (role === "freelancer") {
-          return p.freelancer?.milestoneOSId === "FL-2W8L41" || p.freelancer?.name === "Rohan Verma";
+          return (
+            p.freelancer?.milestoneOSId === "FL-2W8L41" ||
+            p.freelancer?.id === "253b60b8-a9e0-4d3d-96af-618f78c1bf80" ||
+            p.freelancer?.name === "Rohan Verma" ||
+            p.freelancerId === "253b60b8-a9e0-4d3d-96af-618f78c1bf80"
+          );
         }
         return true;
       });
@@ -507,7 +517,7 @@ export function DashboardProvider({
     } catch (err) {
       console.warn("Could not fetch demo data from Supabase:", err);
     }
-    showToast(`Entered Demo Sandbox as ${demoRole === "client" ? "Sarah Chen (Client)" : "Rohan Verma (Freelancer)"}`, "info");
+    showToast(`Entered Demo Sandbox as Rohan Verma (${demoRole === "client" ? "Client Perspective" : "Freelancer Perspective"})`, "info");
   };
 
   // Fetch projects from server scoped to current authenticated user or demo mode

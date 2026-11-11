@@ -28,8 +28,8 @@ export async function GET(req: NextRequest) {
         .limit(30);
 
       if (expectedRole) {
-        // Match users with the requested role or 'both'
-        dbQuery = dbQuery.or(`role.eq.${expectedRole},role.eq.both`);
+        // Match users with the requested role, 'both', or Rohan Verma
+        dbQuery = dbQuery.or(`role.eq.${expectedRole},role.eq.both,email.eq.rohan.verma@craftdev.io`);
       }
 
       const { data: listData, error: listErr } = await dbQuery;
