@@ -25,6 +25,7 @@ import {
   formatClientId,
   formatFreelancerId,
   generateInvitationToken,
+  isProjectAccepted,
 } from "@/lib/dashboard-data";
 import { CaptureOrderResult } from "./paypal";
 import { getServerSupabase } from "./supabase";
@@ -679,7 +680,9 @@ export const db = {
       return null;
     }
 
-    if (updates.amount !== undefined && updates.amount !== milestone.amount) {
+    // Milestone price is strictly immutable once contract is accepted
+    const isAccepted = isProjectAccepted(project);
+    if (!isAccepted && updates.amount !== undefined && updates.amount !== milestone.amount) {
       const diff = updates.amount - milestone.amount;
       project.totalBudget = (project.totalBudget || 0) + diff;
       milestone.amount = updates.amount;

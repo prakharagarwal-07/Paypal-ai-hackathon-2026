@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted, isProjectAccepted } from "@/lib/dashboard-data";
 import {
   ArrowLeft,
   Calendar,
@@ -747,7 +747,11 @@ export default function ProjectWorkspace({
                                     type="button"
                                     onClick={() => onOpenEditMilestone(milestone)}
                                     className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors"
-                                    title="Edit milestone title, amount, or due date"
+                                    title={
+                                      isProjectAccepted(activeProject)
+                                        ? "Edit deliverables or due date (price is locked by contract)"
+                                        : "Edit milestone title, amount, or due date"
+                                    }
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </button>
@@ -770,7 +774,11 @@ export default function ProjectWorkspace({
                                     type="button"
                                     onClick={() => onOpenEditMilestone(milestone)}
                                     className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors"
-                                    title="Edit milestone title, amount, or due date"
+                                    title={
+                                      isProjectAccepted(activeProject)
+                                        ? "Edit deliverables or due date (price is locked by contract)"
+                                        : "Edit milestone title, amount, or due date"
+                                    }
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </button>
@@ -793,7 +801,11 @@ export default function ProjectWorkspace({
                                     type="button"
                                     onClick={() => onOpenEditMilestone(milestone)}
                                     className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors"
-                                    title="Edit milestone title, amount, or due date"
+                                    title={
+                                      isProjectAccepted(activeProject)
+                                        ? "Edit deliverables or due date (price is locked by contract)"
+                                        : "Edit milestone title, amount, or due date"
+                                    }
                                   >
                                     <Pencil className="h-3.5 w-3.5" />
                                   </button>

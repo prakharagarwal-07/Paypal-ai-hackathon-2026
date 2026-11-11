@@ -1260,17 +1260,21 @@ export function DashboardProvider({
       prev.map((project) => {
         if (project.id !== projectId) return project;
 
+        const isAccepted = isProjectAccepted(project);
+        // Milestone price is strictly locked once the contract/proposal is accepted
+        const effectiveAmount = isAccepted ? undefined : updates.amount;
+
         let diff = 0;
         const updatedMilestones = project.milestones.map((m) => {
           if (m.id !== milestoneId) return m;
-          if (updates.amount !== undefined && updates.amount !== m.amount) {
-            diff = updates.amount - m.amount;
+          if (effectiveAmount !== undefined && effectiveAmount !== m.amount) {
+            diff = effectiveAmount - m.amount;
           }
           return {
             ...m,
             title: updates.title || m.title,
             description: updates.description !== undefined ? updates.description : m.description,
-            amount: updates.amount !== undefined ? updates.amount : m.amount,
+            amount: effectiveAmount !== undefined ? effectiveAmount : m.amount,
             dueDate: updates.dueDate || m.dueDate,
           };
         });
@@ -1281,7 +1285,9 @@ export function DashboardProvider({
           timestamp: "Just now",
           actor: actorName,
           actorRole: role,
-          action: `${actorName} edited milestone terms.`,
+          action: isAccepted
+            ? `${actorName} updated milestone deliverables and timeline with mutual consent.`
+            : `${actorName} edited milestone terms.`,
         };
 
         return {
