@@ -646,8 +646,17 @@ export default function ProjectWorkspace({
                               <div className="flex flex-wrap items-center gap-2">
                                 <button
                                   type="button"
+                                  onClick={() => onOpenAudit(activeProject, milestone)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold cursor-pointer transition-all shadow-xs flex items-center gap-1.5"
+                                  title="Review deliverables and run AI acceptance analysis"
+                                >
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                  <span>{milestone.latestAudit ? "View AI Analysis" : "Analyse with AI"}</span>
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => approveMilestone(activeProject.id, milestone.id)}
-                                  className="px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer transition-colors shadow-xs flex items-center gap-1.5"
+                                  className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 cursor-pointer transition-colors shadow-xs flex items-center gap-1.5"
                                   title="Approve milestone work and move to payment stage"
                                 >
                                   <CheckCircle2 className="h-3.5 w-3.5" />
@@ -660,14 +669,6 @@ export default function ProjectWorkspace({
                                   title="Request specific revisions from the freelancer"
                                 >
                                   Request Revision
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => onOpenAudit(activeProject, milestone)}
-                                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer transition-colors flex items-center gap-1"
-                                >
-                                  <Sparkles className="h-3 w-3 text-[#0070BA] dark:text-sky-400" />
-                                  <span>Review</span>
                                 </button>
                               </div>
                             )}

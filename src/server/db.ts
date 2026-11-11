@@ -503,6 +503,26 @@ export const db = {
     return { project, milestone };
   },
 
+  setMilestoneAudit(
+    projectId: string,
+    milestoneId: string,
+    audit: AIAssessment
+  ): { project: ProjectContract; milestone: any } | null {
+    const project = memoryState.projects.find((p) => p.id === projectId);
+    if (!project) return null;
+
+    const milestone = project.milestones.find((m) => m.id === milestoneId);
+    if (!milestone) return null;
+
+    milestone.latestAudit = audit;
+    if (milestone.submissions && milestone.submissions.length > 0) {
+      milestone.submissions[milestone.submissions.length - 1].aiAssessment = audit;
+    }
+
+    persistDatabase();
+    return { project, milestone };
+  },
+
   reviewMilestone(
     projectId: string,
     milestoneId: string,

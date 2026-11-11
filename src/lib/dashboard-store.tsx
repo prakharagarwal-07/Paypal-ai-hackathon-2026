@@ -237,6 +237,7 @@ interface DashboardContextType {
   requestRevision: (projectId: string, milestoneId: string, reason: string) => void;
   requestChanges: (projectId: string, milestoneId: string, reason: string) => void;
   approveMilestone: (projectId: string, milestoneId: string) => void;
+  setMilestoneAudit: (projectId: string, milestoneId: string, audit: AIAssessment) => void;
   releasePayPalPayment: (projectId: string, milestoneId: string, customTxId?: string) => string;
   makePayment: (projectId: string, milestoneId: string, customTxId?: string) => string;
   markNotificationRead: (id: string) => void;
@@ -1385,6 +1386,7 @@ export function DashboardProvider({
           return {
             ...m,
             status: "submitted" as MilestoneStatus,
+            latestAudit: undefined,
             submissions: [...(m.submissions || []), newSubmission],
           };
         });
@@ -1512,6 +1514,42 @@ export function DashboardProvider({
     );
 
     showToast(`"${milestoneTitle}" approved! You can now release payment via PayPal.`, "success");
+  };
+
+  const setMilestoneAudit = (
+    projectId: string,
+    milestoneId: string,
+    audit: AIAssessment
+  ) => {
+    setRawProjects((prev) =>
+      prev.map((project) => {
+        if (project.id !== projectId) return project;
+
+        const updatedMilestones = project.milestones.map((m) => {
+          if (m.id !== milestoneId) return m;
+
+          const updatedSubmissions = [...(m.submissions || [])];
+          if (updatedSubmissions.length > 0) {
+            const lastIdx = updatedSubmissions.length - 1;
+            updatedSubmissions[lastIdx] = {
+              ...updatedSubmissions[lastIdx],
+              aiAssessment: audit,
+            };
+          }
+
+          return {
+            ...m,
+            latestAudit: audit,
+            submissions: updatedSubmissions,
+          };
+        });
+
+        return {
+          ...project,
+          milestones: updatedMilestones,
+        };
+      })
+    );
   };
 
   const releasePayPalPayment = (projectId: string, milestoneId: string, customTxId?: string): string => {
@@ -1695,6 +1733,7 @@ export function DashboardProvider({
         requestRevision,
         requestChanges,
         approveMilestone,
+        setMilestoneAudit,
         releasePayPalPayment,
         makePayment,
         markNotificationRead,

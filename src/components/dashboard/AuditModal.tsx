@@ -20,8 +20,15 @@ import {
   Link as LinkIcon,
   Eye,
   Upload,
+  RefreshCw,
+  ShieldCheck,
+  ShieldAlert,
+  Info,
+  Loader2,
+  ChevronRight,
+  AlertOctagon,
 } from "lucide-react";
-import { Milestone, ProjectContract, getFriendlyCriterionStatus } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyCriterionStatus, AIAssessment } from "@/lib/dashboard-data";
 import { GitHubIcon, PayPalIcon } from "./icons";
 import { useDashboard } from "@/lib/dashboard-store";
 
@@ -44,21 +51,78 @@ export default function AuditModal({
   onOpenPayPalModal,
   onOpenSubmissionModal,
 }: AuditModalProps) {
-  const { role, approveMilestone } = useDashboard();
+  const { role, approveMilestone, setMilestoneAudit } = useDashboard();
   const [copiedLink, setCopiedLink] = useState(false);
   const [previewImage, setPreviewImage] = useState<{ url: string; name: string } | null>(null);
 
+  // AI Analysis state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [isQuotaError, setIsQuotaError] = useState(false);
+  const [loadingStep, setLoadingStep] = useState<string>("Connecting to Gemini...");
+
   if (!isOpen) return null;
 
-  const latestSubmission = milestone.submissions[milestone.submissions.length - 1];
+  const latestSubmission = milestone.submissions?.[milestone.submissions.length - 1];
   const audit = milestone.latestAudit || latestSubmission?.aiAssessment;
-  const criteria = audit?.criteria || milestone.acceptanceCriteria;
+  const criteria = audit?.criteria || milestone.acceptanceCriteria || [];
 
   const metCount = criteria.filter((c) => c.status === "met" || c.status === "satisfied").length;
   const missingCount = criteria.filter((c) => c.status === "missing").length;
   const reviewCount = criteria.filter(
     (c) => c.status === "needs_manual_review" || c.status === "needs_verification"
   ).length;
+
+  const handleRunAIAnalysis = async (forceRefresh = false) => {
+    if (isAnalyzing) return;
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    setIsQuotaError(false);
+    setLoadingStep("1. Packaging submitted files, code & links...");
+
+    try {
+      setTimeout(() => {
+        setLoadingStep("2. Gemini inspecting deliverables against acceptance criteria...");
+      }, 700);
+
+      setTimeout(() => {
+        setLoadingStep("3. Cross-checking verified evidence vs unverified assumptions...");
+      }, 1500);
+
+      const res = await fetch("/api/ai/verify-milestone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: project.id,
+          milestoneId: milestone.id,
+          submission: latestSubmission,
+          forceRefresh,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        if (data.isQuotaExceeded || res.status === 429) {
+          setIsQuotaError(true);
+          setAnalysisError(
+            "Gemini API rate limit reached (HTTP 429). The system can run a deterministic heuristic audit or you can retry in a moment."
+          );
+        } else {
+          setAnalysisError(data.error || "Failed to complete AI acceptance analysis.");
+        }
+        return;
+      }
+
+      if (data.assessment) {
+        setMilestoneAudit(project.id, milestone.id, data.assessment);
+      }
+    } catch (err: any) {
+      setAnalysisError(err?.message || "Network error while connecting to AI verification service.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const copyShareLink = () => {
     navigator.clipboard?.writeText(window.location.href);
@@ -74,10 +138,10 @@ export default function AuditModal({
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xs font-bold text-[#0070BA] dark:text-sky-400">
-                Work Review & AI Assistance
+                Milestone Deliverable Review
               </span>
               <span className="text-xs text-slate-400">•</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 Stage 0{milestone.stageNumber}
               </span>
             </div>
@@ -95,7 +159,7 @@ export default function AuditModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -103,33 +167,284 @@ export default function AuditModal({
 
         {/* Scrollable Content */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
-          {/* Summary Box */}
-          <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 dark:border-blue-900/30 dark:bg-blue-950/20 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-bold text-slate-900 dark:text-white">
-                Review Summary
-              </span>
-              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                {metCount} of {criteria.length} requirements met
-              </span>
-            </div>
-            <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-              {audit?.summary ||
-                "Submitted deliverables have been checked against the milestone requirements agreed in the project contract."}
-            </p>
-          </div>
+          {/* 1. "Analyse with AI" Hero Trigger or Cached Bar */}
+          {!audit && !isAnalyzing && (
+            <div className="p-4 sm:p-5 rounded-2xl border-2 border-indigo-200 dark:border-indigo-900/50 bg-gradient-to-br from-indigo-50/70 via-blue-50/40 to-white dark:from-indigo-950/40 dark:via-blue-950/20 dark:to-transparent shadow-xs space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white flex items-center justify-center shrink-0 shadow-md">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                      <span>Analyse with AI</span>
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950/70 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                        Google Gemini
+                      </span>
+                    </h3>
+                    <p className="text-slate-600 dark:text-slate-300 text-xs mt-1 leading-relaxed">
+                      Evaluate the submitted files, code structures, and deliverable links against the contract acceptance criteria before approving payment.
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-          {/* Submitted Links & Work */}
+              <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 border-t border-indigo-100 dark:border-white/5">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Advisory only • Triggers only on your explicit click
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleRunAIAnalysis(false)}
+                  className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-xs cursor-pointer shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>Analyse with AI</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {isAnalyzing && (
+            <div className="p-5 rounded-2xl border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 text-center space-y-3 animate-in fade-in">
+              <div className="inline-flex p-3 rounded-2xl bg-indigo-600 text-white shadow-lg animate-pulse">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Gemini Evaluating Deliverables...
+                </h4>
+                <p className="text-xs text-indigo-700 dark:text-indigo-300 font-mono">
+                  {loadingStep}
+                </p>
+              </div>
+              <div className="w-full max-w-xs mx-auto bg-slate-200 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-600 rounded-full animate-[shimmer_1.5s_infinite] w-2/3" />
+              </div>
+            </div>
+          )}
+
+          {/* Error / Quota State */}
+          {analysisError && !isAnalyzing && (
+            <div
+              className={`p-4 rounded-xl border ${
+                isQuotaError
+                  ? "border-amber-300 bg-amber-50/70 dark:border-amber-800/40 dark:bg-amber-950/20"
+                  : "border-rose-300 bg-rose-50/70 dark:border-rose-900/40 dark:bg-rose-950/20"
+              } space-y-2`}
+            >
+              <div className="flex items-start gap-2.5">
+                {isQuotaError ? (
+                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="h-4 w-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                )}
+                <div className="space-y-1 flex-1">
+                  <span className="font-bold text-slate-900 dark:text-white block">
+                    {isQuotaError ? "Gemini API Quota Limit Exceeded (HTTP 429)" : "AI Analysis Error"}
+                  </span>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-[11px]">
+                    {analysisError}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/60 dark:border-white/10">
+                <button
+                  type="button"
+                  onClick={() => handleRunAIAnalysis(true)}
+                  className="px-3 py-1.5 rounded-lg bg-white dark:bg-white/10 border border-slate-300 dark:border-white/20 text-slate-700 dark:text-slate-200 font-semibold text-xs cursor-pointer hover:bg-slate-100 flex items-center gap-1.5"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  <span>Retry Analysis</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 2. Structured Assessment Card (when audit exists) */}
+          {audit && !isAnalyzing && (
+            <div className="space-y-4">
+              {/* Header Status Bar & Caching Indicator */}
+              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/60 dark:border-white/10 dark:bg-white/[0.02] flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                      audit.status === "approved"
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                        : audit.status === "changes_requested"
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                    }`}
+                  >
+                    {audit.status === "approved" ? (
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                    ) : audit.status === "changes_requested" ? (
+                      <AlertCircle className="h-3.5 w-3.5 text-rose-600 dark:text-rose-400" />
+                    ) : (
+                      <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    )}
+                    <span>
+                      {audit.status === "approved"
+                        ? "Recommended for Approval"
+                        : audit.status === "changes_requested"
+                        ? "Changes Recommended"
+                        : "Manual Verification Advised"}
+                    </span>
+                  </span>
+
+                  {audit.isCached ? (
+                    <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-md bg-slate-200/60 dark:bg-white/10">
+                      Cached (Unchanged)
+                    </span>
+                  ) : null}
+
+                  {audit.isQuotaExceeded ? (
+                    <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/50">
+                      Heuristic Mode
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <span className="text-base font-extrabold text-slate-900 dark:text-white font-mono">
+                      {audit.overallScore}%
+                    </span>
+                    <span className="text-[10px] text-slate-400 block font-medium">Confidence Score</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleRunAIAnalysis(true)}
+                    className="p-2 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-300 cursor-pointer transition-colors"
+                    title="Re-analyse with AI (bypass cache)"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Executive Summary */}
+              <div className="p-4 rounded-xl border border-blue-200 bg-blue-50/50 dark:border-blue-900/30 dark:bg-blue-950/20 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900 dark:text-white">
+                    Overall AI Assessment
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                    {metCount} of {criteria.length} requirements met
+                  </span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                  {audit.summary}
+                </p>
+                {audit.qualityNotes && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1 border-t border-blue-200/50 dark:border-blue-900/30">
+                    <strong className="text-slate-700 dark:text-slate-300">Artifact Quality: </strong>
+                    {audit.qualityNotes}
+                  </p>
+                )}
+              </div>
+
+              {/* Requirement 7: Non-binding Advisory Notice */}
+              <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 dark:border-white/5 dark:bg-white/[0.02] flex items-center gap-2.5 text-slate-600 dark:text-slate-400 text-[11px]">
+                <Info className="h-4 w-4 text-[#0070BA] dark:text-sky-400 shrink-0" />
+                <p className="leading-snug">
+                  <strong>Advisory Evaluation Only:</strong> Gemini provides automated criteria checks. It cannot release escrow payments, approve milestones, or enforce binding decisions. Milestone approval remains strictly under your control.
+                </p>
+              </div>
+
+              {/* Missing Deliverables Alert (if any) */}
+              {audit.missingDeliverables && audit.missingDeliverables.length > 0 && (
+                <div className="p-3.5 rounded-xl border border-rose-300 bg-rose-50/60 dark:border-rose-900/40 dark:bg-rose-950/20 space-y-1.5">
+                  <div className="flex items-center gap-2 text-rose-700 dark:text-rose-300 font-bold text-xs">
+                    <AlertOctagon className="h-4 w-4" />
+                    <span>Missing or Incomplete Deliverables ({audit.missingDeliverables.length})</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 text-slate-700 dark:text-slate-300 text-[11px] pl-1">
+                    {audit.missingDeliverables.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Inconsistencies Alert (if any) */}
+              {audit.inconsistencies && audit.inconsistencies.length > 0 && (
+                <div className="p-3.5 rounded-xl border border-amber-300 bg-amber-50/60 dark:border-amber-800/40 dark:bg-amber-950/20 space-y-1.5">
+                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-300 font-bold text-xs">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Potential Scope Inconsistencies ({audit.inconsistencies.length})</span>
+                  </div>
+                  <ul className="list-disc list-inside space-y-1 text-slate-700 dark:text-slate-300 text-[11px] pl-1">
+                    {audit.inconsistencies.map((item, idx) => (
+                      <li key={idx}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Requirement 6: Verified Findings vs Unverified Assumptions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Verified Findings */}
+                <div className="p-3.5 rounded-xl border border-emerald-200 bg-emerald-50/40 dark:border-emerald-900/30 dark:bg-emerald-950/15 space-y-2">
+                  <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    <span>Verified Findings</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-400">
+                    Directly inspected from submitted files, photos, code, and documents.
+                  </p>
+                  <ul className="space-y-1 text-[11px] text-slate-700 dark:text-slate-300 pt-1">
+                    {(audit.verifiedFindings && audit.verifiedFindings.length > 0
+                      ? audit.verifiedFindings
+                      : ["Agreed contract deliverables verified in submission package."]
+                    ).map((f, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <Check className="h-3 w-3 text-emerald-500 shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Unverified Assumptions */}
+                <div className="p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 dark:border-amber-900/30 dark:bg-amber-950/15 space-y-2">
+                  <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
+                    <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <span>Unverified Assumptions</span>
+                  </div>
+                  <p className="text-[10px] text-amber-700 dark:text-amber-400">
+                    Live links, private credentials, or runtime items needing manual inspection.
+                  </p>
+                  <ul className="space-y-1 text-[11px] text-slate-700 dark:text-slate-300 pt-1">
+                    {(audit.unverifiedAssumptions && audit.unverifiedAssumptions.length > 0
+                      ? audit.unverifiedAssumptions
+                      : ["Interactive features and staging links should be verified manually."]
+                    ).map((a, idx) => (
+                      <li key={idx} className="flex items-start gap-1.5">
+                        <ChevronRight className="h-3 w-3 text-amber-500 shrink-0 mt-0.5" />
+                        <span>{a}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. Submitted Deliverables & Assets */}
           {latestSubmission && (
-            <div className="space-y-3">
+            <div className="space-y-3 pt-2">
               <span className="font-bold text-slate-900 dark:text-white block">
-                Submitted Deliverables & Assets:
+                Submitted Deliverables & Assets ({latestSubmission.attachments?.length || 0} files,{" "}
+                {latestSubmission.deliverableLinks?.length || 0} links):
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {/* Files and images uploaded directly from PC */}
                 {latestSubmission.attachments &&
                   latestSubmission.attachments.map((file, idx) => {
-                    const isImg = file.type.startsWith("image/") || file.dataUrl?.startsWith("data:image");
+                    const isImg = file.type?.startsWith("image/") || file.dataUrl?.startsWith("data:image");
                     return (
                       <div
                         key={`att_${idx}`}
@@ -165,7 +480,7 @@ export default function AuditModal({
                               <span>{file.size}</span>
                               <span>•</span>
                               <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                                Uploaded from PC
+                                Uploaded deliverable
                               </span>
                             </div>
                           </div>
@@ -263,10 +578,10 @@ export default function AuditModal({
             </div>
           )}
 
-          {/* Requirements Checklist */}
+          {/* 4. Requirement-by-Requirement Checklist */}
           <div className="space-y-2.5 pt-2">
             <span className="font-bold text-slate-900 dark:text-white block">
-              Requirements Checklist ({criteria.length})
+              Contract Acceptance Criteria ({criteria.length})
             </span>
 
             <div className="space-y-2">
@@ -276,7 +591,7 @@ export default function AuditModal({
                 return (
                   <div
                     key={crit.id}
-                    className="p-3.5 rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 space-y-1"
+                    className="p-3.5 rounded-xl border border-slate-200 bg-white dark:border-white/10 dark:bg-white/5 space-y-1.5"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -302,6 +617,20 @@ export default function AuditModal({
                     <p className="text-slate-600 dark:text-slate-300 pl-6 text-[11px] leading-relaxed">
                       {crit.description}
                     </p>
+
+                    {crit.evidence && (
+                      <div className="ml-6 p-2 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/30 text-[11px] text-emerald-900 dark:text-emerald-200">
+                        <strong className="font-semibold">Observed Evidence: </strong>
+                        {crit.evidence}
+                      </div>
+                    )}
+
+                    {crit.aiNotes && (
+                      <div className="ml-6 p-2 rounded-lg bg-slate-50 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 text-[11px] text-slate-600 dark:text-slate-400">
+                        <strong className="font-semibold text-slate-700 dark:text-slate-300">AI Notes: </strong>
+                        {crit.aiNotes}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -312,7 +641,10 @@ export default function AuditModal({
         {/* Footer Actions */}
         <div className="p-4 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 text-xs">
           <div className="text-slate-500 dark:text-slate-400">
-            Payment: <strong className="text-slate-900 dark:text-white font-mono">${milestone.amount.toLocaleString()} USD</strong>
+            Escrow Payment:{" "}
+            <strong className="text-slate-900 dark:text-white font-mono">
+              ${milestone.amount.toLocaleString()} USD
+            </strong>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -415,7 +747,7 @@ export default function AuditModal({
               <button
                 type="button"
                 onClick={() => setPreviewImage(null)}
-                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white"
+                className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>

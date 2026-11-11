@@ -44,6 +44,16 @@ export interface AIAssessment {
   criteria: AcceptanceCriterion[];
   automatedChecks?: AutomatedCheck[];
   suggestedRevisions?: string[];
+  // Deliverable Evaluation Additions
+  qualityScore?: number;
+  qualityNotes?: string;
+  missingDeliverables?: string[];
+  inconsistencies?: string[];
+  verifiedFindings?: string[];
+  unverifiedAssumptions?: string[];
+  submissionFingerprint?: string;
+  isCached?: boolean;
+  isQuotaExceeded?: boolean;
 }
 
 export interface DeliverableAttachment {
