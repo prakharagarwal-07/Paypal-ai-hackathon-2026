@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   X,
   Plus,
@@ -18,6 +18,7 @@ import {
   ArrowRight,
   ExternalLink,
   Sparkles,
+  Calendar,
 } from "lucide-react";
 import {
   FREELANCER_OPTIONS,
@@ -44,9 +45,86 @@ interface NewProjectModalProps {
 interface DraftMilestone {
   title: string;
   description: string;
-  amount: number;
+  amount: number | string;
   dueDate: string;
   criteria: string[];
+}
+
+interface DatePickerInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  className?: string;
+  ariaLabel?: string;
+}
+
+function DatePickerInput({
+  value,
+  onChange,
+  placeholder = "e.g. Dec 25, 2026",
+  className = "",
+  ariaLabel = "Select date",
+}: DatePickerInputProps) {
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // Convert string representation ("Dec 25, 2026" or parseable date) to "YYYY-MM-DD" for native picker
+  const toIsoValue = (str: string) => {
+    if (!str) return "";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    const parsed = Date.parse(str);
+    if (!isNaN(parsed)) {
+      const d = new Date(parsed);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+    return "";
+  };
+
+  // Convert "YYYY-MM-DD" from native picker to friendly "MMM DD, YYYY"
+  const fromIsoValue = (isoStr: string) => {
+    if (!isoStr) return "";
+    const parts = isoStr.split("-").map(Number);
+    if (parts.length === 3) {
+      const [year, month, day] = parts;
+      const d = new Date(year, month - 1, day);
+      const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, "0")}, ${d.getFullYear()}`;
+    }
+    return isoStr;
+  };
+
+  return (
+    <div className="relative flex items-center w-full">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className={`w-full pr-9 ${className}`}
+      />
+
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center">
+        {/* Invisible native date picker triggered by click */}
+        <input
+          ref={dateInputRef}
+          type="date"
+          aria-label={ariaLabel}
+          value={toIsoValue(value)}
+          onChange={(e) => {
+            if (e.target.value) {
+              onChange(fromIsoValue(e.target.value));
+            }
+          }}
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+        />
+        <div className="p-1 rounded-md text-slate-400 hover:text-[#0070BA] dark:hover:text-sky-400 transition-colors pointer-events-none">
+          <Calendar className="h-4 w-4" />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 type InitiationMethod = "user_id" | "share_link";
@@ -66,14 +144,14 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Form Fields
+  // Form Fields - clean defaults without hardcoded dummy content
   const [title, setTitle] = useState(initialProject?.title || "");
   const [description, setDescription] = useState(initialProject?.description || "");
-  const [category, setCategory] = useState(
-    initialProject?.category || (isClient ? "Web Development" : "Custom Web Application")
+  const [category, setCategory] = useState(initialProject?.category || "");
+  const [targetDeadline, setTargetDeadline] = useState(initialProject?.targetDeadline || "");
+  const [proposedBudget, setProposedBudget] = useState<string>(
+    initialProject ? String(initialProject.totalBudget) : ""
   );
-  const [targetDeadline, setTargetDeadline] = useState(initialProject?.targetDeadline || "Dec 25, 2026");
-  const [proposedBudget, setProposedBudget] = useState<number>(initialProject?.totalBudget || 3500);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Invitation Modal for Method B
@@ -91,22 +169,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
         }))
       : [
           {
-            title: isClient ? "Initial Deliverable & Architecture" : "Scope, Architecture & Wireframes",
-            description: isClient
-              ? "Project setup, core mockups, and agreed structural layout."
-              : "Database contracts, technical architecture, and core screen wireframes.",
-            amount: 1500,
-            dueDate: "Dec 05, 2026",
-            criteria: ["Clean responsive layout", "Agreed milestone criteria verified"],
-          },
-          {
-            title: isClient ? "Core Deliverables Implementation" : "Interactive Features & Delivery",
-            description: isClient
-              ? "Main interactive deliverables, payment integration, and testing."
-              : "Feature implementation, PayPal sandbox checkout, and final delivery.",
-            amount: 2000,
-            dueDate: "Dec 20, 2026",
-            criteria: ["Deliverables completed as specified", "Tested checkout and receipt records"],
+            title: "",
+            description: "",
+            amount: "",
+            dueDate: "",
+            criteria: [],
           },
         ]
   );
@@ -118,9 +185,9 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     if (initialProject) {
       setTitle(initialProject.title);
       setDescription(initialProject.description);
-      setCategory(initialProject.category);
-      setTargetDeadline(initialProject.targetDeadline);
-      setProposedBudget(initialProject.totalBudget);
+      setCategory(initialProject.category || "");
+      setTargetDeadline(initialProject.targetDeadline || "");
+      setProposedBudget(initialProject.totalBudget ? String(initialProject.totalBudget) : "");
       setMilestones(
         initialProject.milestones.map((m) => ({
           title: m.title,
@@ -158,7 +225,9 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
   if (!isOpen && !shareModalOpen) return null;
 
   const totalMilestonesSum = milestones.reduce((sum, m) => sum + (Number(m.amount) || 0), 0);
-  const budgetMatches = proposedBudget === totalMilestonesSum;
+  const numProposedBudget = Number(proposedBudget) || 0;
+  const isBudgetEntered = numProposedBudget > 0 || totalMilestonesSum > 0;
+  const budgetMatches = isBudgetEntered && numProposedBudget === totalMilestonesSum;
 
   // Handle User ID Lookup (Database Query against Supabase with shared base-code verification)
   const handleLookupUserId = async (idToLookup?: string) => {
@@ -259,11 +328,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     setMilestones([
       ...milestones,
       {
-        title: `Milestone 0${milestones.length + 1}`,
-        description: "Stage deliverables and agreed acceptance requirements.",
-        amount: 1000,
-        dueDate: "Dec 28, 2026",
-        criteria: ["Agreed deliverables completed according to scope"],
+        title: "",
+        description: "",
+        amount: "",
+        dueDate: "",
+        criteria: [],
       },
     ]);
   };
@@ -318,16 +387,28 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     }
 
     // Validate budget
+    if (numProposedBudget <= 0) {
+      setFormError("Please enter a proposed project budget.");
+      showAlert({
+        title: "Missing Project Budget",
+        message: "Please specify the total proposed budget for this project.",
+        type: "warning",
+      });
+      return;
+    }
+
     if (totalMilestonesSum <= 0) {
       setFormError("Milestone amounts must be greater than $0.");
       return;
     }
 
     if (!budgetMatches && !asDraft) {
-      setFormError(`The total of milestone amounts ($${totalMilestonesSum.toLocaleString()}) does not match the proposed project budget ($${proposedBudget.toLocaleString()}).`);
+      setFormError(
+        `The total of milestone amounts ($${totalMilestonesSum.toLocaleString()}) does not match the proposed project budget ($${numProposedBudget.toLocaleString()}).`
+      );
       showAlert({
         title: "Budget Mismatch",
-        message: `Milestone amounts sum to $${totalMilestonesSum.toLocaleString()} USD, but the proposed budget is $${proposedBudget.toLocaleString()} USD. Please adjust milestone amounts or update the proposed budget.`,
+        message: `Milestone amounts sum to $${totalMilestonesSum.toLocaleString()} USD, but the proposed budget is $${numProposedBudget.toLocaleString()} USD. Please adjust milestone amounts or update the proposed budget.`,
         type: "warning",
       });
       return;
@@ -344,11 +425,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
       return {
         id: `ms_new_${Date.now()}_${idx}`,
         stageNumber: idx + 1,
-        title: m.title,
-        description: m.description,
+        title: m.title.trim() || `Stage 0${idx + 1}`,
+        description: m.description.trim() || "",
         amount: Number(m.amount) || 0,
         currency: "USD",
-        dueDate: m.dueDate,
+        dueDate: m.dueDate || targetDeadline || "TBD",
         status: "not_started",
         acceptanceCriteria,
         submissions: [],
@@ -849,14 +930,15 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
                       <input
-                        type="number"
-                        min={100}
-                        step={100}
+                        type="text"
+                        inputMode="numeric"
                         value={proposedBudget}
                         onChange={(e) => {
-                          setProposedBudget(Number(e.target.value) || 0);
+                          const sanitized = e.target.value.replace(/[^0-9]/g, "");
+                          setProposedBudget(sanitized);
                           if (formError) setFormError(null);
                         }}
+                        placeholder="e.g. 3500"
                         className="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-mono font-bold text-slate-900 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
                       />
                     </div>
@@ -866,12 +948,12 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                     <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                       Target Completion Date
                     </label>
-                    <input
-                      type="text"
+                    <DatePickerInput
                       value={targetDeadline}
-                      onChange={(e) => setTargetDeadline(e.target.value)}
+                      onChange={setTargetDeadline}
                       placeholder="e.g. Dec 25, 2026"
-                      className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                      className="rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
+                      ariaLabel="Select target completion date"
                     />
                   </div>
                 </div>
@@ -931,7 +1013,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                             required
                             value={m.title}
                             onChange={(e) => handleUpdateMilestone(mIdx, "title", e.target.value)}
-                            placeholder="Stage Name"
+                            placeholder={`e.g. Stage 0${mIdx + 1} - Scope & Deliverables`}
                             className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
                           />
                         </div>
@@ -940,15 +1022,21 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                           <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-0.5">
                             Amount ($ USD) *
                           </label>
-                          <input
-                            type="number"
-                            min={10}
-                            step={50}
-                            required
-                            value={m.amount}
-                            onChange={(e) => handleUpdateMilestone(mIdx, "amount", Number(e.target.value) || 0)}
-                            className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
-                          />
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">$</span>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              required
+                              value={m.amount}
+                              onChange={(e) => {
+                                const sanitized = e.target.value.replace(/[^0-9]/g, "");
+                                handleUpdateMilestone(mIdx, "amount", sanitized);
+                              }}
+                              placeholder="e.g. 1500"
+                              className="w-full pl-6 pr-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-xs font-mono font-bold text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
+                            />
+                          </div>
                         </div>
                       </div>
 
@@ -961,7 +1049,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                             type="text"
                             value={m.description}
                             onChange={(e) => handleUpdateMilestone(mIdx, "description", e.target.value)}
-                            placeholder="Deliverables included in this stage"
+                            placeholder="e.g. Deliverables included in this stage"
                             className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
                           />
                         </div>
@@ -970,12 +1058,12 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                           <label className="block text-[11px] font-semibold text-slate-700 dark:text-slate-300 mb-0.5">
                             Due Date
                           </label>
-                          <input
-                            type="text"
+                          <DatePickerInput
                             value={m.dueDate}
-                            onChange={(e) => handleUpdateMilestone(mIdx, "dueDate", e.target.value)}
+                            onChange={(val) => handleUpdateMilestone(mIdx, "dueDate", val)}
                             placeholder="e.g. Dec 10, 2026"
-                            className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
+                            className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs text-slate-900 dark:border-white/10 dark:bg-[#131C31] dark:text-white"
+                            ariaLabel={`Select stage 0${mIdx + 1} due date`}
                           />
                         </div>
                       </div>
@@ -1039,7 +1127,9 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
               {/* BUDGET VALIDATION & SUMMARY BOX */}
               <div
                 className={`p-3.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                  budgetMatches
+                  !isBudgetEntered
+                    ? "bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10"
+                    : budgetMatches
                     ? "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/40"
                     : "bg-amber-50/50 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800"
                 }`}
@@ -1049,7 +1139,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                     <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">
                       Total Milestones Calculation:
                     </span>
-                    {budgetMatches ? (
+                    {!isBudgetEntered ? (
+                      <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                        Enter milestone amounts to calculate total
+                      </span>
+                    ) : budgetMatches ? (
                       <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" />
                         Budget Matches Exactly
@@ -1057,9 +1151,7 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                     ) : (
                       <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
                         <AlertCircle className="h-3 w-3" />
-                        Mismatch ($
-                        {Math.abs(proposedBudget - totalMilestonesSum).toLocaleString()}{" "}
-                        difference)
+                        Mismatch (${Math.abs(numProposedBudget - totalMilestonesSum).toLocaleString()} difference)
                       </span>
                     )}
                   </div>
@@ -1071,10 +1163,10 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                   </span>
                 </div>
 
-                {!budgetMatches && (
+                {isBudgetEntered && !budgetMatches && totalMilestonesSum > 0 && (
                   <button
                     type="button"
-                    onClick={() => setProposedBudget(totalMilestonesSum)}
+                    onClick={() => setProposedBudget(String(totalMilestonesSum))}
                     className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-[11px] font-bold cursor-pointer transition-colors shrink-0 shadow-2xs"
                   >
                     Adjust Budget to ${totalMilestonesSum.toLocaleString()} USD
