@@ -48,6 +48,7 @@ export default function PayPalPaymentModal({
   const { makePayment } = useDashboard();
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
   const [isCapturing, setIsCapturing] = useState(false);
+  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [verifiedReceipt, setVerifiedReceipt] = useState<VerifiedReceipt | null>(null);
 
@@ -324,6 +325,7 @@ export default function PayPalPaymentModal({
                               setPaymentState("failed");
                               throw new Error(msg);
                             }
+                            setCreatedOrderId(data.order.orderId);
                             return data.order.orderId;
                           } catch (err: any) {
                             setPaymentState("failed");
@@ -390,9 +392,46 @@ export default function PayPalPaymentModal({
                             setIsCapturing(false);
                           }
                         }}
-                        onCancel={() => {
+                        onCancel={async () => {
+                          // If popup closed unexpectedly, check if order was actually approved on PayPal
+                          if (createdOrderId) {
+                            setPaymentState("awaiting_capture");
+                            setIsCapturing(true);
+                            try {
+                              const res = await fetch("/api/paypal/capture-order", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  orderId: createdOrderId,
+                                  projectId: project.id,
+                                  milestoneId: milestone.id,
+                                }),
+                              });
+                              const captureData = await res.json();
+                              if (res.ok && captureData.success && captureData.capture?.status === "COMPLETED") {
+                                const verified = captureData.capture;
+                                const captureId = verified.captureId;
+                                makePayment(project.id, milestone.id, captureId, verified.timestamp);
+                                setVerifiedReceipt({
+                                  captureId,
+                                  orderId: createdOrderId,
+                                  amount: verified.amount,
+                                  currency: verified.currency,
+                                  payerEmail: verified.payerEmail,
+                                  payerName: verified.payerName,
+                                  timestamp: verified.timestamp,
+                                });
+                                setPaymentState("paid");
+                                return;
+                              }
+                            } catch (_) {
+                              // If capture check fails, proceed with cancellation
+                            } finally {
+                              setIsCapturing(false);
+                            }
+                          }
                           setPaymentState("cancelled");
-                          setErrorMessage("You closed the PayPal Sandbox checkout window. No payment was made.");
+                          setErrorMessage("The checkout window was closed before completion. No funds were debited, and the milestone remains unpaid.");
                         }}
                         onError={(err) => {
                           console.error("PayPal SDK Error:", err);

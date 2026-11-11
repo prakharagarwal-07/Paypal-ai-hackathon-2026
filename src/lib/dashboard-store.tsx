@@ -502,7 +502,9 @@ export function DashboardProvider({
 
   // Fetch projects from server scoped to current authenticated user or demo mode
   const refreshProjects = async () => {
-    const isDemo = isDemoMode || (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true");
+    // If a user has an authenticated session/profile, they are NEVER in demo mode
+    const isRealUser = Boolean(authUser?.id || authUser?.email);
+    const isDemo = !isRealUser && (isDemoMode || (typeof window !== "undefined" && localStorage.getItem(STORAGE_KEYS.DEMO_MODE) === "true"));
     if (isDemo) {
       try {
         const [pRes, tRes] = await Promise.all([
@@ -724,37 +726,19 @@ export function DashboardProvider({
         if (mounted) setIsLoaded(true);
       };
 
-      // If demo mode is active on load, load real records from Supabase
-      if (isDemo) {
-        Promise.all([
-          fetch("/api/projects?isDemo=true").then((r) => r.json()).catch(() => ({})),
-          fetch("/api/transactions?isDemo=true").then((r) => r.json()).catch(() => ({})),
-        ]).then(([pData, tData]) => {
-          if (!mounted) return;
-          if (pData?.success && Array.isArray(pData.projects) && pData.projects.length > 0) {
-            setRawProjects(pData.projects);
-            if (!savedActiveProj) setActiveProjectIdState(pData.projects[0]?.id || "proj_customer_reviews_2026");
-          }
-          if (tData?.success && Array.isArray(tData.transactions)) {
-            setTransactions(tData.transactions);
-          }
-          setIsLoaded(true);
-        });
-        return;
-      }
-
-      // Fire background parallel refresh immediately using cached user info (zero wait!)
-      if (initialUser?.id) {
-        refreshUserData(initialUser.id, initialUser.email, initialUser.milestoneOSId);
-      }
-
-      // Supabase cloud auth session verification
+      // Supabase cloud auth session verification (Highest Priority)
       const supabase = getSupabaseClient();
       if (supabase) {
         supabase.auth.getUser().then(async ({ data: { user } }) => {
           if (!mounted) return;
 
           if (user) {
+            // Real authenticated user detected -> ALWAYS clear demo mode!
+            setIsDemoModeState(false);
+            try {
+              localStorage.removeItem(STORAGE_KEYS.DEMO_MODE);
+            } catch (_) {}
+
             let profileRecord: any = null;
             try {
               const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
@@ -805,12 +789,28 @@ export function DashboardProvider({
               setRoleState("freelancer");
             }
 
-            // If user was not already hydrated or has changed ID, refresh now
-            if (!initialUser || initialUser.id !== resolvedUser.id) {
-              refreshUserData(resolvedUser.id, resolvedUser.email, primaryMsoId);
-            }
+            // Always refresh live data for the authenticated user from Supabase
+            refreshUserData(resolvedUser.id, resolvedUser.email, primaryMsoId);
           } else {
-            // Unauthenticated user: fresh empty state
+            // Unauthenticated user: check if demo mode requested
+            if (isDemo) {
+              Promise.all([
+                fetch("/api/projects?isDemo=true").then((r) => r.json()).catch(() => ({})),
+                fetch("/api/transactions?isDemo=true").then((r) => r.json()).catch(() => ({})),
+              ]).then(([pData, tData]) => {
+                if (!mounted) return;
+                if (pData?.success && Array.isArray(pData.projects) && pData.projects.length > 0) {
+                  setRawProjects(pData.projects);
+                  if (!savedActiveProj) setActiveProjectIdState(pData.projects[0]?.id || "proj_customer_reviews_2026");
+                }
+                if (tData?.success && Array.isArray(tData.transactions)) {
+                  setTransactions(tData.transactions);
+                }
+                setIsLoaded(true);
+              });
+              return;
+            }
+
             setAuthUser(null);
             setRawProjects([]);
             setTransactions([]);
@@ -819,8 +819,25 @@ export function DashboardProvider({
           }
         });
       } else {
-        if (!initialUser) {
-          setIsLoaded(true);
+        if (isDemo) {
+          Promise.all([
+            fetch("/api/projects?isDemo=true").then((r) => r.json()).catch(() => ({})),
+            fetch("/api/transactions?isDemo=true").then((r) => r.json()).catch(() => ({})),
+          ]).then(([pData, tData]) => {
+            if (!mounted) return;
+            if (pData?.success && Array.isArray(pData.projects) && pData.projects.length > 0) {
+              setRawProjects(pData.projects);
+              if (!savedActiveProj) setActiveProjectIdState(pData.projects[0]?.id || "proj_customer_reviews_2026");
+            }
+            if (tData?.success && Array.isArray(tData.transactions)) {
+              setTransactions(tData.transactions);
+            }
+            setIsLoaded(true);
+          });
+        } else {
+          if (!initialUser) {
+            setIsLoaded(true);
+          }
         }
       }
     } catch (e) {
@@ -1007,29 +1024,29 @@ export function DashboardProvider({
     showToast("Project moved to archive.", "info");
   };
 
-  const acceptProposal = (projectId: string) => {
+  const acceptProposal = async (projectId: string) => {
     let projTitle = "";
+    const actorName = userProfiles[role].name;
+    const nowStr = new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const newLog: ActivityItem = {
+      id: `act_${Date.now()}`,
+      timestamp: "Just now",
+      actor: actorName,
+      actorRole: role,
+      action: `${actorName} accepted the project proposal and agreed to contract terms. Agreement is now active.`,
+    };
+
     setRawProjects((prev) =>
       prev.map((p) => {
         if (p.id !== projectId) return p;
         projTitle = p.title;
-        const actorName = userProfiles[role].name;
-        const nowStr = new Date().toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-
-        const newLog: ActivityItem = {
-          id: `act_${Date.now()}`,
-          timestamp: "Just now",
-          actor: actorName,
-          actorRole: role,
-          action: `${actorName} accepted the project proposal and agreed to contract terms. Agreement is now active.`,
-        };
-
         const updatedMilestones = p.milestones.map((m, idx) => ({
           ...m,
           status: m.status || (idx === 0 ? ("in_progress" as const) : ("not_started" as const)),
@@ -1048,6 +1065,12 @@ export function DashboardProvider({
       })
     );
 
+    setActiveProjectIdState(projectId);
+    setActiveTabState("projects");
+    try {
+      localStorage.setItem(STORAGE_KEYS.ACTIVE_PROJECT, projectId);
+    } catch (_) {}
+
     const notif: NotificationItem = {
       id: `notif_${Date.now()}`,
       timestamp: "Just now",
@@ -1060,14 +1083,35 @@ export function DashboardProvider({
     };
     setNotifications((prev) => [notif, ...prev]);
 
-    // Persist acceptance to server database & Supabase
-    fetch(`/api/projects/${projectId}/proposals`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "accept" }),
-    }).catch((err) => console.warn("Failed to sync proposal acceptance to API:", err));
+    // Persist acceptance to server database & Supabase with authenticated caller credentials
+    try {
+      const res = await fetch(`/api/projects/${projectId}/proposals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "accept",
+          userId: authUser?.id,
+          userEmail: authUser?.email,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.project) {
+        setRawProjects((prev) =>
+          prev.map((p) => (p.id === projectId ? data.project : p))
+        );
+        if (authUser?.id) {
+          try {
+            const current = JSON.parse(localStorage.getItem(`milestoneos_projects_${authUser.id}`) || "[]");
+            const updated = current.map((p: any) => (p.id === projectId ? data.project : p));
+            localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(updated));
+          } catch (_) {}
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to sync proposal acceptance to API:", err);
+    }
 
-    showToast(`Proposal accepted! Contract "${projTitle}" is now active.`, "success");
+    showToast(`Proposal accepted! Contract "${projTitle}" is now active in My Projects.`, "success");
   };
 
   const requestProposalChanges = (projectId: string, feedback: string) => {
@@ -1097,7 +1141,12 @@ export function DashboardProvider({
     fetch(`/api/projects/${projectId}/proposals`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "request_changes", feedback }),
+      body: JSON.stringify({
+        action: "request_changes",
+        feedback,
+        userId: authUser?.id,
+        userEmail: authUser?.email,
+      }),
     }).catch((err) => console.warn("Failed to sync change request to API:", err));
 
     showToast("Feedback submitted to proposer.", "info");
@@ -1129,7 +1178,11 @@ export function DashboardProvider({
     fetch(`/api/projects/${projectId}/proposals`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reject" }),
+      body: JSON.stringify({
+        action: "reject",
+        userId: authUser?.id,
+        userEmail: authUser?.email,
+      }),
     }).catch((err) => console.warn("Failed to sync rejection to API:", err));
 
     showToast("Project proposal declined.", "warning");
@@ -1162,7 +1215,12 @@ export function DashboardProvider({
     fetch(`/api/projects/${projectId}/proposals`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "resubmit", updatedData }),
+      body: JSON.stringify({
+        action: "resubmit",
+        updatedData,
+        userId: authUser?.id,
+        userEmail: authUser?.email,
+      }),
     }).catch((err) => console.warn("Failed to sync resubmission to API:", err));
 
     showToast("Revised proposal submitted for acceptance.", "success");

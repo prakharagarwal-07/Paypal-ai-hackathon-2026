@@ -239,7 +239,14 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
       .then((d) => {
         if (d.success && Array.isArray(d.users)) {
           const myId = authUser?.id;
-          const filtered = d.users.filter((u: any) => u.id !== myId);
+          const myEmail = authUser?.email?.trim().toLowerCase();
+          const myBase = extractBaseCode(authUser?.milestoneOSId) || extractBaseCode(myProfile?.milestoneOSId);
+          const filtered = d.users.filter((u: any) => {
+            if (myId && u.id === myId) return false;
+            if (myEmail && u.email?.trim().toLowerCase() === myEmail) return false;
+            if (myBase && (extractBaseCode(u.milestoneOSId) === myBase || extractBaseCode(u.clientId) === myBase || extractBaseCode(u.freelancerId) === myBase)) return false;
+            return true;
+          });
           setRegisteredCounterparties(filtered);
         }
       })

@@ -58,7 +58,8 @@ export default function ProjectRequestsView({
       p.status === "changes_requested" ||
       p.status === "draft" ||
       p.status === "rejected" ||
-      p.status === "accepted";
+      p.status === "accepted" ||
+      (p.status === "active" && p.proposalStatus === "accepted");
     return isSent && isProposalOrRecent;
   });
 

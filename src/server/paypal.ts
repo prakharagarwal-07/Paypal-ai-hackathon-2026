@@ -133,6 +133,7 @@ export async function createPayPalOrder(params: CreateOrderParams): Promise<PayP
     application_context: {
       brand_name: "MilestoneOS",
       landing_page: "NO_PREFERENCE",
+      shipping_preference: "NO_SHIPPING",
       user_action: "PAY_NOW",
       return_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?payment=success&milestoneId=${milestoneId}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?payment=cancelled`,
