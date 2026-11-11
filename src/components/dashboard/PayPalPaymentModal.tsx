@@ -16,6 +16,7 @@ import {
 import { Milestone, ProjectContract } from "@/lib/dashboard-data";
 import { PayPalIcon } from "./icons";
 import { useDashboard } from "@/lib/dashboard-store";
+import { getSupabaseClient } from "@/lib/supabase";
 import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 interface PayPalPaymentModalProps {
@@ -45,12 +46,41 @@ export default function PayPalPaymentModal({
   onClose,
   onOpenInvoice,
 }: PayPalPaymentModalProps) {
-  const { makePayment } = useDashboard();
+  const { makePayment, authUser } = useDashboard();
   const [paymentState, setPaymentState] = useState<PaymentState>("idle");
   const [isCapturing, setIsCapturing] = useState(false);
   const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [verifiedReceipt, setVerifiedReceipt] = useState<VerifiedReceipt | null>(null);
+
+  const getAuthPayload = async () => {
+    const callerId = authUser?.id || project.clientId || project.client?.id;
+    const callerEmail = authUser?.email || project.client?.email;
+    const callerMso = authUser?.milestoneOSId || authUser?.clientId || project.client?.milestoneOSId;
+
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    try {
+      const supabase = getSupabaseClient();
+      const session = (await supabase?.auth.getSession())?.data?.session;
+      if (session?.access_token) {
+        headers["Authorization"] = `Bearer ${session.access_token}`;
+      }
+    } catch (_) {}
+
+    if (callerId) headers["x-user-id"] = callerId;
+    if (callerEmail) headers["x-user-email"] = callerEmail;
+    if (callerMso) headers["x-user-mso-id"] = callerMso;
+
+    return {
+      headers,
+      bodyData: {
+        userId: callerId,
+        userEmail: callerEmail,
+        payerId: callerId,
+        milestoneOSId: callerMso,
+      },
+    };
+  };
 
   if (!isOpen) return null;
 
@@ -310,12 +340,14 @@ export default function PayPalPaymentModal({
                         createOrder={async () => {
                           setErrorMessage(null);
                           try {
+                            const { headers, bodyData } = await getAuthPayload();
                             const res = await fetch("/api/paypal/create-order", {
                               method: "POST",
-                              headers: { "Content-Type": "application/json" },
+                              headers,
                               body: JSON.stringify({
                                 projectId: project.id,
                                 milestoneId: milestone.id,
+                                ...bodyData,
                               }),
                             });
                             const data = await res.json();
@@ -340,13 +372,15 @@ export default function PayPalPaymentModal({
                           setErrorMessage(null);
 
                           try {
+                            const { headers, bodyData } = await getAuthPayload();
                             const res = await fetch("/api/paypal/capture-order", {
                               method: "POST",
-                              headers: { "Content-Type": "application/json" },
+                              headers,
                               body: JSON.stringify({
                                 orderId: data.orderID,
                                 projectId: project.id,
                                 milestoneId: milestone.id,
+                                ...bodyData,
                               }),
                             });
 
@@ -398,13 +432,15 @@ export default function PayPalPaymentModal({
                             setPaymentState("awaiting_capture");
                             setIsCapturing(true);
                             try {
+                              const { headers, bodyData } = await getAuthPayload();
                               const res = await fetch("/api/paypal/capture-order", {
                                 method: "POST",
-                                headers: { "Content-Type": "application/json" },
+                                headers,
                                 body: JSON.stringify({
                                   orderId: createdOrderId,
                                   projectId: project.id,
                                   milestoneId: milestone.id,
+                                  ...bodyData,
                                 }),
                               });
                               const captureData = await res.json();

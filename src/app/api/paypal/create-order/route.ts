@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createPayPalOrder } from "@/server/paypal";
 import { db } from "@/server/db";
 import { getServerSupabase } from "@/server/supabase";
+import { extractBaseCode } from "@/lib/dashboard-data";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { projectId, milestoneId } = body;
-    let callerId = body.userId || body.payerId;
-    let callerEmail = body.userEmail;
+    let callerId = body.userId || body.payerId || body.callerId || req.headers.get("x-user-id");
+    let callerEmail = body.userEmail || req.headers.get("x-user-email");
+    let callerMsoId = body.milestoneOSId || req.headers.get("x-user-mso-id");
 
     // Verify caller session token if provided
     const authHeader = req.headers.get("authorization");
@@ -41,9 +43,15 @@ export async function POST(req: NextRequest) {
     // Security check: Only the designated client can fund or pay milestone contracts
     const clientId = project.clientId || project.client?.id;
     const clientEmail = project.client?.email?.toLowerCase();
+    const clientMso = project.client?.milestoneOSId || (project as any).client_mso_id;
+    const clientBase = extractBaseCode(clientMso);
+    const callerBase = extractBaseCode(callerMsoId) || extractBaseCode(callerId);
+
     const isClientCaller = Boolean(
-      (callerId && callerId === clientId) ||
-      (callerEmail && callerEmail.toLowerCase() === clientEmail)
+      (callerId && (callerId === clientId || callerId === clientMso)) ||
+      (callerEmail && clientEmail && callerEmail.toLowerCase() === clientEmail) ||
+      (callerMsoId && clientMso && callerMsoId.toUpperCase() === clientMso.toUpperCase()) ||
+      (callerBase && clientBase && callerBase === clientBase)
     );
 
     if (!isClientCaller && !project.isDemo) {
