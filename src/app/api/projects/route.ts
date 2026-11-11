@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { ProjectContract, ActivityItem, extractBaseCode } from "@/lib/dashboard-data";
 import { getServerSupabase } from "@/server/supabase";
+import { resolveCounterpartyIdentity } from "@/server/identity";
 
 export async function GET(req: NextRequest) {
   try {
@@ -97,73 +98,102 @@ export async function POST(req: NextRequest) {
       timestamp: "Just now",
     };
 
+    let clientData = client ? { ...client } : {};
+    let freelancerData = freelancer ? { ...freelancer } : {};
+
     const isValidUUID = (str?: string | null) =>
       Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
 
-    const effectiveCreatorId = creatorId || (initiatedBy === "client" ? (body.clientId || client?.id) : (body.freelancerId || freelancer?.id));
+    const effectiveCreatorId = creatorId || (initiatedBy === "client" ? (body.clientId || clientData?.id) : (body.freelancerId || freelancerData?.id));
 
-    let resolvedClientId = isValidUUID(body.clientId) ? body.clientId : isValidUUID(client?.id) ? client.id : null;
-    let resolvedFreelancerId = isValidUUID(body.freelancerId) ? body.freelancerId : isValidUUID(freelancer?.id) ? freelancer.id : null;
+    let resolvedClientId = isValidUUID(body.clientId) ? body.clientId : isValidUUID(clientData?.id) ? clientData.id : null;
+    let resolvedFreelancerId = isValidUUID(body.freelancerId) ? body.freelancerId : isValidUUID(freelancerData?.id) ? freelancerData.id : null;
 
-    const supabase = getServerSupabase();
-    if (supabase) {
-      // Resolve Freelancer UUID
-      if (!resolvedFreelancerId) {
-        if (freelancer?.email && !freelancer.email.includes("@milestoneos.link")) {
-          try {
-            const { data: fProfile } = await supabase.from("profiles").select("id, email, full_name").eq("email", freelancer.email.toLowerCase()).maybeSingle();
-            if (fProfile?.id) resolvedFreelancerId = fProfile.id;
-          } catch (_) {}
-        }
-        if (!resolvedFreelancerId && freelancer?.milestoneOSId) {
-          const fBase = extractBaseCode(freelancer.milestoneOSId);
-          try {
-            const { data: fProfile } = await supabase
-              .from("profiles")
-              .select("id, email, full_name")
-              .ilike("milestone_os_id", `%${fBase}%`)
-              .maybeSingle();
-            if (fProfile?.id) {
-              resolvedFreelancerId = fProfile.id;
-              if (fProfile.email && (!freelancer.email || freelancer.email.includes("@milestoneos.link"))) {
-                freelancer.email = fProfile.email;
-              }
-            }
-          } catch (_) {}
-        }
-      }
+    // Use Central Identity Resolution for non-public counterparties
+    if (!isPublicInvitation) {
+      if (initiatedBy === "client") {
+        resolvedClientId = resolvedClientId || (isValidUUID(effectiveCreatorId) ? effectiveCreatorId : null);
 
-      // Resolve Client UUID
-      if (!resolvedClientId) {
-        if (client?.email && !client.email.includes("@milestoneos.link")) {
-          try {
-            const { data: cProfile } = await supabase.from("profiles").select("id, email, full_name").eq("email", client.email.toLowerCase()).maybeSingle();
-            if (cProfile?.id) resolvedClientId = cProfile.id;
-          } catch (_) {}
+        // Resolve Freelancer Counterparty
+        const fIdentifier = freelancerData?.milestoneOSId || freelancerData?.id || body.freelancerId || freelancerData?.email;
+        if (!fIdentifier) {
+          return NextResponse.json(
+            { error: "Freelancer identifier is required when creating a client request." },
+            { status: 400 }
+          );
         }
-        if (!resolvedClientId && client?.milestoneOSId) {
-          const cBase = extractBaseCode(client.milestoneOSId);
-          try {
-            const { data: cProfile } = await supabase
-              .from("profiles")
-              .select("id, email, full_name")
-              .ilike("milestone_os_id", `%${cBase}%`)
-              .maybeSingle();
-            if (cProfile?.id) {
-              resolvedClientId = cProfile.id;
-              if (cProfile.email && (!client.email || client.email.includes("@milestoneos.link"))) {
-                client.email = cProfile.email;
-              }
-            }
-          } catch (_) {}
+
+        const fResult = await resolveCounterpartyIdentity({
+          identifier: fIdentifier,
+          expectedRole: "freelancer",
+          proposerId: resolvedClientId,
+          proposerEmail: clientData?.email,
+        });
+
+        if (!fResult.success) {
+          return NextResponse.json(
+            { error: fResult.error, code: fResult.code },
+            { status: 400 }
+          );
         }
+
+        resolvedFreelancerId = fResult.user.id;
+        freelancerData = {
+          ...freelancerData,
+          id: fResult.user.id,
+          name: fResult.user.name,
+          email: fResult.user.email,
+          avatar: fResult.user.avatar || freelancerData.avatar || "FL",
+          title: fResult.user.title || freelancerData.title || "Independent Specialist",
+          milestoneOSId: fResult.user.freelancerId,
+          rating: fResult.user.rating || 5.0,
+        };
+      } else {
+        // Initiated by freelancer
+        resolvedFreelancerId = resolvedFreelancerId || (isValidUUID(effectiveCreatorId) ? effectiveCreatorId : null);
+
+        // Resolve Client Counterparty
+        const cIdentifier = clientData?.milestoneOSId || clientData?.id || body.clientId || clientData?.email;
+        if (!cIdentifier) {
+          return NextResponse.json(
+            { error: "Client identifier is required when proposing a project." },
+            { status: 400 }
+          );
+        }
+
+        const cResult = await resolveCounterpartyIdentity({
+          identifier: cIdentifier,
+          expectedRole: "client",
+          proposerId: resolvedFreelancerId,
+          proposerEmail: freelancerData?.email,
+        });
+
+        if (!cResult.success) {
+          return NextResponse.json(
+            { error: cResult.error, code: cResult.code },
+            { status: 400 }
+          );
+        }
+
+        resolvedClientId = cResult.user.id;
+        clientData = {
+          ...clientData,
+          id: cResult.user.id,
+          name: cResult.user.name,
+          email: cResult.user.email,
+          avatar: cResult.user.avatar || clientData.avatar || "CL",
+          company: cResult.user.company || clientData.company || "Client Organization",
+          milestoneOSId: cResult.user.clientId,
+        };
       }
     }
 
-    if (initiatedBy === "client") {
-      resolvedClientId = resolvedClientId || (isValidUUID(effectiveCreatorId) ? effectiveCreatorId : null);
-    } else {
-      resolvedFreelancerId = resolvedFreelancerId || (isValidUUID(effectiveCreatorId) ? effectiveCreatorId : null);
+    // Safety check: Proposer and recipient must never be the exact same user
+    if (!isPublicInvitation && resolvedClientId && resolvedFreelancerId && resolvedClientId === resolvedFreelancerId) {
+      return NextResponse.json(
+        { error: "Client and Freelancer must be different registered users. Self-assignment is not permitted." },
+        { status: 400 }
+      );
     }
 
     const newProject: ProjectContract = {
@@ -172,12 +202,12 @@ export async function POST(req: NextRequest) {
       description: description || "",
       category,
       client: {
-        ...client,
-        id: resolvedClientId || client.id,
+        ...clientData,
+        id: resolvedClientId || clientData.id,
       },
       freelancer: {
-        ...freelancer,
-        id: resolvedFreelancerId || freelancer.id,
+        ...freelancerData,
+        id: resolvedFreelancerId || freelancerData.id,
       },
       clientId: resolvedClientId,
       freelancerId: resolvedFreelancerId,

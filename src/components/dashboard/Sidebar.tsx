@@ -46,6 +46,7 @@ export default function Sidebar({
     activeProjectId,
     setActiveProjectId,
     authUser,
+    isDemoMode,
   } = useDashboard();
 
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
@@ -75,12 +76,29 @@ export default function Sidebar({
     }
   };
 
-  // Count incoming proposals awaiting action
-  const incomingPendingCount = projects.filter(
-    (p) =>
-      (p.status === "awaiting_acceptance" || p.status === "changes_requested") &&
-      p.initiatedBy !== role
-  ).length;
+  const myId = authUser?.id;
+  const myEmail = authUser?.email?.trim().toLowerCase();
+
+  // Count incoming proposals strictly awaiting action by this recipient
+  const incomingPendingCount = projects.filter((p) => {
+    const isPending =
+      p.status === "awaiting_acceptance" || p.status === "changes_requested";
+    if (!isPending) return false;
+    if (isDemoMode) {
+      return role === "client" ? p.initiatedBy === "freelancer" : p.initiatedBy === "client";
+    }
+    if (role === "client") {
+      const isTargetClient =
+        (myId && (p.clientId === myId || p.client?.id === myId)) ||
+        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail);
+      return Boolean(isTargetClient && p.initiatedBy === "freelancer");
+    } else {
+      const isTargetFreelancer =
+        (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) ||
+        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail);
+      return Boolean(isTargetFreelancer && p.initiatedBy === "client");
+    }
+  }).length;
 
   const [copiedType, setCopiedType] = useState<"client" | "freelancer" | null>(null);
 
@@ -397,6 +415,20 @@ export default function Sidebar({
               <div className="flex items-center justify-between text-[10px] text-slate-400 font-semibold px-0.5">
                 <span>My Account IDs (Base: {baseCode})</span>
               </div>
+
+              {/* Show Registered Account Role Badge */}
+              {authUser?.role && (
+                <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                  Registered Role:{" "}
+                  <strong className="text-slate-800 dark:text-slate-200 uppercase font-semibold">
+                    {authUser.role}
+                  </strong>{" "}
+                  • Current View:{" "}
+                  <strong className="text-[#0070BA] dark:text-sky-300 capitalize font-semibold">
+                    {role}
+                  </strong>
+                </div>
+              )}
 
               {role === "freelancer" ? (
                 <>

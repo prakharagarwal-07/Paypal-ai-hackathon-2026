@@ -33,7 +33,7 @@ export default function ProjectRequestsView({
   onOpenRevision,
   onSelectProject,
 }: ProjectRequestsViewProps) {
-  const { role, projects, searchQuery, revokeInvitation, showConfirm, authUser } = useDashboard();
+  const { role, projects, searchQuery, revokeInvitation, showConfirm, authUser, isDemoMode } = useDashboard();
 
   const [activeTab, setActiveTab] = useState<"incoming" | "sent">("incoming");
   const [selectedReviewProject, setSelectedReviewProject] = useState<ProjectContract | null>(null);
@@ -43,7 +43,9 @@ export default function ProjectRequestsView({
   const myId = authUser?.id;
   const myEmail = authUser?.email?.trim().toLowerCase();
 
-  // Incoming Requests: proposals where current user/role is the designated recipient
+  // Incoming Requests: Strict recipient authorization
+  // For Client role: proposals where client_id = authUser.id AND initiated_by = 'freelancer'
+  // For Freelancer role: requests where freelancer_id = authUser.id AND initiated_by = 'client'
   const incomingRequests = projects.filter((p) => {
     const isProposalStatus =
       p.status === "awaiting_acceptance" ||
@@ -51,21 +53,29 @@ export default function ProjectRequestsView({
       p.status === "rejected";
     if (!isProposalStatus) return false;
 
-    // Direct recipient check:
-    if (p.initiatedBy === "client") {
-      // Initiated by client -> Recipient is the freelancer
-      if (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) return true;
-      if (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail) return true;
-      return role === "freelancer";
+    // Disregard invalid self-assigned proposals
+    if (p.clientId && p.freelancerId && p.clientId === p.freelancerId) return false;
+
+    if (isDemoMode) {
+      return role === "client" ? p.initiatedBy === "freelancer" : p.initiatedBy === "client";
+    }
+
+    if (role === "client") {
+      const isTargetClient =
+        (myId && (p.clientId === myId || p.client?.id === myId)) ||
+        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail);
+      return Boolean(isTargetClient && p.initiatedBy === "freelancer");
     } else {
-      // Initiated by freelancer -> Recipient is the client
-      if (myId && (p.clientId === myId || p.client?.id === myId)) return true;
-      if (myEmail && p.client?.email?.trim().toLowerCase() === myEmail) return true;
-      return role === "client";
+      const isTargetFreelancer =
+        (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) ||
+        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail);
+      return Boolean(isTargetFreelancer && p.initiatedBy === "client");
     }
   });
 
-  // Sent Proposals: proposals initiated by current user/role
+  // Sent Proposals: Strict proposer authorization
+  // For Client role: requests where client_id = authUser.id AND initiated_by = 'client'
+  // For Freelancer role: proposals where freelancer_id = authUser.id AND initiated_by = 'freelancer'
   const sentProposals = projects.filter((p) => {
     const isProposalOrRecent =
       p.status === "awaiting_acceptance" ||
@@ -76,15 +86,20 @@ export default function ProjectRequestsView({
       (p.status === "active" && p.proposalStatus === "accepted");
     if (!isProposalOrRecent) return false;
 
-    // Direct proposer check:
-    if (p.initiatedBy === "client") {
-      if (myId && (p.clientId === myId || p.client?.id === myId)) return true;
-      if (myEmail && p.client?.email?.trim().toLowerCase() === myEmail) return true;
-      return role === "client";
+    if (isDemoMode) {
+      return role === "client" ? p.initiatedBy === "client" : p.initiatedBy === "freelancer";
+    }
+
+    if (role === "client") {
+      const isProposerClient =
+        (myId && (p.clientId === myId || p.client?.id === myId)) ||
+        (myEmail && p.client?.email?.trim().toLowerCase() === myEmail);
+      return Boolean(isProposerClient && p.initiatedBy === "client");
     } else {
-      if (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) return true;
-      if (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail) return true;
-      return role === "freelancer";
+      const isProposerFreelancer =
+        (myId && (p.freelancerId === myId || p.freelancer?.id === myId)) ||
+        (myEmail && p.freelancer?.email?.trim().toLowerCase() === myEmail);
+      return Boolean(isProposerFreelancer && p.initiatedBy === "freelancer");
     }
   });
 

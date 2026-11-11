@@ -317,7 +317,9 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
     setIsSearching(true);
     try {
       const expectedRole = isClient ? "freelancer" : "client";
-      const res = await fetch(`/api/users/lookup?id=${encodeURIComponent(rawId)}&expectedRole=${expectedRole}${isDemoMode ? "&demo=true" : ""}`);
+      const currentUserId = authUser?.id || myProfile?.id;
+      const proposerParam = currentUserId ? `&proposerId=${encodeURIComponent(currentUserId)}` : "";
+      const res = await fetch(`/api/users/lookup?id=${encodeURIComponent(rawId)}&expectedRole=${expectedRole}${isDemoMode ? "&demo=true" : ""}${proposerParam}`);
       const data = await res.json();
       setIsSearching(false);
 

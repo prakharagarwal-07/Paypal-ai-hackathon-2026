@@ -70,6 +70,12 @@ export default function ProposalReviewModal({
     project.initiatorMilestoneOSId ||
     (project.initiatedBy === "client" ? project.client.milestoneOSId : project.freelancer.milestoneOSId);
 
+  const recipientName = isClientProposer ? project.freelancer?.name : project.client?.name;
+  const recipientRole = isClientProposer ? "Freelancer" : "Client";
+  const recipientOrgOrTitle = isClientProposer ? project.freelancer?.title : project.client?.company;
+  const recipientMsoId = isClientProposer ? project.freelancer?.milestoneOSId : project.client?.milestoneOSId;
+  const recipientAvatar = isClientProposer ? project.freelancer?.avatar : project.client?.avatar;
+
   const statusInfo = getFriendlyProjectStatus(project.status, project.initiatedBy, role);
 
   const handleConfirmAccept = () => {
@@ -133,33 +139,76 @@ export default function ProposalReviewModal({
 
         {/* Scrollable Body */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1 text-xs">
-          {/* Sender Overview Card */}
-          <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50/70 to-sky-50/40 dark:from-blue-950/30 dark:to-sky-950/20 border border-blue-200/80 dark:border-blue-900/40 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-[#0070BA] text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
+          {/* Dual Participant Overview (Sender & Intended Recipient) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Sender Overview Card */}
+            <div className="p-3.5 rounded-xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-900/40 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-[#0070BA] text-white font-bold flex items-center justify-center text-xs shadow-xs shrink-0">
                 {project.initiatedBy === "client" ? project.client.avatar : project.freelancer.avatar}
               </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[#0070BA] dark:text-sky-400 tracking-wider block">
+              <div className="min-w-0">
+                <span className="text-[9px] uppercase font-bold text-[#0070BA] dark:text-sky-400 tracking-wider block">
                   Proposal Proposer ({senderRole})
                 </span>
-                <h4 className="font-bold text-slate-900 dark:text-white text-xs">
+                <h4 className="font-bold text-slate-900 dark:text-white text-xs truncate">
                   {senderName}
                 </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  {senderOrgOrTitle} • ID:{" "}
-                  <strong className="font-mono text-slate-800 dark:text-sky-300">{senderId || "MSO-VERIFIED"}</strong>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  {senderOrgOrTitle} • ID: <strong className="font-mono text-slate-800 dark:text-sky-300">{senderId || "MSO-VERIFIED"}</strong>
                 </p>
               </div>
             </div>
 
-            <div className="text-right shrink-0">
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Proposed Budget</span>
+            {/* Intended Recipient Overview Card */}
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-slate-700 dark:bg-slate-600 text-white font-bold flex items-center justify-center text-xs shadow-xs shrink-0">
+                {recipientAvatar || "RC"}
+              </div>
+              <div className="min-w-0">
+                <span className="text-[9px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider block">
+                  Designated Recipient ({recipientRole})
+                </span>
+                <h4 className="font-bold text-slate-900 dark:text-white text-xs truncate">
+                  {recipientName}
+                </h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  {recipientOrgOrTitle} • ID: <strong className="font-mono text-slate-800 dark:text-slate-200">{recipientMsoId || "PENDING"}</strong>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Budget & Target Overview Bar */}
+          <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Proposed Total Budget</span>
               <span className="font-mono font-black text-base text-slate-900 dark:text-white">
                 {formatCurrency(project.totalBudget, project.currency)}
               </span>
             </div>
+            <div className="text-right">
+              <span className="text-[10px] uppercase font-bold text-slate-400 block">Target Deadline</span>
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                {project.targetDeadline || "TBD"}
+              </span>
+            </div>
           </div>
+
+          {/* Perspective-aware Status Notice */}
+          {project.status === "awaiting_acceptance" && (
+            <div className={`p-3 rounded-xl border text-[11px] flex items-center gap-2 ${
+              isRecipient
+                ? "bg-amber-50/80 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 font-medium"
+                : "bg-blue-50/80 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900 text-blue-900 dark:text-sky-200"
+            }`}>
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                {isRecipient
+                  ? "Action Required: You are the designated recipient of this proposal. Review the agreed scope and milestones below to accept, request adjustments, or decline."
+                  : `Proposal Dispatched: You created and submitted this proposal to ${recipientName}. Awaiting their counterparty acceptance.`}
+              </span>
+            </div>
+          )}
 
           {/* Requested Changes Banner (if any) */}
           {project.status === "changes_requested" && project.proposalFeedback && (

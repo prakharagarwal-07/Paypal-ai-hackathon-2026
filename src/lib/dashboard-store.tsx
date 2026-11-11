@@ -1022,18 +1022,8 @@ export function DashboardProvider({
         isDemo: Boolean(isDemoMode),
       };
 
-      const recipientNotif: NotificationItem = {
-        id: `notif_${Date.now()}_recip`,
-        timestamp: "Just now",
-        title: isClientInitiator ? "Project Assignment Received" : "Incoming Project Proposal",
-        message: `${senderName} sent you a project proposal: "${newProject.title}" (${currSym}${newProject.totalBudget.toLocaleString()} ${curr}). Review to accept.`,
-        type: "proposal",
-        unread: true,
-        projectId: id,
-        isDemo: Boolean(isDemoMode),
-      };
-
-      setNotifications((prev) => [recipientNotif, senderNotif, ...prev]);
+      // Add dispatch notification for sender only (recipient notification is stored in Supabase)
+      setNotifications((prev) => [senderNotif, ...prev]);
     }
 
     showToast(
