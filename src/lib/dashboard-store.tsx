@@ -25,6 +25,7 @@ import {
   generateInvitationToken,
   lookupMilestoneOSUser,
   isProjectCompleted,
+  isProjectAccepted,
 } from "./dashboard-data";
 import { getSupabaseClient, isSupabaseConfigured } from "./supabase";
 
@@ -355,7 +356,11 @@ export function DashboardProvider({
 
   const activeProject = useMemo(() => {
     if (!projects || projects.length === 0) return undefined;
-    return projects.find((p) => p.id === activeProjectIdState) || projects[0];
+    const accepted = projects.filter(isProjectAccepted);
+    const matched = projects.find((p) => p.id === activeProjectIdState);
+    if (matched) return matched;
+    if (accepted.length > 0) return accepted[0];
+    return undefined;
   }, [projects, activeProjectIdState]);
 
   const setActiveProjectId = (id: string) => {

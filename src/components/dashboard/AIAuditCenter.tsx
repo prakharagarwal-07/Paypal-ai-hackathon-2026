@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyStatus, isProjectAccepted } from "@/lib/dashboard-data";
 import {
   FolderGit2,
   Sparkles,
@@ -31,9 +31,9 @@ export default function AIAuditCenter({ onOpenAudit, onSelectProject }: AIAuditC
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
-  // Get all projects that have at least one milestone with a submission or audit report
-  const projectsWithReviews = projects.filter((p) =>
-    p.milestones.some((m) => m.submissions.length > 0 || m.latestAudit)
+  // Get all accepted projects that have at least one milestone with a submission or audit report
+  const projectsWithReviews = projects.filter(
+    (p) => isProjectAccepted(p) && p.milestones.some((m) => m.submissions.length > 0 || m.latestAudit)
   );
 
   // Filter projects by selected project ID and search query

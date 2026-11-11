@@ -1,7 +1,7 @@
 "use client";
 
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, TransactionRecord } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, TransactionRecord, isProjectAccepted } from "@/lib/dashboard-data";
 import { CheckCircle2, Clock, Copy, Check, X, FolderGit2, Sparkles, Download, Receipt } from "lucide-react";
 import { PayPalIcon } from "./icons";
 import { useState } from "react";
@@ -16,12 +16,14 @@ export default function PaymentsView({ onOpenPayPal, onOpenInvoice }: PaymentsVi
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [selectedTx, setSelectedTx] = useState<TransactionRecord | null>(null);
 
-  // 1. Payments to Make (milestones approved and ready for payment)
-  const paymentsToMake = projects.flatMap((p) =>
-    p.milestones
-      .filter((m) => m.status === "approved" || m.status === "payment_pending")
-      .map((m) => ({ project: p, milestone: m }))
-  );
+  // 1. Payments to Make (milestones approved and ready for payment in accepted projects)
+  const paymentsToMake = projects
+    .filter(isProjectAccepted)
+    .flatMap((p) =>
+      p.milestones
+        .filter((m) => m.status === "approved" || m.status === "payment_pending")
+        .map((m) => ({ project: p, milestone: m }))
+    );
 
   const copyTxId = (id: string) => {
     navigator.clipboard?.writeText(id);

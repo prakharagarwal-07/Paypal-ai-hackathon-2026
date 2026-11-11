@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, ActivityItem, getFriendlyStatus, isProjectCompleted } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, ActivityItem, getFriendlyStatus, isProjectCompleted, isProjectAccepted } from "@/lib/dashboard-data";
 import {
   FolderGit2,
   Sparkles,
@@ -186,9 +186,10 @@ export default function DashboardOverview({
     setActiveTab,
   } = useDashboard();
 
-  // Clean metrics calculations
-  const totalProjects = projects.filter((p) => p.status === "active" && !isProjectCompleted(p)).length;
-  const allMilestones = projects.flatMap((p) =>
+  // Clean metrics calculations for accepted active projects only
+  const acceptedProjects = projects.filter(isProjectAccepted);
+  const totalProjects = acceptedProjects.filter((p) => p.status === "active" && !isProjectCompleted(p)).length;
+  const allMilestones = acceptedProjects.flatMap((p) =>
     p.milestones.map((m) => ({ project: p, milestone: m }))
   );
 

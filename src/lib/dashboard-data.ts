@@ -209,6 +209,27 @@ export function isProjectCompleted(project: ProjectContract | null | undefined):
   return project.milestones.every((m) => m.status === "paid");
 }
 
+export function isProjectAccepted(project: ProjectContract | null | undefined): boolean {
+  if (!project) return false;
+  if (
+    project.status === "draft" ||
+    project.status === "awaiting_acceptance" ||
+    project.status === "changes_requested" ||
+    project.status === "rejected"
+  ) {
+    return false;
+  }
+  if (project.proposalStatus && project.proposalStatus !== "accepted") {
+    return false;
+  }
+  return (
+    project.status === "active" ||
+    project.status === "accepted" ||
+    project.status === "completed" ||
+    project.termsAgreed === true
+  );
+}
+
 export function getFriendlyStatus(status: MilestoneStatus): {
   label: string;
   badgeClass: string;

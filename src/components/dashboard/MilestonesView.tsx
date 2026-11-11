@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useDashboard } from "@/lib/dashboard-store";
-import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted } from "@/lib/dashboard-data";
+import { Milestone, ProjectContract, getFriendlyStatus, isProjectCompleted, isProjectAccepted } from "@/lib/dashboard-data";
 import {
   FolderGit2,
   ArrowRight,
@@ -51,8 +51,11 @@ export default function MilestonesView({
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
 
-  // Filter projects by selected project ID and search query
-  const projectsToDisplay = projects.filter((p) => {
+  // Only projects that have been accepted belong in the Milestones tab
+  const acceptedProjects = projects.filter(isProjectAccepted);
+
+  // Filter accepted projects by selected project ID and search query
+  const projectsToDisplay = acceptedProjects.filter((p) => {
     if (selectedProjectId !== "all" && p.id !== selectedProjectId) {
       return false;
     }
@@ -148,10 +151,10 @@ export default function MilestonesView({
                 : "bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            All Projects ({projects.length})
+            All Projects ({acceptedProjects.length})
           </button>
 
-          {projects.map((p) => (
+          {acceptedProjects.map((p) => (
             <button
               key={p.id}
               type="button"
@@ -194,7 +197,21 @@ export default function MilestonesView({
 
       {/* Project Groupings List */}
       <div className="space-y-6">
-        {totalMatchingMilestones === 0 ? (
+        {acceptedProjects.length === 0 ? (
+          <div className="p-12 text-center text-xs text-slate-500 dark:text-slate-400 border border-dashed border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-[#0D1527] space-y-3">
+            <div className="h-12 w-12 mx-auto rounded-2xl bg-blue-50 dark:bg-sky-950/40 text-[#0070BA] dark:text-sky-300 flex items-center justify-center font-bold">
+              <Layers className="h-6 w-6" />
+            </div>
+            <div className="max-w-md mx-auto space-y-1">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                No Active Project Milestones
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Milestones will appear here once a project proposal has been accepted by both parties. Pending proposals can be reviewed in Project Requests.
+              </p>
+            </div>
+          </div>
+        ) : totalMatchingMilestones === 0 ? (
           <div className="p-12 text-center text-slate-400 text-xs border border-dashed border-slate-200 dark:border-white/10 rounded-2xl bg-white dark:bg-[#0D1527]">
             No milestones found matching your selected filters.
           </div>
