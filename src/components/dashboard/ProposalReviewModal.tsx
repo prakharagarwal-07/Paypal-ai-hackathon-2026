@@ -50,17 +50,12 @@ export default function ProposalReviewModal({
   const recipientId = isClientProposer ? (project.freelancerId || project.freelancer?.id) : (project.clientId || project.client?.id);
   const recipientEmail = (isClientProposer ? project.freelancer?.email : project.client?.email)?.trim().toLowerCase();
 
-  const isRecipient = Boolean(
-    (myId && (recipientId === myId)) ||
-    (myEmail && (recipientEmail === myEmail)) ||
-    (!myId && role !== project.initiatedBy)
-  );
-
-  const isSender = Boolean(
-    (myId && proposerId === myId) ||
-    (myEmail && proposerEmail === myEmail) ||
-    (!isRecipient && role === project.initiatedBy)
-  );
+  // Active workspace role determines perspective:
+  // - In Client view, if initiatedBy === 'freelancer', user is acting as RECIPIENT.
+  // - In Freelancer view, if initiatedBy === 'client', user is acting as RECIPIENT.
+  // - If role === initiatedBy, user is the SENDER.
+  const isSender = role === project.initiatedBy;
+  const isRecipient = role !== project.initiatedBy;
 
   const senderName = project.initiatedBy === "client" ? project.client.name : project.freelancer.name;
   const senderRole = project.initiatedBy === "client" ? "Client" : "Freelancer";
@@ -98,12 +93,26 @@ export default function ProposalReviewModal({
   const handleDecline = () => {
     showConfirm({
       title: "Decline Project Proposal?",
-      message: `Are you sure you want to decline the proposal for "${project.title}"? This will record the proposal as rejected.`,
-      confirmText: "Yes, Decline Proposal",
+      message: `Are you sure you want to decline the proposal "${project.title}"? This will decline and permanently remove it for both parties.`,
+      confirmText: "Yes, Decline & Remove",
+      cancelText: "Keep Reviewing",
+      isDestructive: true,
+      onConfirm: () => {
+        rejectProposal(project.id, "Declined by recipient");
+        onClose();
+      },
+    });
+  };
+
+  const handleWithdraw = () => {
+    showConfirm({
+      title: "Withdraw Project Proposal?",
+      message: `Are you sure you want to withdraw "${project.title}"? This will cancel the proposal and remove it for both parties.`,
+      confirmText: "Yes, Withdraw & Remove",
       cancelText: "Keep Proposal",
       isDestructive: true,
       onConfirm: () => {
-        rejectProposal(project.id, "Proposal declined by counterparty.");
+        rejectProposal(project.id, "Withdrawn by proposer");
         onClose();
       },
     });
@@ -345,6 +354,17 @@ export default function ProposalReviewModal({
           </button>
 
           <div className="flex items-center gap-2">
+            {/* If sender viewing sent proposal: can withdraw/cancel */}
+            {isSender && project.status === "awaiting_acceptance" && (
+              <button
+                type="button"
+                onClick={handleWithdraw}
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer transition-colors"
+              >
+                Withdraw Proposal
+              </button>
+            )}
+
             {/* If sender viewing changes requested: can revise */}
             {isSender && project.status === "changes_requested" && onOpenRevision && (
               <button
@@ -359,8 +379,8 @@ export default function ProposalReviewModal({
               </button>
             )}
 
-            {/* If recipient: 3 clear actions (Accept, Request Changes, Reject) */}
-            {!isSender && project.status === "awaiting_acceptance" && (
+            {/* If recipient: 3 clear actions (Accept, Request Changes, Decline) */}
+            {isRecipient && project.status === "awaiting_acceptance" && (
               <>
                 <button
                   type="button"

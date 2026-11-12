@@ -88,6 +88,7 @@ export default function SubmissionModal({
   const [formError, setFormError] = useState<string | null>(null);
   const [isRunningCheck, setIsRunningCheck] = useState(false);
   const [checkPassed, setCheckPassed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -178,7 +179,7 @@ export default function SubmissionModal({
     }, 800);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const hasFiles = uploadedFiles.length > 0;
@@ -198,20 +199,29 @@ export default function SubmissionModal({
       (l) => l.url.trim().length > 0 || l.title.trim().length > 0
     );
 
-    submitMilestoneDeliverables(
-      project.id,
-      milestone.id,
-      {
-        deliverableLinks: cleanedLinks,
-        attachments: uploadedFiles,
-        demoUrl: demoUrl.trim() || undefined,
-        githubRepo: githubRepo.trim() || undefined,
-        loomVideo: loomVideo.trim() || undefined,
-        notes: notes.trim() || "Milestone deliverables submitted for review.",
-      },
-      isRevision
-    );
-    onClose();
+    setIsSubmitting(true);
+    setFormError(null);
+
+    try {
+      await submitMilestoneDeliverables(
+        project.id,
+        milestone.id,
+        {
+          deliverableLinks: cleanedLinks,
+          attachments: uploadedFiles,
+          demoUrl: demoUrl.trim() || undefined,
+          githubRepo: githubRepo.trim() || undefined,
+          loomVideo: loomVideo.trim() || undefined,
+          notes: notes.trim() || "Milestone deliverables submitted for review.",
+        },
+        isRevision
+      );
+      onClose();
+    } catch (err: any) {
+      setFormError(err.message || "Failed to submit deliverables. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -493,9 +503,17 @@ export default function SubmissionModal({
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold cursor-pointer transition-colors shadow-xs"
+              disabled={isSubmitting}
+              className="px-5 py-2 rounded-xl bg-[#0070BA] hover:bg-[#005a96] text-white text-xs font-bold cursor-pointer transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
-              {isRevision ? "Resubmit Work" : "Submit Work"}
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  <span>Submitting & Verifying...</span>
+                </>
+              ) : (
+                <span>{isRevision ? "Resubmit Work" : "Submit Work"}</span>
+              )}
             </button>
           </div>
         </form>

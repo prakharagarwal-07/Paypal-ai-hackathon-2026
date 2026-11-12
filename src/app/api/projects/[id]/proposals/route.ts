@@ -41,26 +41,38 @@ export async function POST(
     const recipientId = isClientProposer ? (project.freelancerId || project.freelancer?.id) : (project.clientId || project.client?.id);
     const recipientEmail = isClientProposer ? project.freelancer?.email?.toLowerCase() : project.client?.email?.toLowerCase();
 
-    const isProposer = Boolean(
-      (callerId && callerId === proposerId) ||
-      (callerEmail && callerEmail.toLowerCase() === proposerEmail)
+    const callerRole = body.role;
+    const isSelfAssignment = Boolean(
+      (proposerId && recipientId && proposerId === recipientId) ||
+      (proposerEmail && recipientEmail && proposerEmail === recipientEmail)
     );
 
-    const isRecipient = Boolean(
-      (callerId && callerId === recipientId) ||
-      (callerEmail && callerEmail.toLowerCase() === recipientEmail)
+    // If caller is in the counterparty role or self-assigning, treat as recipient
+    const isActingAsRecipient = Boolean(
+      (callerRole && callerRole !== project.initiatedBy) ||
+      (callerId && callerId === recipientId && !isSelfAssignment) ||
+      (callerEmail && callerEmail.toLowerCase() === recipientEmail && !isSelfAssignment) ||
+      isSelfAssignment
     );
 
-    // Scenario D Enforcement: Proposer CANNOT accept, reject, or request changes on their own proposal
-    if (action === "accept" || action === "reject" || action === "request_changes") {
-      if (isProposer) {
+    const isActingAsProposer = Boolean(
+      (callerRole && callerRole === project.initiatedBy) ||
+      (!callerRole && !isSelfAssignment && (
+        (callerId && callerId === proposerId) ||
+        (callerEmail && callerEmail.toLowerCase() === proposerEmail)
+      ))
+    );
+
+    // Scenario D Enforcement: Proposer CANNOT accept or request changes on their own proposal
+    if (action === "accept" || action === "request_changes") {
+      if (isActingAsProposer && !isActingAsRecipient) {
         return NextResponse.json(
-          { error: "You cannot accept, reject, or request changes on your own proposal. Only the recipient can accept." },
+          { error: "You cannot accept or request changes on your own proposal. Only the recipient can accept." },
           { status: 403 }
         );
       }
 
-      if (!isRecipient && !project.isDemo) {
+      if (!isActingAsRecipient && !project.isDemo) {
         return NextResponse.json(
           { error: "Unauthorized. Only the designated recipient can accept or review this project proposal." },
           { status: 403 }
@@ -71,7 +83,7 @@ export async function POST(
     if (action === "accept") {
       if (project.status === "active" && project.proposalStatus === "accepted") {
         return NextResponse.json(
-          { success: true, message: "Project proposal has already been accepted and is active.", project }
+          { success: true, message: "Project proposal has already been accepted and is active in My Projects.", project }
         );
       }
 
@@ -85,7 +97,7 @@ export async function POST(
       const updated = await db.updateProjectStatus(id, "active");
       return NextResponse.json({
         success: true,
-        message: "Proposal accepted. Mutually agreed contract is now active.",
+        message: "Proposal accepted. Mutually agreed contract is now active in My Projects.",
         project: updated,
       });
     }
@@ -109,13 +121,22 @@ export async function POST(
       const updated = await db.updateProjectStatus(id, "rejected", feedback);
       return NextResponse.json({
         success: true,
-        message: "Proposal declined.",
+        message: "Proposal declined and removed from workspace.",
         project: updated,
       });
     }
 
+    if (action === "withdraw") {
+      await db.deleteProject(id);
+      return NextResponse.json({
+        success: true,
+        message: "Proposal withdrawn and removed from workspace.",
+        removedProjectId: id,
+      });
+    }
+
     if (action === "resubmit") {
-      if (callerId && !isProposer) {
+      if (callerId && !isActingAsProposer) {
         return NextResponse.json(
           { error: "Only the original proposer can revise and resubmit this proposal." },
           { status: 403 }

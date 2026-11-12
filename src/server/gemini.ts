@@ -27,12 +27,10 @@ export function hasGeminiKey(): boolean {
 }
 
 const GEMINI_MODELS = [
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-3.8-flash",
   "gemini-flash-latest",
   "gemini-flash-lite-latest",
-  "gemini-3.8-flash",
 ];
 
 export interface GeminiCallResult {
@@ -119,6 +117,7 @@ async function requestGeminiJson(
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: AbortSignal.timeout(3000),
           body: JSON.stringify({
             contents: [{ parts }],
             generationConfig: {
@@ -184,95 +183,95 @@ export async function verifyMilestoneWithAI(
 
   if (hasGeminiKey() && apiKey) {
     try {
-      const deliverableLinksStr = (submission.deliverableLinks || [])
-        .map((l, i) => `  ${i + 1}. [${l.type || "Asset"}] ${l.title}: ${l.url}`)
-        .join("\n") || "  None provided";
+      const liveAiPromise = (async () => {
+        const deliverableLinksStr = (submission.deliverableLinks || [])
+          .map((l, i) => `  ${i + 1}. [${l.type || "Asset"}] ${l.title}: ${l.url}`)
+          .join("\n") || "  None provided";
 
-      // Extract code snippets and ZIP manifests from submitted attachments
-      const textCodeSnippets: string[] = [];
-      const zipManifests: string[] = [];
-      const multimodalParts: any[] = [];
+        // Extract code snippets and ZIP manifests from submitted attachments
+        const textCodeSnippets: string[] = [];
+        const zipManifests: string[] = [];
+        const multimodalParts: any[] = [];
 
-      if (submission.attachments && submission.attachments.length > 0) {
-        for (const att of submission.attachments) {
-          if (!att.dataUrl) continue;
-          const match = att.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
-          if (!match) continue;
+        if (submission.attachments && submission.attachments.length > 0) {
+          for (const att of submission.attachments) {
+            if (!att.dataUrl) continue;
+            const match = att.dataUrl.match(/^data:([^;]+);base64,(.+)$/);
+            if (!match) continue;
 
-          const mime = match[1].toLowerCase();
-          const base64Data = match[2];
-          const lowerName = att.name.toLowerCase();
+            const mime = match[1].toLowerCase();
+            const base64Data = match[2];
+            const lowerName = att.name.toLowerCase();
 
-          // 1. Multimodal Images (PNG, JPG, WebP, GIF)
-          if (mime.startsWith("image/")) {
-            multimodalParts.push({
-              inline_data: {
-                mime_type: mime,
-                data: base64Data,
-              },
-            });
-          }
-          // 2. Multimodal PDFs
-          else if (mime === "application/pdf" || lowerName.endsWith(".pdf")) {
-            multimodalParts.push({
-              inline_data: {
-                mime_type: "application/pdf",
-                data: base64Data,
-              },
-            });
-          }
-          // 3. ZIP Archives: extract file tree manifest
-          else if (
-            lowerName.endsWith(".zip") ||
-            mime.includes("zip") ||
-            mime === "application/x-zip-compressed"
-          ) {
-            try {
-              const buffer = Buffer.from(base64Data, "base64");
-              const files = parseZipArchiveHeaders(buffer);
-              if (files.length > 0) {
-                zipManifests.push(
-                  `Archive: "${att.name}" (${att.size}) — Contains ${files.length} file(s):\n  ` +
-                    files.slice(0, 40).join("\n  ") +
-                    (files.length > 40 ? `\n  ... (+${files.length - 40} more files)` : "")
-                );
-              } else {
-                zipManifests.push(`Archive: "${att.name}" (${att.size}) — Valid ZIP format detected.`);
+            // 1. Multimodal Images (PNG, JPG, WebP, GIF)
+            if (mime.startsWith("image/")) {
+              multimodalParts.push({
+                inline_data: {
+                  mime_type: mime,
+                  data: base64Data,
+                },
+              });
+            }
+            // 2. Multimodal PDFs
+            else if (mime === "application/pdf" || lowerName.endsWith(".pdf")) {
+              multimodalParts.push({
+                inline_data: {
+                  mime_type: "application/pdf",
+                  data: base64Data,
+                },
+              });
+            }
+            // 3. ZIP Archives: extract file tree manifest
+            else if (
+              lowerName.endsWith(".zip") ||
+              mime.includes("zip") ||
+              mime === "application/x-zip-compressed"
+            ) {
+              try {
+                const buffer = Buffer.from(base64Data, "base64");
+                const files = parseZipArchiveHeaders(buffer);
+                if (files.length > 0) {
+                  zipManifests.push(
+                    `Archive: "${att.name}" (${att.size}) — Contains ${files.length} file(s):\n  ` +
+                      files.slice(0, 40).join("\n  ") +
+                      (files.length > 40 ? `\n  ... (+${files.length - 40} more files)` : "")
+                  );
+                } else {
+                  zipManifests.push(`Archive: "${att.name}" (${att.size}) — Valid ZIP format detected.`);
+                }
+              } catch (_) {
+                zipManifests.push(`Archive: "${att.name}" (${att.size}) — ZIP package uploaded.`);
               }
-            } catch (_) {
-              zipManifests.push(`Archive: "${att.name}" (${att.size}) — ZIP package uploaded.`);
+            }
+            // 4. Source Code and Text Documents
+            else if (
+              mime.startsWith("text/") ||
+              lowerName.endsWith(".ts") ||
+              lowerName.endsWith(".tsx") ||
+              lowerName.endsWith(".js") ||
+              lowerName.endsWith(".jsx") ||
+              lowerName.endsWith(".py") ||
+              lowerName.endsWith(".json") ||
+              lowerName.endsWith(".html") ||
+              lowerName.endsWith(".css") ||
+              lowerName.endsWith(".sql") ||
+              lowerName.endsWith(".md") ||
+              lowerName.endsWith(".txt")
+            ) {
+              try {
+                const decoded = Buffer.from(base64Data, "base64").toString("utf-8");
+                const snippet = decoded.slice(0, 8000);
+                textCodeSnippets.push(
+                  `=== FILE: ${att.name} (${att.size}) ===\n${snippet}${
+                    decoded.length > 8000 ? "\n... [truncated]" : ""
+                  }`
+                );
+              } catch (_) {}
             }
           }
-          // 4. Source Code and Text Documents
-          else if (
-            mime.startsWith("text/") ||
-            lowerName.endsWith(".ts") ||
-            lowerName.endsWith(".tsx") ||
-            lowerName.endsWith(".js") ||
-            lowerName.endsWith(".jsx") ||
-            lowerName.endsWith(".py") ||
-            lowerName.endsWith(".json") ||
-            lowerName.endsWith(".html") ||
-            lowerName.endsWith(".css") ||
-            lowerName.endsWith(".sql") ||
-            lowerName.endsWith(".md") ||
-            lowerName.endsWith(".txt")
-          ) {
-            try {
-              const decoded = Buffer.from(base64Data, "base64").toString("utf-8");
-              // Cap at 8,000 chars per file to preserve token budget
-              const snippet = decoded.slice(0, 8000);
-              textCodeSnippets.push(
-                `=== FILE: ${att.name} (${att.size}) ===\n${snippet}${
-                  decoded.length > 8000 ? "\n... [truncated]" : ""
-                }`
-              );
-            } catch (_) {}
-          }
         }
-      }
 
-      const prompt = `You are the MilestoneOS AI Deliverable Acceptance Evaluator.
+        const prompt = `You are the MilestoneOS AI Deliverable Acceptance Evaluator.
 Your job is to objectively evaluate submitted deliverables (photos, artwork, Figma mockups, source code, ZIP packages, PDF reports, or staging URLs) against the contract acceptance criteria agreed between client and freelancer.
 
 IMPORTANT LEGAL & OPERATIONAL CONTEXT:
@@ -297,26 +296,20 @@ ${zipManifests.length > 0 ? `\nSUBMITTED ZIP ARCHIVE MANIFESTS:\n${zipManifests.
 
 EVALUATION RULES:
 1. Requirement-by-Requirement Completion:
-   - For EACH criterion, determine status:
-     * "met": Concrete deliverable proof is present in submitted materials.
-     * "missing": Requirement is omitted or unsatisfied.
-     * "needs_manual_review": Partial proof or runtime interactive item requiring client manual inspection.
+   - For EACH criterion, determine status: "met" | "missing" | "needs_manual_review".
    - Cite specific, concrete "evidence" from submitted images, code, files, or notes.
    - Formulate constructive "aiNotes".
-
 2. Deliverable Gap & Inconsistency Analysis:
    - "missingDeliverables": List any specific deliverables that were required by the milestone description or criteria but are absent from the submission package.
-   - "inconsistencies": Flag any discrepancies between what was agreed in the scope and what was submitted (e.g. requested feature X but delivered Y).
-
-3. Evidence & Assumption Disambiguation (CRITICAL):
+   - "inconsistencies": Flag any discrepancies between what was agreed in the scope and what was submitted.
+3. Evidence & Assumption Disambiguation:
    - "verifiedFindings": Concrete items directly verified and proven by uploaded photos, documents, code files, or ZIP manifests.
-   - "unverifiedAssumptions": Items that CANNOT be verified by an automated AI (e.g. external live staging links requiring authentication, private GitHub repos, runtime user interactions, or real-world execution).
-
+   - "unverifiedAssumptions": Items that CANNOT be verified by an automated AI.
 4. Quality Assessment:
-   - "qualityScore": number (0-100) reflecting fidelity, craft, and completeness.
+   - "qualityScore": number (0-100).
    - "qualityNotes": concise evaluation of overall quality.
    - "overallScore": number (0-100).
-   - "status": "approved" (score >= 80 and no critical missing items), "changes_requested" (critical items missing), or "needs_verification".
+   - "status": "approved" (score >= 80 and no critical missing items), "changes_requested", or "needs_verification".
 
 Return STRICTLY valid JSON conforming to this schema:
 {
@@ -342,102 +335,100 @@ Return STRICTLY valid JSON conforming to this schema:
   "suggestedRevisions": string[]
 }`;
 
-      const parts: any[] = [{ text: prompt }, ...multimodalParts];
+        const parts: any[] = [{ text: prompt }, ...multimodalParts];
+        const callResult = await requestGeminiJson(parts, apiKey);
 
-      const callResult = await requestGeminiJson(parts, apiKey);
+        if (callResult.data) {
+          const parsed = callResult.data;
+          const checks: Array<{ name: string; passed: boolean; detail: string }> = [];
 
-      if (callResult.data) {
-        const parsed = callResult.data;
-        const checks: Array<{ name: string; passed: boolean; detail: string }> = [];
+          if (submission.attachments && submission.attachments.length > 0) {
+            checks.push({
+              name: "Uploaded Deliverables & Files",
+              passed: true,
+              detail: `${submission.attachments.length} file(s) evaluated by Gemini multimodal engine`,
+            });
+          }
+          if (submission.deliverableLinks && submission.deliverableLinks.length > 0) {
+            checks.push({
+              name: "Deliverable Assets & Links",
+              passed: true,
+              detail: `${submission.deliverableLinks.length} asset link(s) inspected`,
+            });
+          }
+          if (submission.githubRepo) {
+            checks.push({
+              name: "Repository Integration",
+              passed: true,
+              detail: "Code repository link verified",
+            });
+          }
+          if (submission.demoUrl) {
+            checks.push({
+              name: "Live Staging Preview",
+              passed: true,
+              detail: "Interactive preview link verified",
+            });
+          }
+          if (submission.loomVideo) {
+            checks.push({
+              name: "Walkthrough Video",
+              passed: true,
+              detail: "Video walkthrough attached",
+            });
+          }
+          checks.push({
+            name: "Acceptance Criteria Alignment",
+            passed: (parsed.status || "approved") !== "changes_requested",
+            detail:
+              (parsed.status || "approved") === "approved"
+                ? "All milestone criteria met"
+                : "Items require review",
+          });
 
-        if (submission.attachments && submission.attachments.length > 0) {
-          checks.push({
-            name: "Uploaded Deliverables & Files",
-            passed: true,
-            detail: `${submission.attachments.length} file(s) evaluated by Gemini multimodal engine`,
-          });
+          return {
+            overallScore: Math.min(100, Math.max(0, Math.round(parsed.overallScore || 88))),
+            summary:
+              parsed.summary ||
+              "Automated evaluation completed against agreed milestone acceptance criteria.",
+            status: parsed.status || "approved",
+            verifiedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            isDemonstration: false,
+            qualityScore: parsed.qualityScore || 85,
+            qualityNotes:
+              parsed.qualityNotes || "Deliverables align well with specified milestone requirements.",
+            criteria: (parsed.criteria || []).map((c: any, idx: number) => ({
+              id: c.id || acceptanceCriteria[idx]?.id || `crit_${idx}`,
+              title: c.title || acceptanceCriteria[idx]?.title || "Requirement",
+              description: c.description || acceptanceCriteria[idx]?.description || "",
+              status: c.status || "met",
+              evidence: c.evidence || "Verified in deliverable package.",
+              aiNotes: c.aiNotes || "Meets scope specification.",
+            })),
+            missingDeliverables: parsed.missingDeliverables || [],
+            inconsistencies: parsed.inconsistencies || [],
+            verifiedFindings: parsed.verifiedFindings || [
+              "Evaluated submitted files and deliverable links against contract criteria.",
+            ],
+            unverifiedAssumptions: parsed.unverifiedAssumptions || [
+              "External URLs and runtime interactions require manual client verification.",
+            ],
+            suggestedRevisions: parsed.suggestedRevisions || [],
+            automatedChecks: checks,
+            submissionFingerprint: fingerprint,
+            isCached: false,
+            isQuotaExceeded: false,
+          };
         }
-        if (submission.deliverableLinks && submission.deliverableLinks.length > 0) {
-          checks.push({
-            name: "Deliverable Assets & Links",
-            passed: true,
-            detail: `${submission.deliverableLinks.length} asset link(s) inspected`,
-          });
-        }
-        if (submission.githubRepo) {
-          checks.push({
-            name: "Repository Integration",
-            passed: true,
-            detail: "Code repository link verified",
-          });
-        }
-        if (submission.demoUrl) {
-          checks.push({
-            name: "Live Staging Preview",
-            passed: true,
-            detail: "Interactive preview link verified",
-          });
-        }
-        if (submission.loomVideo) {
-          checks.push({
-            name: "Walkthrough Video",
-            passed: true,
-            detail: "Video walkthrough attached",
-          });
-        }
-        checks.push({
-          name: "Acceptance Criteria Alignment",
-          passed: (parsed.status || "approved") !== "changes_requested",
-          detail:
-            (parsed.status || "approved") === "approved"
-              ? "All milestone criteria met"
-              : "Items require review",
-        });
 
-        return {
-          overallScore: Math.min(100, Math.max(0, Math.round(parsed.overallScore || 88))),
-          summary:
-            parsed.summary ||
-            "Automated evaluation completed against agreed milestone acceptance criteria.",
-          status: parsed.status || "approved",
-          verifiedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          isDemonstration: false,
-          qualityScore: parsed.qualityScore || 85,
-          qualityNotes:
-            parsed.qualityNotes || "Deliverables align well with specified milestone requirements.",
-          criteria: (parsed.criteria || []).map((c: any, idx: number) => ({
-            id: c.id || acceptanceCriteria[idx]?.id || `crit_${idx}`,
-            title: c.title || acceptanceCriteria[idx]?.title || "Requirement",
-            description: c.description || acceptanceCriteria[idx]?.description || "",
-            status: c.status || "met",
-            evidence: c.evidence || "Verified in deliverable package.",
-            aiNotes: c.aiNotes || "Meets scope specification.",
-          })),
-          missingDeliverables: parsed.missingDeliverables || [],
-          inconsistencies: parsed.inconsistencies || [],
-          verifiedFindings: parsed.verifiedFindings || [
-            "Evaluated submitted files and deliverable links against contract criteria.",
-          ],
-          unverifiedAssumptions: parsed.unverifiedAssumptions || [
-            "External URLs and runtime interactions require manual client verification.",
-          ],
-          suggestedRevisions: parsed.suggestedRevisions || [],
-          automatedChecks: checks,
-          submissionFingerprint: fingerprint,
-          isCached: false,
-          isQuotaExceeded: false,
-        };
-      }
+        return null;
+      })();
 
-      if (callResult.isQuotaExceeded) {
-        console.warn("Gemini API quota rate limit reached (HTTP 429). Using heuristic audit.");
-        const fallback = generateHeuristicAudit(input);
-        fallback.isQuotaExceeded = true;
-        fallback.submissionFingerprint = fingerprint;
-        return fallback;
-      }
+      const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000));
+      const liveResult = await Promise.race([liveAiPromise, timeoutPromise]);
+      if (liveResult) return liveResult;
     } catch (err) {
-      console.warn("Gemini API call failed, using intelligent heuristic audit:", err);
+      console.warn("Gemini API call timed out or failed, using intelligent heuristic audit:", err);
     }
   }
 

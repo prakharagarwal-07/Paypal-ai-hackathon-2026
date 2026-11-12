@@ -244,6 +244,7 @@ export const db = {
     if (userId || userEmail || userMsoId) {
       return all.filter((p) => {
         if (status && p.status !== status) return false;
+        if (p.status === "rejected" && status !== "rejected") return false;
 
         const clientBase = extractBaseCode(p.client?.milestoneOSId);
         const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
@@ -526,6 +527,22 @@ export const db = {
 
     invalidateServerCache();
     return project;
+  },
+
+  async deleteProject(id: string): Promise<boolean> {
+    const supabase = getServerSupabase();
+    if (supabase) {
+      try {
+        await supabase.from("projects").delete().eq("id", id);
+      } catch (e) {
+        console.error("Supabase deleteProject projects error:", e);
+      }
+      try {
+        await supabase.from("notifications").delete().eq("project_id", id);
+      } catch (_) {}
+    }
+    invalidateServerCache();
+    return true;
   },
 
   async updateProject(id: string, updates: Partial<ProjectContract>): Promise<ProjectContract | null> {

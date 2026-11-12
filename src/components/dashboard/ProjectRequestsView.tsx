@@ -49,14 +49,11 @@ export default function ProjectRequestsView({
   // For Client role: proposals where client_id = authUser.id AND initiated_by = 'freelancer'
   // For Freelancer role: requests where freelancer_id = authUser.id AND initiated_by = 'client'
   const incomingRequests = projects.filter((p) => {
-    const isProposalStatus =
+    // Only pending proposals requiring action belong in Incoming Requests
+    const isPendingIncoming =
       p.status === "awaiting_acceptance" ||
-      p.status === "changes_requested" ||
-      p.status === "rejected";
-    if (!isProposalStatus) return false;
-
-    // Disregard invalid self-assigned proposals
-    if (p.clientId && p.freelancerId && p.clientId === p.freelancerId) return false;
+      p.status === "changes_requested";
+    if (!isPendingIncoming) return false;
 
     const clientBase = extractBaseCode(p.client?.milestoneOSId);
     const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);
@@ -81,15 +78,14 @@ export default function ProjectRequestsView({
   // Sent Proposals: Strict proposer authorization
   // For Client role: requests where client_id = authUser.id AND initiated_by = 'client'
   // For Freelancer role: proposals where freelancer_id = authUser.id AND initiated_by = 'freelancer'
+  // Once accepted, proposals move to My Projects and are removed from Sent Proposals.
+  // Once declined, proposals are removed completely.
   const sentProposals = projects.filter((p) => {
-    const isProposalOrRecent =
+    const isPendingSent =
       p.status === "awaiting_acceptance" ||
       p.status === "changes_requested" ||
-      p.status === "draft" ||
-      p.status === "rejected" ||
-      p.status === "accepted" ||
-      (p.status === "active" && p.proposalStatus === "accepted");
-    if (!isProposalOrRecent) return false;
+      p.status === "draft";
+    if (!isPendingSent) return false;
 
     const clientBase = extractBaseCode(p.client?.milestoneOSId);
     const freelancerBase = extractBaseCode(p.freelancer?.milestoneOSId);

@@ -234,7 +234,7 @@ interface DashboardContextType {
       attachments?: DeliverableAttachment[];
     },
     isRevision?: boolean
-  ) => void;
+  ) => void | Promise<void>;
   requestRevision: (projectId: string, milestoneId: string, reason: string) => void;
   requestChanges: (projectId: string, milestoneId: string, reason: string) => void;
   approveMilestone: (projectId: string, milestoneId: string) => void;
@@ -1095,20 +1095,28 @@ export function DashboardProvider({
 
   const rejectProposal = async (projectId: string, reason?: string) => {
     try {
+      // Immediately remove from local state so both client and freelancer views clear it right away
+      setRawProjects((prev) => prev.filter((p) => p.id !== projectId));
+      if (activeProject?.id === projectId) {
+        setActiveProjectIdState("");
+      }
+
       const res = await fetch(`/api/projects/${projectId}/proposals`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "reject",
+          reason,
           userId: authUser?.id,
           userEmail: authUser?.email,
+          role,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Failed to decline proposal");
       }
-      showToast("Project proposal declined.", "warning");
+      showToast("Project proposal declined and removed from workspace.", "info");
       refreshProjects();
     } catch (err: any) {
       console.warn("Failed to sync rejection to API:", err);
@@ -1486,7 +1494,7 @@ export function DashboardProvider({
     showToast("Milestone marked as in progress.", "info");
   };
 
-  const submitMilestoneDeliverables = (
+  const submitMilestoneDeliverables = async (
     projectId: string,
     milestoneId: string,
     deliverables: {
@@ -1563,27 +1571,73 @@ export function DashboardProvider({
       })
     );
 
-    // Call API submit route for automated Gemini review
-    fetch(`/api/milestones/${milestoneId}/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        projectId,
-        notes: deliverables.notes,
-        demoUrl: deliverables.demoUrl,
-        githubRepo: deliverables.githubRepo,
-        loomVideo: deliverables.loomVideo,
-        deliverableLinks: deliverables.deliverableLinks,
-        attachments: deliverables.attachments,
-      }),
-    }).catch(() => {});
+    // Call API submit route for automated Gemini review and backend database persistence
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      try {
+        const supabase = getSupabaseClient();
+        const session = (await supabase?.auth.getSession())?.data?.session;
+        if (session?.access_token) {
+          headers["Authorization"] = `Bearer ${session.access_token}`;
+        }
+      } catch (_) {}
 
-    showToast(
-      isRevision
-        ? `Revised work for "${submittedMilestoneTitle}" submitted.`
-        : `Work for "${submittedMilestoneTitle}" submitted. AI Acceptance Audit queued.`,
-      "success"
-    );
+      const callerId = authUser?.id || (isDemoMode ? "253b60b8-a9e0-4d3d-96af-618f78c1bf80" : undefined);
+      const callerEmail = authUser?.email || (isDemoMode ? "rohan.verma@craftdev.io" : undefined);
+      const callerMso = userProfiles.freelancer.milestoneOSId || "FL-2W8L41";
+
+      if (callerId) headers["x-user-id"] = callerId;
+      if (callerEmail) headers["x-user-email"] = callerEmail;
+      if (callerMso) headers["x-user-mso-id"] = callerMso;
+
+      const res = await fetch(`/api/milestones/${milestoneId}/submit`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          projectId,
+          notes: deliverables.notes,
+          demoUrl: deliverables.demoUrl,
+          githubRepo: deliverables.githubRepo,
+          loomVideo: deliverables.loomVideo,
+          deliverableLinks: deliverables.deliverableLinks,
+          attachments: deliverables.attachments,
+          userId: callerId,
+          userEmail: callerEmail,
+          milestoneOSId: callerMso,
+          isDemo: isDemoMode,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to submit milestone work");
+      }
+
+      if (data.project) {
+        setRawProjects((prev) =>
+          prev.map((p) => (p.id === projectId ? data.project : p))
+        );
+        if (authUser?.id) {
+          try {
+            const current = JSON.parse(localStorage.getItem(`milestoneos_projects_${authUser.id}`) || "[]");
+            const updated = current.map((p: any) => (p.id === projectId ? data.project : p));
+            localStorage.setItem(`milestoneos_projects_${authUser.id}`, JSON.stringify(updated));
+          } catch (_) {}
+        }
+      }
+
+      showToast(
+        isRevision
+          ? `Revised work for "${submittedMilestoneTitle}" submitted.`
+          : `Work for "${submittedMilestoneTitle}" submitted and verified!`,
+        "success"
+      );
+      refreshProjects();
+    } catch (err: any) {
+      console.error("Milestone submission error:", err);
+      showToast(err.message || "Failed to submit deliverables. Please check connection and try again.", "warning");
+      refreshProjects();
+    }
   };
 
   const requestRevision = (projectId: string, milestoneId: string, reason: string) => {
