@@ -112,10 +112,7 @@ export async function POST(req: NextRequest) {
 
     // 6. Security check: Verify captured amount matches agreed milestone contract price
     const contractCurrency = (milestone.currency || project.currency || "USD").toUpperCase();
-    const isINR = contractCurrency === "INR";
-    const expectedAmount = isINR
-      ? Math.max(1, Math.round((milestone.amount / 85) * 100) / 100)
-      : milestone.amount;
+    const expectedAmount = milestone.amount;
 
     if (Math.abs(captureResult.amount - expectedAmount) > 1.0) {
       console.warn(

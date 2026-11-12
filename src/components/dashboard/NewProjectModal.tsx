@@ -981,6 +981,11 @@ export default function NewProjectModal({ isOpen, onClose, initialProject }: New
                         className="w-full pl-7 pr-3 py-2 rounded-xl border border-slate-300 bg-white text-xs font-mono font-bold text-slate-900 focus:border-[#0070BA] focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white"
                       />
                     </div>
+                    {currency === "INR" && (
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1">
+                        Note: PayPal escrow checkout settles in USD. Contracts requiring PayPal funding should be denominated in USD.
+                      </p>
+                    )}
                   </div>
 
                   <div>

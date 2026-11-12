@@ -86,26 +86,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // PayPal REST API does not support INR directly for checkout.
-    // When milestone is in INR, convert to USD for PayPal authorization (1 USD = ~85 INR)
-    // while keeping contract tracking in Rupees.
-    let orderAmount = contractAmount;
-    let orderCurrency = contractCurrency;
-
-    if (contractCurrency === "INR") {
-      orderAmount = Math.max(1, Math.round((contractAmount / 85) * 100) / 100);
-      orderCurrency = "USD";
+    // PayPal REST Orders v2 API does not support INR directly for checkout.
+    // Per platform requirements, do not silently convert or assume exchange rates.
+    const normalizedCurrency = contractCurrency.trim().toUpperCase();
+    if (
+      normalizedCurrency === "INR" ||
+      normalizedCurrency === "₹" ||
+      normalizedCurrency === "RUPEE" ||
+      normalizedCurrency === "RUPEES"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "PayPal Checkout does not support INR (Indian Rupee) directly. Escrow milestone contracts must be settled in supported PayPal currencies (USD). Please adjust the milestone currency to USD.",
+          currency: contractCurrency,
+          isUnsupportedCurrency: true,
+        },
+        { status: 400 }
+      );
     }
 
     const orderResult = await createPayPalOrder({
       projectId: project.id,
       milestoneId: milestone.id,
-      milestoneTitle:
-        contractCurrency === "INR"
-          ? `${milestone.title} (INR ${contractAmount.toLocaleString()} - USD ${orderAmount.toFixed(2)})`
-          : milestone.title,
-      amount: orderAmount,
-      currency: orderCurrency,
+      milestoneTitle: milestone.title,
+      amount: contractAmount,
+      currency: contractCurrency,
       freelancerName: project.freelancer.name,
     });
 
@@ -117,8 +123,8 @@ export async function POST(req: NextRequest) {
         title: milestone.title,
         amount: contractAmount,
         currency: contractCurrency,
-        orderAmount,
-        orderCurrency,
+        orderAmount: contractAmount,
+        orderCurrency: contractCurrency,
       },
     });
   } catch (err: any) {
